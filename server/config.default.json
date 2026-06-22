@@ -1,0 +1,19 @@
+{
+  "musicRoot": "c:\\vibecode\\dgc2tag\\music",
+  "port": 3000,
+  "tagDefaults": {
+    "artist": true,
+    "albumArtist": true,
+    "album": true,
+    "year": true,
+    "genre": true,
+    "country": true,
+    "label": true,
+    "releaseType": true,
+    "postId": true
+  },
+  "writeTrackNames": true,
+  "writeTrackArtists": true,
+  "outputFolder": "c:\\vibecode\\dgc2tag\\music_processed\\",
+  "outputMode": "absolute"
+}

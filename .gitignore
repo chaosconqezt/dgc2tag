@@ -1,0 +1,30 @@
+node_modules/
+dist/
+*.local
+zzz/
+user_data/
+user_data_tmp/
+user_data_tmp2/
+user_data_img/
+test_muz/
+cache/
+*.log
+.DS_Store
+.vscode/
+.idea/
+nul
+
+# User music library (large, personal)
+music/
+music_processed/
+
+# Per-user config (override defaults)
+server/config.json
+taxonomy-cache.json
+
+# Build artifacts
+server/src/*.js
+server/src/*.js.map
+server/src/*.d.ts
+server/src/*.d.ts.map
+client/.vite/
