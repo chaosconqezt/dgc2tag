@@ -5,6 +5,7 @@ Desktop application for batch-tagging MP3 files from [Deathgrind Club](https://d
 ## Features
 
 - **DGC + Deezer search** — find releases on both platforms
+- **Compilation mode** — auto-detect VA compilations, per-track artist parsing
 - **Local tags editing** — edit tags without search results, panels always visible
 - **Batch tag writing** — write ID3 tags, rename files, move to output folder
 - **Track matching** — automatic matching of remote tracks to local files
@@ -25,6 +26,8 @@ Open `http://localhost:3000` in your browser.
 | Command | Description |
 |---------|-------------|
 | `npm run dev` | Dev mode — tsx watch + Vite middleware, single port |
+| `npm run dev:server` | Dev server only — tsx watch |
+| `npm run dev:client` | Dev client only — Vite |
 | `npm run build` | Build client (tsc -b && vite build) |
 | `npm start` | Production mode |
 
@@ -73,21 +76,44 @@ Edit `server/config.json` (auto-created on first run):
 
 ```
 client/src/
-├── App.tsx                    # Main layout
+├── App.tsx                    # Main layout + pipeline
 ├── api.ts                     # Axios + interceptors
-├── hooks/useAppContext.tsx    # State management
-├── components/
-│   ├── TagComparison.tsx      # Tag editing panel
-│   ├── TrackMatcher.tsx       # Track matching panel
-│   ├── LibraryTree.tsx        # File browser
-│   └── SearchResults.tsx      # DGC + Deezer results
+├── build.ts                   # Build version
+├── index.css                  # Global styles
+├── main.tsx                   # Entry point
+├── types.ts                   # AlbumTags, SearchResult, etc.
+├── hooks/
+│   └── useAppContext.tsx       # useReducer: state + business logic
+├── utils/
+│   ├── index.ts               # Barrel export
+│   ├── similarity.ts          # Levenshtein distance
+│   └── trackMatching.ts       # matchTracks(): remote vs local
+└── components/
+    ├── styles.ts              # Design tokens (COLORS, FONT...)
+    ├── ErrorBoundary.tsx      # Error boundary with fallback UI
+    ├── LibraryTree.tsx        # File browser
+    ├── SearchBar.tsx          # Artist + album search field
+    ├── SearchResults.tsx      # DGC + Deezer results
+    ├── DgcResults.tsx         # DGC results list
+    ├── DeezerResults.tsx      # Deezer results list
+    ├── TagComparison.tsx      # Tag editing panel
+    ├── TrackMatcher.tsx       # Track matching panel
+    ├── ApplyPanel.tsx         # WRITE/RENAME/MOVE buttons
+    ├── SettingsModal.tsx      # Settings
+    ├── WebfetchOverlay.tsx    # DGC page preview
+    └── Footer.tsx             # Footer
 
 server/src/
-├── index.ts                   # Express routes
-├── scraper.ts                 # DGC API (Puppeteer)
+├── index.ts                   # Express routes + Vite middleware
+├── scraper.ts                 # DGC API (Puppeteer + stealth)
 ├── deezer.ts                  # Deezer API
-├── tagger.ts                  # Read ID3 tags
-└── tagWriter.ts               # Write ID3 tags
+├── tagger.ts                  # Read ID3 tags from folder
+├── tagWriter.ts               # Write ID3, rename, move
+├── scanner.ts                 # File system traversal
+├── config.ts                  # config.json load/save
+├── cache.ts                   # File cache for bands/releases
+├── logger.ts                  # Leveled logger
+└── trackUtils.ts              # Extract track# from ID3/filename
 ```
 
 ## License

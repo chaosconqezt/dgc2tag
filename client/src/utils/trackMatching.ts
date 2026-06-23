@@ -67,3 +67,21 @@ export function matchTracks(
 
   return results;
 }
+
+export function parseCompilationTracklist(tracklist: string): { num: string; artist: string; name: string }[] {
+  const lines = tracklist.split('\n');
+  const tracks: { num: string; artist: string; name: string }[] = [];
+  for (const line of lines) {
+    const m = line.trim().match(/^(\d{1,3})[.\s)]+\s*(.+)/);
+    if (!m) continue;
+    const num = m[1]!;
+    const rest = m[2]!.trim();
+    const dashIdx = rest.search(/\s[-–—]\s/);
+    if (dashIdx > 0) {
+      tracks.push({ num, artist: rest.slice(0, dashIdx).trim(), name: rest.slice(dashIdx + 1).replace(/^[-–—]\s*/, '').trim() });
+    } else {
+      tracks.push({ num, artist: '', name: rest });
+    }
+  }
+  return tracks;
+}

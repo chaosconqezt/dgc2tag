@@ -13,6 +13,12 @@ interface TagComparisonProps {
   onEditedSiteValuesChange: (key: string, value: string) => void;
 }
 
+function formatReleaseType(val: string): string {
+  if (!val) return val;
+  if (val.toLowerCase() === 'ep') return 'EP';
+  return val.charAt(0).toUpperCase() + val.slice(1);
+}
+
 export function TagComparison({
   selectedResult,
   localTags,
@@ -115,11 +121,12 @@ export function TagComparison({
 
       <div>
         {fields.map((f) => {
-          const siteVal = editedSiteValues[f.key] !== undefined ? editedSiteValues[f.key] : (f.site || '');
+          const rawSiteVal = editedSiteValues[f.key] !== undefined ? editedSiteValues[f.key] : (f.site || '');
+          const siteVal = f.key === 'releaseType' ? formatReleaseType(rawSiteVal) : rawSiteVal;
           const sim = fieldSims[f.key];
           const isDifferent = f.key === 'artist' && Array.isArray(f.file)
             ? true
-            : String(f.file) !== siteVal;
+            : String(f.file) !== rawSiteVal;
           const enabled = tagEnabled[f.key] !== false;
           const readonly = 'readonly' in f && (f as { readonly?: boolean }).readonly === true;
 

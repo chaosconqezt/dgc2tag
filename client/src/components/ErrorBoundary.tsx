@@ -1,4 +1,5 @@
 import React, { Component, ErrorInfo, ReactNode } from 'react';
+import { FONT, FS } from './styles';
 
 interface Props {
   children: ReactNode;
@@ -18,10 +19,10 @@ const FALLBACK_CONTENT = (
     height: '100%',
     padding: '32px',
     color: '#a1a1aa',
-    fontFamily: 'Inter, system-ui, sans-serif',
+    fontFamily: FONT,
   }}>
     <div style={{ fontSize: '48px', marginBottom: '16px' }}>⚠️</div>
-    <h2 style={{ margin: '0 0 8px', color: '#f4f4f5', fontSize: '18px', fontWeight: '600' }}>
+    <h2 style={{ margin: '0 0 8px', color: '#f4f4f5', fontSize: FS, fontWeight: '600', fontFamily: FONT }}>
       Что-то пошло не так
     </h2>
     <p style={{ margin: '0 0 20px', textAlign: 'center', maxWidth: '400px', lineHeight: '1.5' }}>
@@ -37,7 +38,8 @@ const FALLBACK_CONTENT = (
         borderRadius: '6px',
         cursor: 'pointer',
         fontWeight: '500',
-        fontSize: '14px',
+        fontSize: FS,
+        fontFamily: FONT,
       }}
     >
       Перезагрузить

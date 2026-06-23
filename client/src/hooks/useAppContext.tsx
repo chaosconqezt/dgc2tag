@@ -29,6 +29,9 @@ interface AppState {
   searchAlbum: string;
   searchArtistEnabled: boolean;
   searchAlbumEnabled: boolean;
+  dgcLoading: boolean;
+  deezerLoading: boolean;
+  searchTimeMs: number | null;
 
   // UI state
   loading: boolean;
@@ -54,6 +57,8 @@ interface AppState {
   trackNameEnabled: Record<string, boolean>;
   trackArtistsEnabled: Record<string, boolean>;
   stripRemoteParentheses: boolean;
+  compilation: boolean;
+  serverParsedTracks: { num: string; artist: string; name: string; duration?: number }[] | null;
 }
 
 type Action =
@@ -70,6 +75,9 @@ type Action =
   | { type: 'SET_SEARCH_ALBUM'; payload: string }
   | { type: 'SET_SEARCH_ARTIST_ENABLED'; payload: boolean }
   | { type: 'SET_SEARCH_ALBUM_ENABLED'; payload: boolean }
+  | { type: 'SET_DGC_LOADING'; payload: boolean }
+  | { type: 'SET_DEEZER_LOADING'; payload: boolean }
+  | { type: 'SET_SEARCH_TIME'; payload: number | null }
   | { type: 'TOGGLE_NODE'; payload: string }
   | { type: 'COLLAPSE_ALL' }
   | { type: 'CLEAR_SELECTION_STATE' }
@@ -91,7 +99,9 @@ type Action =
   | { type: 'SET_CONFIG_OUTPUT_MODE'; payload: 'subfolder' | 'absolute' }
   | { type: 'SET_CONFIG_SAVING'; payload: boolean }
   | { type: 'SET_CLEARING_CACHE'; payload: boolean }
-  | { type: 'SET_STRIP_REMOTE_PARENS'; payload: boolean };
+  | { type: 'SET_STRIP_REMOTE_PARENS'; payload: boolean }
+  | { type: 'SET_COMPILATION'; payload: boolean }
+  | { type: 'SET_SERVER_PARSED_TRACKS'; payload: { num: string; artist: string; name: string; duration?: number }[] | null };
 
 const initialState: AppState = {
   tree: [],
@@ -107,6 +117,9 @@ const initialState: AppState = {
   searchAlbum: '',
   searchArtistEnabled: true,
   searchAlbumEnabled: true,
+  dgcLoading: false,
+  deezerLoading: false,
+  searchTimeMs: null,
   loading: false,
   webfetchUrl: null,
   webfetchContent: null,
@@ -126,6 +139,8 @@ const initialState: AppState = {
   trackNameEnabled: {},
   trackArtistsEnabled: {},
   stripRemoteParentheses: false,
+  compilation: false,
+  serverParsedTracks: null,
 };
 
 function appReducer(state: AppState, action: Action): AppState {
@@ -138,11 +153,14 @@ function appReducer(state: AppState, action: Action): AppState {
     case 'SET_DEEZER_RESULTS': return { ...state, deezerResults: action.payload };
     case 'SET_SELECTED_RESULT': return { ...state, selectedResult: action.payload };
     case 'SET_SELECTED_DEEZER': return { ...state, selectedDeezer: action.payload };
-    case 'SET_ALBUM_DETAILS': return { ...state, albumDetails: action.payload };
+    case 'SET_ALBUM_DETAILS': return { ...state, albumDetails: action.payload, compilation: action.payload?.compilation ?? state.compilation, serverParsedTracks: action.payload?.parsedTracks ?? null };
     case 'SET_SEARCH_ARTIST': return { ...state, searchArtist: action.payload };
     case 'SET_SEARCH_ALBUM': return { ...state, searchAlbum: action.payload };
     case 'SET_SEARCH_ARTIST_ENABLED': return { ...state, searchArtistEnabled: action.payload };
     case 'SET_SEARCH_ALBUM_ENABLED': return { ...state, searchAlbumEnabled: action.payload };
+    case 'SET_DGC_LOADING': return { ...state, dgcLoading: action.payload };
+    case 'SET_DEEZER_LOADING': return { ...state, deezerLoading: action.payload };
+    case 'SET_SEARCH_TIME': return { ...state, searchTimeMs: action.payload };
     case 'TOGGLE_NODE': {
       const next = new Set(state.expandedNodes);
       if (next.has(action.payload)) next.delete(action.payload);
@@ -162,6 +180,8 @@ function appReducer(state: AppState, action: Action): AppState {
         editedTrackArtists: {},
         trackNameEnabled: {},
         trackArtistsEnabled: {},
+        compilation: false,
+        serverParsedTracks: null,
       };
     case 'SET_TAG_ENABLED': return { ...state, tagEnabled: action.payload };
     case 'SET_TAG_ENABLED_KEY':
@@ -188,6 +208,8 @@ function appReducer(state: AppState, action: Action): AppState {
     case 'SET_CONFIG_SAVING': return { ...state, configSaving: action.payload };
     case 'SET_CLEARING_CACHE': return { ...state, clearingCache: action.payload };
     case 'SET_STRIP_REMOTE_PARENS': return { ...state, stripRemoteParentheses: action.payload };
+    case 'SET_COMPILATION': return { ...state, compilation: action.payload };
+    case 'SET_SERVER_PARSED_TRACKS': return { ...state, serverParsedTracks: action.payload };
     default:
       return state;
   }
@@ -220,6 +242,8 @@ const AppContext = createContext<AppContextType | null>(null);
 export function AppProvider({ children }: { children: React.ReactNode }) {
   const [state, dispatch] = useReducer(appReducer, initialState);
   const abortControllerRef = useRef<AbortController | null>(null);
+  const searchInProgressRef = useRef(false);
+  const loadAlbumDetailsIdRef = useRef<number | null>(null);
 
   // ── Derived helpers ───────────────────────────────────────────────────────
 
@@ -243,6 +267,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   }, [state.tree]);
 
   const clearSelectionState = useCallback(() => {
+    loadAlbumDetailsIdRef.current = null;
     dispatch({ type: 'CLEAR_SELECTION_STATE' });
   }, []);
 
@@ -343,38 +368,57 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   }, [dirHasAudioFiles, clearSelectionState]);
 
   const handleSearch = useCallback(async (artist?: string, album?: string, artistEnabled?: boolean, albumEnabled?: boolean) => {
+    if (searchInProgressRef.current) return;
+    searchInProgressRef.current = true;
+
     const a = artistEnabled !== undefined ? artistEnabled : state.searchArtistEnabled;
     const b = albumEnabled !== undefined ? albumEnabled : state.searchAlbumEnabled;
     const dgcQuery = [a ? (artist || state.searchArtist) : '', b ? (album || state.searchAlbum) : ''].filter(Boolean).join(' ');
     if (!dgcQuery) return;
 
     if (import.meta.env.DEV) console.log(`[client] search DGC: "${dgcQuery}"`);
-    dispatch({ type: 'SET_LOADING', payload: true });
+    dispatch({ type: 'SET_DGC_LOADING', payload: true });
+    dispatch({ type: 'SET_DEEZER_LOADING', payload: true });
+    dispatch({ type: 'SET_SEARCH_RESULTS', payload: [] });
     dispatch({ type: 'SET_DEEZER_RESULTS', payload: [] });
+    dispatch({ type: 'SET_SEARCH_TIME', payload: null });
 
-    try {
-      const dzArtist = a ? (artist || state.searchArtist) : undefined;
-      const dzAlbum = b ? (album || state.searchAlbum) : undefined;
-      const [dgcData, dzData] = await Promise.all([
-        api.searchAlbums(dgcQuery),
-        api.searchAlbumsDeezer(dzArtist, dzAlbum).catch(() => []),
-      ]);
-      if (import.meta.env.DEV) console.log(`[client] DGC results: ${dgcData.length}, Deezer results: ${dzData.length}`);
-      dispatch({ type: 'SET_SEARCH_RESULTS', payload: dgcData });
-      dispatch({ type: 'SET_DEEZER_RESULTS', payload: dzData });
-    } catch (err) {
-      if (import.meta.env.DEV) console.error('[client] search error:', err);
-    } finally {
-      dispatch({ type: 'SET_LOADING', payload: false });
-    }
+    const start = Date.now();
+    const dzArtist = a ? (artist || state.searchArtist) : undefined;
+    const dzAlbum = b ? (album || state.searchAlbum) : undefined;
+
+    api.searchAlbums(dgcQuery)
+      .then(data => {
+        if (import.meta.env.DEV) console.log(`[client] DGC results: ${data.length}`);
+        dispatch({ type: 'SET_SEARCH_RESULTS', payload: data });
+      })
+      .catch(err => {
+        if (import.meta.env.DEV) console.error('[client] DGC search error:', err);
+      })
+      .finally(() => dispatch({ type: 'SET_DGC_LOADING', payload: false }));
+
+    api.searchAlbumsDeezer(dzArtist, dzAlbum)
+      .then(data => {
+        if (import.meta.env.DEV) console.log(`[client] Deezer results: ${data.length}`);
+        dispatch({ type: 'SET_DEEZER_RESULTS', payload: data });
+      })
+      .catch(() => {})
+      .finally(() => {
+        dispatch({ type: 'SET_DEEZER_LOADING', payload: false });
+        dispatch({ type: 'SET_SEARCH_TIME', payload: Date.now() - start });
+        searchInProgressRef.current = false;
+      });
   }, [state.searchArtist, state.searchAlbum, state.searchArtistEnabled, state.searchAlbumEnabled]);
 
   const loadAlbumDetails = useCallback(async (postId: number) => {
+    loadAlbumDetailsIdRef.current = postId;
     if (import.meta.env.DEV) console.log(`[client] loading album details: ${postId}`);
     try {
       const data = await api.fetchAlbumDetails(postId);
+      if (loadAlbumDetailsIdRef.current !== postId) return;
       dispatch({ type: 'SET_ALBUM_DETAILS', payload: data });
     } catch (err) {
+      if (loadAlbumDetailsIdRef.current !== postId) return;
       if (import.meta.env.DEV) console.error('[client] album details error:', err);
       dispatch({ type: 'SET_ALBUM_DETAILS', payload: null });
     }
@@ -411,6 +455,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       label: dz.label,
       genres: [],
       releaseType: dz.releaseType,
+      compilation: dz.compilation,
       url: dz.url,
       parsedTracks,
     };

@@ -11,9 +11,10 @@ export interface DeezerSearchResult {
     year: string | null;
     label: string | null;
     releaseType: string | null;
+    compilation?: boolean;
     coverUrl: string;
     trackCount: number;
-    tracks: { num: string; name: string; duration: number }[];
+    tracks: { num: string; name: string; duration: number; artist?: string }[];
     url: string;
 }
 
@@ -42,6 +43,7 @@ interface DzAlbumDetail {
             track_position: number;
             title: string;
             duration: number;
+            artist?: { id: number; name: string };
         }[];
     };
 }
@@ -92,10 +94,12 @@ export async function searchDeezer(artist?: string, album?: string): Promise<Dee
         }
 
         const year = detail.release_date?.substring(0, 4) || null;
+        const isCompilation = detail.record_type === 'compile';
         const tracks = (detail.tracks?.data || []).map(t => ({
             num: String(t.track_position),
             name: t.title,
             duration: t.duration,
+            ...(t.artist?.name ? { artist: t.artist.name } : {}),
         }));
 
         results.push({
@@ -106,6 +110,7 @@ export async function searchDeezer(artist?: string, album?: string): Promise<Dee
             year,
             label: detail.label || null,
             releaseType: detail.record_type || null,
+            ...(isCompilation ? { compilation: true } : {}),
             coverUrl: detail.cover_xl || '',
             trackCount: detail.nb_tracks,
             tracks,

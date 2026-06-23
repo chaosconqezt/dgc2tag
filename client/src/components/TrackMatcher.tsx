@@ -13,6 +13,7 @@ interface TrackMatcherProps {
   editedTrackNames: Record<string, string>;
   editedTrackArtists: Record<string, string>;
   stripRemoteParentheses: boolean;
+  compilation: boolean;
   onStripRemoteParenthesesChange: (enabled: boolean) => void;
   onWriteTrackNamesChange: (enabled: boolean) => void;
   onWriteTrackArtistsChange: (enabled: boolean) => void;
@@ -20,6 +21,7 @@ interface TrackMatcherProps {
   onTrackArtistsEnabledChange: (num: string, enabled: boolean) => void;
   onEditedTrackNameChange: (num: string, value: string) => void;
   onEditedTrackArtistChange: (num: string, value: string) => void;
+  onCompilationChange: (enabled: boolean) => void;
 }
 
 function TrackArtistField({
@@ -159,6 +161,7 @@ function MatchRow({
 
   const localDuration = m.local ? localTags.trackDurations?.[m.local.file] : undefined;
   const remoteDuration = m.remote.duration;
+  const displayDuration = localDuration || remoteDuration;
 
   return (
     <div style={{
@@ -206,8 +209,8 @@ function MatchRow({
       </div>
 
       {/* local duration */}
-      <div style={{ width: '36px', textAlign: 'right', flexShrink: 0, fontSize: '12px', fontFamily: 'monospace', color: COLORS.textFaint }}>
-        {formatDuration(localDuration)}
+      <div style={{ width: '36px', textAlign: 'right', flexShrink: 0, fontSize: FS, fontFamily: 'monospace', color: COLORS.textMuted }}>
+        {formatDuration(displayDuration)}
       </div>
 
       {/* similarity */}
@@ -220,7 +223,7 @@ function MatchRow({
       </div>
 
       {/* remote duration */}
-      <div style={{ width: '36px', textAlign: 'left', flexShrink: 0, fontSize: '12px', fontFamily: 'monospace', color: remoteDuration ? COLORS.textMuted : COLORS.textInvisible }}>
+      <div style={{ width: '36px', textAlign: 'left', flexShrink: 0, fontSize: FS, fontFamily: 'monospace', color: remoteDuration ? COLORS.textMuted : COLORS.textInvisible }}>
         {formatDuration(remoteDuration)}
       </div>
 
@@ -278,14 +281,6 @@ function SingleArtistTracks({
 }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1px' }}>
-      <div style={{ display: 'flex', gap: '4px', marginBottom: '4px', fontSize: FS, fontFamily: FONT, color: COLORS.textFaint, fontWeight: '600', paddingLeft: '11px' }}>
-        <span style={{ width: '11px', flexShrink: 0 }} />
-        <span style={{ flex: 1, textAlign: 'left', paddingLeft: '4px' }}>from tag</span>
-        <span style={{ width: '36px', textAlign: 'right', flexShrink: 0 }} />
-        <span style={{ width: '40px', textAlign: 'center', flexShrink: 0 }} />
-        <span style={{ width: '36px', textAlign: 'left', flexShrink: 0 }} />
-        <span style={{ flex: 1, textAlign: 'left', paddingLeft: '4px' }}>from DGC</span>
-      </div>
 
       {matched.map((m, i) => {
         const nameEnabled = writeTrackNames && (trackNameEnabled[m.remote.num] !== false);
@@ -346,6 +341,7 @@ function MultiArtistTracks({
   trackArtistsEnabled: Record<string, boolean>;
   editedTrackNames: Record<string, string>;
   editedTrackArtists: Record<string, string>;
+  stripRemoteParentheses: boolean;
   showFilenamePreviews: boolean;
   filenameMode: 'id3' | 'filename';
   onWriteTrackNamesChange: (enabled: boolean) => void;
@@ -357,14 +353,6 @@ function MultiArtistTracks({
 }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-      <div style={{ display: 'flex', gap: '4px', marginBottom: '4px', fontSize: FS, fontFamily: FONT, color: COLORS.textFaint, fontWeight: '600', paddingLeft: '11px' }}>
-        <span style={{ width: '11px', flexShrink: 0 }} />
-        <span style={{ flex: 1, textAlign: 'left', paddingLeft: '4px' }}>from tag</span>
-        <span style={{ width: '36px', textAlign: 'right', flexShrink: 0 }} />
-        <span style={{ width: '40px', textAlign: 'center', flexShrink: 0 }} />
-        <span style={{ width: '36px', textAlign: 'left', flexShrink: 0 }} />
-        <span style={{ flex: 1, textAlign: 'left', paddingLeft: '4px' }}>from DGC</span>
-      </div>
 
       {matched.map((m, i) => {
         const nameEnabled = writeTrackNames && (trackNameEnabled[m.remote.num] !== false);
@@ -448,6 +436,7 @@ export function TrackMatcher({
   editedTrackNames,
   editedTrackArtists,
   stripRemoteParentheses,
+  compilation,
   onStripRemoteParenthesesChange,
   onWriteTrackNamesChange,
   onWriteTrackArtistsChange,
@@ -455,6 +444,7 @@ export function TrackMatcher({
   onTrackArtistsEnabledChange,
   onEditedTrackNameChange,
   onEditedTrackArtistChange,
+  onCompilationChange,
 }: TrackMatcherProps) {
   const [showFilenamePreviews, setShowFilenamePreviews] = useState(false);
   const [filenameMode, setFilenameMode] = useState<'id3' | 'filename'>('id3');
@@ -473,7 +463,7 @@ export function TrackMatcher({
     return { num, artist, name };
   });
   const artists = [...new Set(remoteTracks.map(t => t.artist))];
-  const hasMultiArtist = artists.length > 1;
+  const hasMultiArtist = compilation || artists.length > 1;
   const matched = matchTracks(remoteTracks, localTags.files, localTags.trackTitles, false, filenameMode);
 
   const localCount = localTags.files.length;
@@ -502,10 +492,12 @@ export function TrackMatcher({
 
   return (
     <div style={PANEL_STYLE}>
-      <div style={HEADER_STYLE}>
+      <div style={{ ...HEADER_STYLE, justifyContent: 'space-between' }}>
+        <span style={{ flex: 1, textAlign: 'left', color: COLORS.textDim, fontSize: FS, fontFamily: FONT }}>from tag</span>
         <span style={{ color: COLORS.text, fontWeight: '600', fontSize: FS, fontFamily: FONT }}>
           {albumDetails ? 'TRACKS' : 'LOCAL TRACKS'}
         </span>
+        <span style={{ flex: 1, textAlign: 'right', color: COLORS.textDim, fontSize: FS, fontFamily: FONT }}>from DGC</span>
       </div>
 
       {/* Controls */}
@@ -529,6 +521,14 @@ export function TrackMatcher({
             </label>
           </>
         )}
+        <span style={{ color: COLORS.textInvisible }}>·</span>
+        <label style={{ display: 'flex', alignItems: 'center', gap: '3px', cursor: 'pointer' }}>
+          <input type="checkbox" checked={compilation}
+            onChange={(e) => onCompilationChange(e.target.checked)}
+            style={CHECKBOX}
+          />
+          compilation
+        </label>
         <span style={{ color: COLORS.textInvisible }}>·</span>
         <label style={{ display: 'flex', alignItems: 'center', gap: '3px', cursor: 'pointer', opacity: hasAnyTags ? 1 : 0.3 }}>
           <input type="checkbox" checked={showFilenamePreviews}

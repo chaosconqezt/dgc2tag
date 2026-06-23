@@ -46,6 +46,7 @@ export interface SearchResult {
   youtube?: string;
   metalArchivesUrl?: string;
   artworkBy?: string;
+  compilation?: boolean;
   parsedTracks?: { num: string; artist: string; name: string; duration?: number }[];
 }
 
@@ -65,6 +66,7 @@ export interface DeezerSearchResult {
   year: string | null;
   label: string | null;
   releaseType: string | null;
+  compilation?: boolean;
   coverUrl: string;
   trackCount: number;
   tracks: { num: string; name: string; duration: number; artist?: string }[];

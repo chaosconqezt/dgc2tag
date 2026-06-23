@@ -1,6 +1,7 @@
 import NodeID3 from 'node-id3';
 import fs from 'fs/promises';
 import path from 'path';
+import { logger } from './logger.js';
 
 // Type for NodeID3.read() result — matches the actual runtime shape
 interface Id3Tags {
@@ -101,6 +102,10 @@ export async function getTags(folderPath: string): Promise<AlbumTags> {
         }
         if (tags.performerInfo) albumArtistsSet.add(tags.performerInfo as string);
         if (tags.length) trackDurations[filePath] = Math.round(Number(tags.length) / 1000);
+    }
+
+    if (Object.keys(trackDurations).length === 0) {
+        logger.warn(`no trackDurations found for ${folderPath} — MP3 files may lack TLEN frame`);
     }
 
     // Album-level info from first file

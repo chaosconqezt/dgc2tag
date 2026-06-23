@@ -1,21 +1,22 @@
-import { Globe, ExternalLink, Disc3 } from 'lucide-react';
+import { ExternalLink, Disc3, RefreshCw } from 'lucide-react';
 import type { SearchResult } from '../types';
 import { FONT, FS } from './styles';
 
 interface DgcResultsProps {
   results: SearchResult[];
+  loading: boolean;
   selectedResult: SearchResult | null;
   onSelectResult: (result: SearchResult) => void;
-  onWebfetch: (url: string) => void;
 }
 
-export function DgcResults({ results, selectedResult, onSelectResult, onWebfetch }: DgcResultsProps) {
-  if (results.length === 0) return null;
+export function DgcResults({ results, loading, selectedResult, onSelectResult }: DgcResultsProps) {
+  if (results.length === 0 && !loading) return null;
 
   return (
     <div>
-      <div style={{ fontSize: FS, color: '#ef4444', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '4px', paddingLeft: '2px', fontFamily: FONT }}>
-        DGC · {results.length}
+      <div style={{ fontSize: FS, color: '#ef4444', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '4px', paddingLeft: '2px', fontFamily: FONT, display: 'flex', alignItems: 'center', gap: '6px' }}>
+        DGC · {loading ? '...' : results.length}
+        {loading && <RefreshCw size={10} className="animate-spin" />}
       </div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
         {results.map((res) => (
@@ -63,24 +64,15 @@ export function DgcResults({ results, selectedResult, onSelectResult, onWebfetch
                 </div>
               )}
             </div>
-            <div style={{ display: 'flex', gap: '4px' }}>
-              <button
-                onClick={(e) => { e.stopPropagation(); onWebfetch(res.url); }}
-                style={{ flex: 1, background: '#18181b', border: '1px solid #27272a', borderRadius: '3px', padding: '3px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#71717a', transition: 'all 0.15s', fontSize: FS, gap: '2px', fontFamily: FONT }}
-                title="Preview on DGC"
-              >
-                <Globe size={9} /> DGC
-              </button>
-              <a
-                href={res.url}
-                target="_blank"
-                onClick={(e) => e.stopPropagation()}
-                style={{ flex: 1, background: '#18181b', border: '1px solid #27272a', borderRadius: '3px', padding: '3px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#71717a', textDecoration: 'none', transition: 'all 0.15s', fontSize: FS, gap: '2px', fontFamily: FONT }}
-                title="Open in new tab"
-              >
-                <ExternalLink size={9} /> OPEN
-              </a>
-            </div>
+            <a
+              href={res.url}
+              target="_blank"
+              onClick={(e) => e.stopPropagation()}
+              style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '3px', background: '#18181b', border: '1px solid #27272a', borderRadius: '3px', padding: '3px', cursor: 'pointer', color: '#71717a', textDecoration: 'none', transition: 'all 0.15s', fontSize: FS, fontFamily: FONT }}
+              title="Open on DGC"
+            >
+              <ExternalLink size={9} /> OPEN
+            </a>
           </div>
         ))}
       </div>

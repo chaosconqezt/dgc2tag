@@ -1,6 +1,7 @@
 import puppeteer from 'puppeteer-extra';
 import StealthPlugin from 'puppeteer-extra-plugin-stealth';
 import fs from 'fs/promises';
+import fsSync from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { logger } from './logger.js';
@@ -8,6 +9,21 @@ import { logger } from './logger.js';
 const __dirname = fileURLToPath(new URL('.', import.meta.url));
 
 (puppeteer as any).use(StealthPlugin());
+
+async function findRunningBrowserWs(): Promise<string | null> {
+    try {
+        const portFile = path.join('./user_data', 'DevToolsActivePort');
+        if (fsSync.existsSync(portFile)) {
+            const content = fsSync.readFileSync(portFile, 'utf-8').trim();
+            const lines = content.split('\n');
+            if (lines.length >= 2) {
+                const port = lines[0];
+                return `ws://127.0.0.1:${port}${lines[1]}`;
+            }
+        }
+    } catch {}
+    return null;
+}
 
 // ── Interfaces ──────────────────────────────────────────────
 
@@ -30,6 +46,7 @@ export interface SearchResult {
     youtube?: string;
     metalArchivesUrl?: string;
     artworkBy?: string;
+    compilation?: boolean;
     parsedTracks?: { num: string; artist: string; name: string }[];
 }
 
@@ -198,26 +215,43 @@ async function ensureBrowser() {
     // Запускаем браузер в фоне
     browserLaunchPromise = (async () => {
         console.log('[scraper] launching browser...');
-        const launched = await (puppeteer as any).launch({
-            headless: false,
-            defaultViewport: null,
-            pipe: false,
-            userDataDir: './user_data',
-            args: [
-                '--window-size=900,700',
-                '--no-sandbox',
-                '--disable-setuid-sandbox',
-                '--disable-blink-features=AutomationControlled',
-            ],
-        });
+        try {
+            const launched = await (puppeteer as any).launch({
+                headless: false,
+                defaultViewport: null,
+                pipe: false,
+                userDataDir: './user_data',
+                args: [
+                    '--window-size=900,700',
+                    '--no-sandbox',
+                    '--disable-setuid-sandbox',
+                    '--disable-blink-features=AutomationControlled',
+                ],
+            });
 
-        browser = launched;
-        managedBrowser = true;
-        const pages = await browser.pages();
-        page = pages[0] || await browser.newPage();
-        await page.goto('https://deathgrind.club', { waitUntil: 'domcontentloaded', timeout: 60000 });
-        console.log('[scraper] browser ready — if Cloudflare challenge appears, solve it in the browser window');
-        return browser;
+            browser = launched;
+            managedBrowser = true;
+            const pages = await browser.pages();
+            page = pages[0] || await browser.newPage();
+            await page.goto('https://deathgrind.club', { waitUntil: 'domcontentloaded', timeout: 60000 });
+            console.log('[scraper] browser ready — if Cloudflare challenge appears, solve it in the browser window');
+            return browser;
+        } catch (err: any) {
+            if (err.message?.includes('already running')) {
+                console.log('[scraper] browser already running, attempting to connect...');
+                const wsEndpoint = await findRunningBrowserWs();
+                if (wsEndpoint) {
+                    const connected = await (puppeteer as any).connect({ browserWSEndpoint: wsEndpoint });
+                    browser = connected;
+                    managedBrowser = false;
+                    const pages = await browser.pages();
+                    page = pages[0] || await browser.newPage();
+                    console.log('[scraper] connected to existing browser');
+                    return browser;
+                }
+            }
+            throw err;
+        }
     })();
 
     try {
@@ -360,6 +394,8 @@ export async function getAlbumDetails(postId: number): Promise<SearchResult | nu
         result.tracklist = data.post.tracklist;
         const albumArtist = result.artist;
         const bandNames = (data.post.bands || []).map(b => b.name.toLowerCase());
+        const isCompilation = bandNames.length === 1 && (bandNames[0] === 'va' || bandNames[0] === 'various artists');
+        result.compilation = isCompilation;
         let currentSectionArtist: string | null = null;
         let lastKnownBandIndex = -1;  // track index where currentSectionArtist was set
         const lines = data.post.tracklist.split('\n');
@@ -379,7 +415,12 @@ export async function getAlbumDetails(postId: number): Promise<SearchResult | nu
                 const num = trackMatch[1];
                 const rest = trackMatch[2].trim();
                 const dashIdx = rest.search(/\s[-–—]\s/);
-                if (dashIdx > 0) {
+                if (isCompilation && dashIdx > 0) {
+                    const beforeDash = rest.slice(0, dashIdx).trim();
+                    const afterDash = rest.slice(dashIdx + 1).replace(/^[-–—]\s*/, '').trim();
+                    parsedTracks.push({ num, artist: beforeDash, name: afterDash });
+                    logger.debug(`  track ${num}: artist="${beforeDash}" name="${afterDash}" (compilation)`);
+                } else if (dashIdx > 0) {
                     const beforeDash = rest.slice(0, dashIdx).trim();
                     const afterDash = rest.slice(dashIdx + 1).replace(/^[-–—]\s*/, '').trim();
                     const isKnownArtist = bandNames.includes(beforeDash.toLowerCase()) ||

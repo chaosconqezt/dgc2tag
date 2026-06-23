@@ -99,9 +99,14 @@ user_data/           ← puppeteer cookies/session
     │  — С albumDetails: matchTracks() по parsedTracks из скрапера
     │  — Без albumDetails: генерация parsedTracks из localTags.files/trackTitles/trackArtists
     │
+    │  Compilation mode:
+    │    — авто-детект: albumDetails.compilation или artists.length > 1
+    │    — тогл "Compilation (multi-artist)" в шапке TRACKS панели
+    │    — парсинг: NN. Artist - Title → split на " - " → { num, artist, name }
+    │
     │  TRACKS панель:
     │    — показывает локальные имена треков (+артист трека) из тегов файла
-    │    — артист трека отображается ТОЛЬКО если артистов альбома >1 (компиляции)
+    │    — артист трека отображается ТОЛЬКО если compilation=true или артистов >1
     │    — если один артист у альбома, артист трека = артист альбома
     │    — галка titles: включает запись имён треков из скрапа в ID3
     │    — Write & Rename: пишет имя трека (+артист трека из скрапа) → rename файла
@@ -184,6 +189,7 @@ interface SearchResult {
   releaseType: string | null; typeId?: number | null; url: string;
   tracklist?: string; notes?: string; youtube?: string;
   metalArchivesUrl?: string; artworkBy?: string;
+  compilation?: boolean;
   parsedTracks?: { num: string; artist: string; name: string; duration?: number }[];
 }
 
@@ -198,6 +204,7 @@ interface MatchResult {
 interface DeezerSearchResult {
   source: 'deezer'; albumId: number; albumName: string; artist: string;
   year: string | null; label: string | null; releaseType: string | null;
+  compilation?: boolean;
   coverUrl: string; trackCount: number;
   tracks: { num: string; name: string; duration: number; artist?: string }[];
   url: string;
@@ -245,6 +252,14 @@ TAG COMPARISON и TRACKS показываются при выборе папки
 - `country`, `label`, `releaseType` — fallback на localTagValue если source не имеет значение
 - Deezer `label` берётся из API Deezer (`detail.label`)
 - При ClearSelectionState: `selectedDeezer` и `tagEnabled` сбрасываются к дефолтам
+
+### Compilation mode (VA сборники)
+Авто-детект и парсинг треклистовVarious Artists сборников:
+- **Сервер**: `scraper.ts` — bandNames=["va"]||["various artists"] → `compilation=true`
+- **Сервер**: `deezer.ts` — compilation flag из Deezer API
+- **Клиент**: `useAppContext.tsx` — `compilation` state, `SET_COMPILATION` action
+- **UI**: `TrackMatcher.tsx` — тогл "Compilation (multi-artist)" в TRACKS панели
+- **Парсинг**: строка `NN. Artist - Title` → split на " - " → `{ num, artist, name }`
 
 ## Конфигурация (`server/config.json`)
 

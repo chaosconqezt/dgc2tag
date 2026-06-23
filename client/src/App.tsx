@@ -5,6 +5,7 @@ import type { FileNode, AlbumTags, SearchResult, DeezerSearchResult } from './ty
 import * as api from './api';
 import { RefreshCw, Layout, Settings } from 'lucide-react';
 import { FONT, FS } from './components/styles';
+import { parseCompilationTracklist } from './utils';
 import { WebfetchOverlay } from './components/WebfetchOverlay';
 import { SettingsModal } from './components/SettingsModal';
 import { LibraryTree } from './components/LibraryTree';
@@ -65,11 +66,12 @@ function AppContent() {
         <SearchResults
           results={ctx.searchResults}
           deezerResults={ctx.deezerResults}
-          loading={ctx.loading}
+          dgcLoading={ctx.dgcLoading}
+          deezerLoading={ctx.deezerLoading}
+          searchTimeMs={ctx.searchTimeMs}
           selectedResult={ctx.selectedResult}
           onSelectResult={ctx.handleSelectResult}
           onSelectDeezer={ctx.handleSelectDeezer}
-          onWebfetch={ctx.handleWebfetch}
           selectedDeezerId={ctx.selectedDeezer?.albumId ?? null}
         />
       </div>
@@ -108,17 +110,8 @@ function AppContent() {
                   onEditedSiteValuesChange={(key, value) => ctx.dispatch({ type: 'SET_EDITED_SITE_VALUE', payload: { key, value } })}
                 />
 
-                {ctx.selectedDeezer && (
-                  <div style={{ padding: '8px 10px', background: '#111114', borderRadius: '8px', border: '1px solid #27272a', marginBottom: '10px', display: 'flex', gap: '8px', alignItems: 'center' }}>
-                    {ctx.selectedDeezer.coverUrl && <img src={ctx.selectedDeezer.coverUrl} alt="" style={{ width: '32px', height: '32px', borderRadius: '4px', objectFit: 'cover', flexShrink: 0 }} />}
-                    <div style={{ fontSize: FS, fontFamily: FONT }}>
-                      <span style={{ color: '#4ade80', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.5px' }}>DEEZER</span>
-                      <span style={{ color: '#52525b' }}> · {ctx.selectedDeezer.trackCount} tracks</span>
-                    </div>
-                  </div>
-                )}
-
                 <TrackMatcher
+                  key={ctx.selectedResult?.postId ?? 'local'}
                   albumDetails={ctx.albumDetails}
                   localTags={ctx.localTags}
                   writeTrackNames={ctx.writeTrackNames}
@@ -128,6 +121,7 @@ function AppContent() {
                   editedTrackNames={ctx.editedTrackNames}
                   editedTrackArtists={ctx.editedTrackArtists}
                   stripRemoteParentheses={ctx.stripRemoteParentheses}
+                  compilation={ctx.compilation}
                   onStripRemoteParenthesesChange={(enabled) => ctx.dispatch({ type: 'SET_STRIP_REMOTE_PARENS', payload: enabled })}
                   onWriteTrackNamesChange={(enabled) => { ctx.dispatch({ type: 'SET_WRITE_TRACK_NAMES', payload: enabled }); api.setWriteTrackNames(enabled); }}
                   onWriteTrackArtistsChange={(enabled) => { ctx.dispatch({ type: 'SET_WRITE_TRACK_ARTISTS', payload: enabled }); api.setWriteTrackArtists(enabled); }}
@@ -135,6 +129,17 @@ function AppContent() {
                   onTrackArtistsEnabledChange={(num, enabled) => ctx.dispatch({ type: 'SET_TRACK_ARTISTS_ENABLED', payload: { num, enabled } })}
                   onEditedTrackNameChange={(num, value) => ctx.dispatch({ type: 'SET_EDITED_TRACK_NAME', payload: { num, value } })}
                   onEditedTrackArtistChange={(num, value) => ctx.dispatch({ type: 'SET_EDITED_TRACK_ARTIST', payload: { num, value } })}
+                  onCompilationChange={(enabled) => {
+                    ctx.dispatch({ type: 'SET_COMPILATION', payload: enabled });
+                    if (ctx.albumDetails?.tracklist) {
+                      if (enabled) {
+                        const parsed = parseCompilationTracklist(ctx.albumDetails.tracklist);
+                        ctx.dispatch({ type: 'SET_ALBUM_DETAILS', payload: { ...ctx.albumDetails, parsedTracks: parsed, compilation: true } });
+                      } else if (ctx.serverParsedTracks) {
+                        ctx.dispatch({ type: 'SET_ALBUM_DETAILS', payload: { ...ctx.albumDetails, parsedTracks: ctx.serverParsedTracks, compilation: false } });
+                      }
+                    }
+                  }}
                 />
 
                 {ctx.albumDetails?.notes && (

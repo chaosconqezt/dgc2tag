@@ -11,7 +11,7 @@ export function Footer() {
       gap: '8px',
       backgroundColor: COLORS.inputBgAlt,
       fontFamily: FONT,
-      fontSize: '12px',
+      fontSize: FS,
       color: COLORS.textDim,
       flexShrink: 0,
     }}>

@@ -42,7 +42,7 @@ export function SearchBar({
           onChange={(e) => onArtistEnabledChange(e.target.checked)}
           style={{ accentColor: COLORS.red, margin: 0 }}
         />
-        <span style={{ fontSize: '11px', color: COLORS.textDim, fontFamily: FONT }}>Artist</span>
+        <span style={{ fontSize: FS, color: COLORS.textDim, fontFamily: FONT }}>Artist</span>
       </label>
       <input
         type="text"
@@ -69,7 +69,7 @@ export function SearchBar({
           onChange={(e) => onAlbumEnabledChange(e.target.checked)}
           style={{ accentColor: COLORS.red, margin: 0 }}
         />
-        <span style={{ fontSize: '11px', color: COLORS.textDim, fontFamily: FONT }}>Album</span>
+        <span style={{ fontSize: FS, color: COLORS.textDim, fontFamily: FONT }}>Album</span>
       </label>
       <input
         type="text"
