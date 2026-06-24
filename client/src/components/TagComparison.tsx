@@ -263,15 +263,16 @@ export function TagComparison({
           sourceTags={localTags?.extraTags || {}}
           outputTags={(() => {
             const tags: Record<string, string> = {};
-            const skip = new Set(['country', 'label', 'releasetype']);
+            // These tags are in the main TAGS panel — don't duplicate
+            const skip = new Set(['country', 'label', 'releasetype', 'genre']);
             if (localTags?.extraTags) {
               for (const [k, v] of Object.entries(localTags.extraTags)) {
-                if (!skip.has(k.toLowerCase())) tags[k] = v;
+                if (!skip.has(k)) tags[k] = v;
               }
             }
             if (selectedResult?.extraTags) {
               for (const [k, v] of Object.entries(selectedResult.extraTags)) {
-                if (!skip.has(k.toLowerCase()) && !tags[k]) tags[k] = v;
+                if (!skip.has(k) && !tags[k]) tags[k] = v;
               }
             }
             if (localTags?.postId) tags['DGC_POST_ID'] = String(localTags.postId);

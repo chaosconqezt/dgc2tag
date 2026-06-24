@@ -5,6 +5,7 @@ const DEEZER_BASE = 'https://api.deezer.com';
 
 export interface DeezerSearchResult {
     source: 'deezer';
+    id: string;
     albumId: number;
     albumName: string;
     artist: string;
@@ -79,6 +80,7 @@ export async function searchDeezer(artist?: string, album?: string): Promise<Dee
             logger.warn(`failed to fetch album ${dzAlbum.id}, using search data`);
             results.push({
                 source: 'deezer',
+                id: String(dzAlbum.id),
                 albumId: dzAlbum.id,
                 albumName: dzAlbum.title,
                 artist: dzAlbum.artist?.name || '',
@@ -104,6 +106,7 @@ export async function searchDeezer(artist?: string, album?: string): Promise<Dee
 
         results.push({
             source: 'deezer',
+            id: String(detail.id),
             albumId: detail.id,
             albumName: detail.title,
             artist: detail.artist?.name || '',

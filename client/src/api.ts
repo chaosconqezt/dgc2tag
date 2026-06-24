@@ -101,6 +101,16 @@ export async function searchAlbums(query: string): Promise<SearchResult[]> {
   return res.data;
 }
 
+export async function sourceSearch(sourceId: string, artist?: string, album?: string): Promise<any[]> {
+  const res = await api.post(`/search-${sourceId}`, { artist, album });
+  return res.data;
+}
+
+export async function sourceGetDetails(sourceId: string, id: string): Promise<any> {
+  const res = await api.get(`/${sourceId}/${id}`);
+  return res.data;
+}
+
 export async function fetchAlbumDetails(postId: number): Promise<SearchResult> {
   const res = await api.get(`/post/${postId}`);
   return res.data;
@@ -155,6 +165,7 @@ export async function searchAlbumsDeezer(artist?: string, album?: string): Promi
 
 export interface MusicBrainzSearchResult {
   source: 'musicbrainz';
+  id: string;
   releaseId: string;
   title: string;
   artist: string;

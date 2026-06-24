@@ -28,6 +28,8 @@ async function findRunningBrowserWs(): Promise<string | null> {
 // ── Interfaces ──────────────────────────────────────────────
 
 export interface SearchResult {
+    source: string;
+    id: string;
     postId: number;
     albumName: string | null;
     artist: string;
@@ -48,6 +50,14 @@ export interface SearchResult {
     artworkBy?: string;
     compilation?: boolean;
     parsedTracks?: { num: string; artist: string; name: string }[];
+    trackCount?: number;
+    extraTags?: Record<string, string>;
+    musicbrainzReleaseId?: string | null;
+    musicbrainzArtistId?: string | null;
+    musicbrainzReleaseGroupId?: string | null;
+    catalogNumber?: string | null;
+    discId?: string | null;
+    originalYear?: string | null;
 }
 
 // ── Dynamic genre/type/country mapping ────────────────────────
@@ -352,6 +362,8 @@ function mapPost(post: DgcPost, genresRaw: number[] | undefined, typeRaw: number
     const label = post.label?.[0]?.name || null;
 
     return {
+        source: 'dgc',
+        id: String(post.postId),
         postId: post.postId,
         albumName: post.album || null,
         artist,

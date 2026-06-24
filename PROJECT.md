@@ -24,284 +24,209 @@ npm start            # production запуск сервера (NODE_ENV=producti
 ```
 server/src/
 ├── index.ts          — Express API routes + Vite middleware
-├── tagger.ts         — чтение ID3 тегов из папки → AlbumTags
-├── tagWriter.ts      — запись ID3, rename, move
+├── sources/          — плагинная архитектура источников
+│   ├── types.ts      — interface SearchSource { id, label, accentColor, search(), getDetails?() }
+│   ├── index.ts      — реестр sources[] + getSource(id)
+│   ├── dgc.ts        — обёртка над scraper.ts
+│   ├── deezer.ts     — обёртка над deezer.ts
+│   └── musicbrainz.ts — обёртка над musicbrainz.ts
 ├── scraper.ts        — puppeteer + stealth, DGC API
-├── deezer.ts         — Deezer API поиск
+├── deezer.ts         — Deezer API
+├── musicbrainz.ts    — MusicBrainz API + FIELD_MAP для динамического извлечения тегов
+├── tagWriter.ts      — запись ID3 (writeUserDefinedText data-driven)
+├── tagger.ts         — чтение ID3 тегов из папки
 ├── scanner.ts        — обход файловой системы
 ├── config.ts         — config.json load/save
 ├── cache.ts          — файловый кеш bands/releases
-├── logger.ts         — leveled logger (debug/info/warn/error)
+├── logger.ts         — leveled logger
 └── trackUtils.ts     — извлечение track# из ID3/filename
 
 client/src/
-├── main.tsx          — точка входа (ReactDOM.createRoot)
+├── main.tsx          — точка входа
 ├── App.tsx           — layout + пайплайн данных
-├── api.ts            — axios-запросы к /api/* + interceptors + AbortController
-├── types.ts          — AlbumTags, SearchResult, MatchResult, DeezerSearchResult
-├── build.ts          — версия билда
-├── index.css         — глобальные стили
+├── api.ts            — axios + interceptors + generic sourceSearch/sourceGetDetails
+├── types.ts          — SearchResult (source, id), AlbumTags, MatchResult
+├── sourceConfigs.ts  — конфиги источников [{ id, label, color }]
+├── index.css         — CSS-переменные :root + focus-visible
 ├── hooks/
-│   └── useAppContext.tsx — useReducer: всё состояние + бизнес-логика
+│   └── useAppContext.tsx — useReducer: состояние + бизнес-логика
 ├── utils/
-│   ├── index.ts         — barrel export
-│   ├── similarity.ts    — Levenshtein distance → %
-│   └── trackMatching.ts — matchTracks(): remote vs local
+│   ├── similarity.ts    — Levenshtein distance
+│   └── trackMatching.ts — matchTracks() с prefix/contains
 └── components/
-    ├── styles.ts          — дизайн-токены (COLORS, FONT...)
-    ├── ErrorBoundary.tsx  — error boundary с fallback UI
-    ├── LibraryTree.tsx    — дерево библиотеки
-    ├── SearchBar.tsx      — поле поиска artist + album
-    ├── SearchResults.tsx  — результаты поиска DGC + Deezer
-    ├── DgcResults.tsx     — список результатов DGC
-    ├── DeezerResults.tsx  — список результатов Deezer
-    ├── TagComparison.tsx  — сравнение тегов file vs site
-    ├── TrackMatcher.tsx   — потрековый матчинг + TRACKS панель
-    ├── ApplyPanel.tsx     — кнопки WRITE/RENAME/MOVE
-    ├── SettingsModal.tsx  — настройки
-    ├── WebfetchOverlay.tsx — превью страницы DGC
-    └── Footer.tsx         — подвал
+    ├── styles.ts          — COLORS через var(--*), FONT, FS
+    ├── ResultCard.tsx     — единая карточка с hover preview
+    ├── SearchResults.tsx  — DGC + Deezer + MB (горизонтальный scroll)
+    ├── TagComparison.tsx  — теги file vs site + Extra Tags (Current/New)
+    ├── TrackMatcher.tsx   — матчинг + TRACKS
+    ├── ApplyPanel.tsx     — WRITE & MOVE / WRITE & RENAME / WRITE / ОТМЕНА
+    ├── ResultModal.tsx    — модальное окно результата
+    ├── SettingsModal.tsx  — настройки (Escape)
+    ├── WebfetchOverlay.tsx — превью DGC (Escape)
+    ├── LibraryTree.tsx    — дерево (hover)
+    ├── SearchBar.tsx      — поиск
+    └── Footer.tsx
 
 music/               ← исходная библиотека
 music_processed/     ← результат после MOVE
 user_data/           ← puppeteer cookies/session
 ```
 
+## Плагинная архитектура источников
+
+### Добавление нового источника
+
+1. Создать `server/src/sources/my-source.ts`:
+
+```typescript
+import type { SearchSource } from './types.js';
+
+export const mySource: SearchSource = {
+  id: 'mysource',           // → POST /api/search-mysource, GET /api/mysource/:id
+  label: 'My Source',
+  accentColor: '#aabbcc',
+
+  async search(artist, album) {
+    // вернуть массив любых объектов — клиент конвертирует
+    return fetchFromApi(artist, album);
+  },
+
+  async getDetails(id) {     // опционально
+    return fetchDetails(id);
+  },
+};
+```
+
+2. Добавить в `server/src/sources/index.ts`:
+
+```typescript
+import { mySource } from './my-source.js';
+export const sources: SearchSource[] = [..., mySource];
+```
+
+3. Routes генерируются автоматически:
+   - `POST /api/search-{id}` → `src.search()`
+   - `GET /api/{id}/:id` → `src.getDetails()`
+
+4. Клиент: добавить state + handler в `useAppContext.tsx`, компонент в `SearchResults.tsx`
+
+### Текущие источники
+
+| ID | Лейбл | Цвет | Search | Details |
+|----|-------|------|--------|---------|
+| `dgc` | DGC | `#ef4444` | ✅ | ✅ `/api/post/:id` |
+| `deezer` | Deezer | `#4ade80` | ✅ | — |
+| `mbrainz` | MusicBrainz | `#f97316` | ✅ | ✅ `/api/mbrainz/:id` |
+
+## Unified SearchResult
+
+Все источники возвращают данные, которые клиент нормализует в `SearchResult`:
+
+```typescript
+interface SearchResult {
+  source: string;            // 'dgc' | 'deezer' | 'mbrainz' | ...
+  id: string;                // нормализованный ID
+  postId: number;            // DGC: >0, Deezer: <0, MB: 0
+  albumName, artist, albumArtist, coverUrl, country, year, label,
+  genres, releaseType, url, parsedTracks, extraTags, compilation,
+  // ... source-specific поля
+}
+```
+
+## writeUserDefinedText — data-driven
+
+```typescript
+// Было: 12 позиционных параметров
+writeUserDefinedText(current, country, releaseType, postId, deezerId, mbReleaseId, ...)
+
+// Стало: Record<string, string | undefined>
+writeUserDefinedText(current, {
+  'Country': tags.country,
+  'DGC_POST_ID': tags.postId != null ? String(tags.postId) : undefined,
+  'MusicBrainz Album Id': (tags as any).musicbrainzReleaseId,
+  // ... добавишь строку = добавился тег
+})
+```
+
+## MusicBrainz — FIELD_MAP
+
+Динамическое извлечение всех полей MB API:
+
+```typescript
+const FIELD_MAP = {
+  'id': 'MusicBrainz Album Id',
+  'status': 'MusicBrainz Album Status',
+  'date': 'originalyear',
+  'country': 'MusicBrainz Album Release Country',  // ≠ Country исполнителя!
+  'artist-credit.0.artist.id': 'MusicBrainz Artist Id',
+  'label-info.0.catalog-number': 'CATALOGNUMBER',
+  'release-group.id': 'MusicBrainz Release Group Id',
+  // ... рекурсивно все примитивные значения
+};
+```
+
 ## Пайплайн тегирования
 
 ```
-[1] tagger.ts — чтение тегов из папки
-    │  Читает каждый MP3, ключуя по ПОЛНОМУ ПУТИ (immutable identifier):
-    │    filePath = path.join(folderPath, filename)
-    │  Возвращает AlbumTags:
-    │    files[]              — ПОЛНЫЕ ПУТИ MP3 файлов
-    │    trackArtists         — Record<filePath, TPE1>   (артист трека)
-    │    trackTitles          — Record<filePath, title>  (название трека)
-    │    trackDurations       — Record<filePath, duration>
-    │    artists              — уникальные TPE1 (кандидаты артистов)
-    │    albumArtists         — уникальные TPE2
-    │    artist               — TPE1 первого файла (или TPE2)
-    │    albumArtist          — TPE2 первого файла (или TPE1)
+[1] tagger.ts — чтение тегов из папки (ключ = полный путь)
     ▼
 [2] TagComparison.tsx — редактирование тегов
-    │  Два режима:
-    │  — С найденным релизом: локальные теги (file) vs данные скрапера (site)
-    │  — Без релиза: локальные теги как source для обеих колонок (LOCAL TAGS)
     │  Поля: Artist, Album Artist, Album, Year, Genre, Country, Label, Type
-    │  ID строка: DGC ID + Deezer ID из локальных тегов (read-only)
-    │
-    │  Сохранение данных при переключении источника (DGC ↔ Deezer):
-    │  — country, label, releaseType: sourceValue ?? localTagValue
-    │  — postId/deezerId: всегда сохраняются оба, не затирают друг друга
+    │  Extra Tags: Current (что в файле) vs New (что запишется)
     ▼
-[3] TrackMatcher.tsx — потрековый матчинг + TRACKS панель
-    │  Два режима:
-    │  — С albumDetails: matchTracks() по parsedTracks из скрапера
-    │  — Без albumDetails: генерация parsedTracks из localTags.files/trackTitles/trackArtists
-    │
-    │  Compilation mode:
-    │    — авто-детект: albumDetails.compilation или artists.length > 1
-    │    — тогл "Compilation (multi-artist)" в шапке TRACKS панели
-    │    — парсинг: NN. Artist - Title → split на " - " → { num, artist, name }
-    │
-    │  TRACKS панель:
-    │    — показывает локальные имена треков (+артист трека) из тегов файла
-    │    — артист трека отображается ТОЛЬКО если compilation=true или артистов >1
-    │    — если один артист у альбома, артист трека = артист альбома
-    │    — галка titles: включает запись имён треков из скрапа в ID3
-    │    — Write & Rename: пишет имя трека (+артист трека из скрапа) → rename файла
-    │    — Move & Write: пишет теги → переносит в outputFolder/artist/year - album/
+[3] TrackMatcher.tsx — матчинг (prefix/contains для "Track (Cover)")
     ▼
-[4] App.tsx applyTags() — сбор данных
-    │  Панели рендерятся всегда когда localTags есть (даже без найденного релиза).
-    │
-    │  Строит trackArtists и trackNames ПО ПОЛНОМУ ПУТИ:
-    │    trackArtists[filePath] = editedOrRemote.artist  (из скрапа или localTags)
-    │    trackNames[filePath]   = editedOrRemote.name     (из скрапа или localTags)
-    │
-    │  tagsToApply собирается из: editedSiteValues > remote > localTags
-    │  trackNames собирается всегда при Rename/Move (не зависит от writeTrackNames)
+[4] ApplyPanel.tsx — WRITE & MOVE / WRITE & RENAME / WRITE / ОТМЕНА
     ▼
-[5] tagWriter.ts — запись
-    │  writeTags():       TPE1 = perTrackArtist (из trackArtists[filePath]), TPE2 = albumArtist
-    │  renameFilesInPlace: имя = "NN. trackArtist - title.mp3"
-    │    — trackArtist из trackArtists[filePath], fallback на albumArtist
-    │    — title из trackNames[filePath], fallback на ID3 title
-    │  moveProcessedFiles: папка = outputRoot/albumArtist/year - album/
-    │    — файлы переименовываются аналогично renameFilesInPlace
-    │
-    │  writeUserDefinedText: запись кастомных ID3 тегов:
-    │    — Country, RELEASETYPE, DGC_POST_ID, DEEZER_ID
-    │    — При переключении источника: preservation через fallback на localTags
+[5] ResultModal.tsx — результат: теги old→new, rename файлов
+    ▼
+[6] tagWriter.ts — запись (writeUserDefinedText data-driven)
 ```
 
-## Ключевая архитектурная идея: immutable identifier = полный путь
+## CSS-переменные
 
-**Проблема:** раньше ключи trackArtists/trackNames были по имени файла (`01.mp3`). При переименовании файл получал новое имя, и последующие операции (move) не могли найти артиста — ключ больше не совпадал.
-
-**Решение:** ВСЕ ключи = **полный путь к файлу** (никогда не меняется):
-- `tagger.ts` возвращает `files[]` как полные пути
-- Клиент строит `trackArtists[filePath]` и `trackNames[filePath]`
-- Сервер использует те же полные пути для write/rename/move
-
-## Артист трека vs Артист альбома (не путать!)
-
-| | TPE1 — Artist | TPE2 — Album Artist |
-|---|---|---|
-| **Что** | Кто исполняет трек | Кто записал альбом |
-| **ID3 frame** | `tags.artist` | `tags.performerInfo` |
-| **Компиляции** | Разные на трек | Один на весь альбом |
-| **Используется для** | Имя файла при rename | Папка назначения при move |
-| **Ключ в trackArtists** | Полный путь к файлу (NOT номер трека!) | Один на альбом |
-
-**Правило записи:**
-```ts
-// TPE1: per-track artist (из trackArtists[filePath])
-artist: perTrackArtist || resolvedArtist
-// TPE2: только album artist
-performerInfo: resolvedAlbumArtist
-```
-
-## Типы данных
-
-```typescript
-// Локальные теги (из MP3) — ключи = полный путь к файлу
-interface AlbumTags {
-  artist?: string; albumArtist?: string; album?: string; year?: string;
-  genre?: string; country?: string; label?: string; releaseType?: string;
-  trackCount?: number;
-  files?: string[];                 // полные пути
-  trackTitles?: Record<string, string>;   // filePath → title
-  trackArtists?: Record<string, string>;  // filePath → TPE1
-  trackDurations?: Record<string, number>;
-  postId?: number;
-  deezerId?: number;
-  artists?: string[];               // уникальные TPE1
-  albumArtists?: string[];          // уникальные TPE2
-}
-
-// Результат скрапинга DGC / Deezer
-interface SearchResult {
-  postId: number; artist: string; albumArtist: string;
-  albumName: string | null; genres: string[];
-  coverUrl: string | null; country: string | null; year: string | null;
-  label: string | null; genreIds?: number[];
-  releaseType: string | null; typeId?: number | null; url: string;
-  tracklist?: string; notes?: string; youtube?: string;
-  metalArchivesUrl?: string; artworkBy?: string;
-  compilation?: boolean;
-  parsedTracks?: { num: string; artist: string; name: string; duration?: number }[];
-}
-
-// Результат матчинга
-interface MatchResult {
-  remote: { num: string; artist: string; name: string; duration?: number };
-  local: { num: string; name: string; file: string; artist?: string } | null;
-  sim: number;
-}
-
-// Deezer результат
-interface DeezerSearchResult {
-  source: 'deezer'; albumId: number; albumName: string; artist: string;
-  year: string | null; label: string | null; releaseType: string | null;
-  compilation?: boolean;
-  coverUrl: string; trackCount: number;
-  tracks: { num: string; name: string; duration: number; artist?: string }[];
-  url: string;
+```css
+:root {
+  --bg, --card-bg, --panel-bg, --input-bg, --input-bg-alt;
+  --border, --border-light;
+  --text, --text-muted, --text-dim, --text-faint, --text-invisible;
+  --red, --green, --yellow, --purple;
+  --green-bg, --green-border, --purple-bg, --purple-border;
 }
 ```
+
+## UI UX
+
+- **Focus indicators**: `:focus-visible` на всех input/button/a
+- **Hover states**: sidebar, tree items, tag rows, track rows, ApplyPanel
+- **Escape**: закрывает все модалки
+- **Result modal**: теги old→new, rename файлов вместо alert()
+- **Hover preview**: увеличенная обложка под курсором
+- **Track matching**: prefix/contains для файлов с суффиксами
 
 ## API
 
 | Метод | Путь | Описание |
 |-------|------|----------|
-| GET | `/api/config` | Текущая конфигурация |
+| GET | `/api/config` | Конфигурация |
 | POST | `/api/config` | Сохранить config |
-| POST | `/api/config/write-track-names` | Переключить writeTrackNames |
-| POST | `/api/config/write-track-artists` | Переключить writeTrackArtists |
 | GET | `/api/library` | Дерево библиотеки |
-| GET | `/api/library/children` | Lazy load детей директории |
 | GET | `/api/tags?folderPath=` | AlbumTags из папки |
-| POST | `/api/search` | Поиск альбома на DGC |
-| POST | `/api/search-deezer` | Поиск альбома на Deezer |
-| GET | `/api/post/:id` | Детали альбома с DGC |
-| POST | `/api/tags/update` | Запись тегов (write/rename/move) |
-| GET | `/api/webfetch?url=` | Fetch страницы через puppeteer |
-| POST | `/api/parse-genres` | Парсинг жанров из HTML |
-| GET | `/api/browser/status` | Статус puppeteer |
+| POST | `/api/search` | Поиск DGC (останется для совместимости) |
+| POST | `/api/search-{sourceId}` | **Авто-генерация** из sources/ |
+| GET | `/api/{sourceId}/:id` | **Авто-генерация** деталей |
+| POST | `/api/tags/update` | Запись тегов + diff |
 | POST | `/api/cache/clear` | Очистить кеш |
-
-## Режимы применения тегов
-
-- **WRITE** — запись ID3 тегов в файлы
-- **WRITE & RENAME** — теги + переименование в `NN. Artist - Title.mp3`
-- **MOVE & WRITE** — теги + переименование + перемещение в `outputFolder/Artist/Year - Album/`
-
-## Работа с тегами
-
-### Панели всегда видны
-TAG COMPARISON и TRACKS показываются при выборе папки с MP3, даже без найденного релиза на DGC/Deezer. Когда релиз не найден — локальные теги становятся источником для редактирования.
-
-### Два режима TagComparison
-- **С релизом**: локальные теги (file) vs данные скрапера (site) — сравнение
-- **Без релиза**: локальные теги как source для обеих колонок — ручное редактирование
-
-### Сохранение тегов при переключении источника
-При переключении между DGC и Deezer source данные НЕ затираются:
-- `postId` и `deezerId` — всегда сохраняются оба
-- `country`, `label`, `releaseType` — fallback на localTagValue если source не имеет значение
-- Deezer `label` берётся из API Deezer (`detail.label`)
-- При ClearSelectionState: `selectedDeezer` и `tagEnabled` сбрасываются к дефолтам
-
-### Compilation mode (VA сборники)
-Авто-детект и парсинг треклистовVarious Artists сборников:
-- **Сервер**: `scraper.ts` — bandNames=["va"]||["various artists"] → `compilation=true`
-- **Сервер**: `deezer.ts` — compilation flag из Deezer API
-- **Клиент**: `useAppContext.tsx` — `compilation` state, `SET_COMPILATION` action
-- **UI**: `TrackMatcher.tsx` — тогл "Compilation (multi-artist)" в TRACKS панели
-- **Парсинг**: строка `NN. Artist - Title` → split на " - " → `{ num, artist, name }`
-
-## Конфигурация (`server/config.json`)
-
-```json
-{
-  "musicRoot": "c:\\vibecode\\dgc2tag\\music",
-  "port": 3000,
-  "tagDefaults": {
-    "artist": true, "albumArtist": true, "album": true, "year": true,
-    "genre": true, "country": true, "label": true, "releaseType": true,
-    "postId": true
-  },
-  "writeTrackNames": true,
-  "writeTrackArtists": true,
-  "outputFolder": "c:\\vibecode\\dgc2tag\\music_processed\\",
-  "outputMode": "absolute"
-}
-```
-
-Примечание: `config.ts` DEFAULTS используют другие значения (`test_muz`, порт 3001, `dgc`, `subfolder`) — они применяются только если `config.json` не существует. `TagDefaults` интерфейс не включает `postId`, но оно проходит через spread.
-
-## Best Practices
-
-- **Single process**: Express + Vite middleware в одном процессе. Один порт.
-- **Dev mode**: `NODE_ENV !== 'production'` → tsx watch + Vite `middlewareMode: true`.
-- **Prod mode**: `NODE_ENV=production` → Express раздаёт `client/dist` статикой.
-- **tsx watch** для сервера — hot-reload без компиляции.
-- **npm workspaces** — зависимости в root, hoisted. Не дублировать в client/server.
-- **config.json** — дефолты в `config.default.json` (в git), пользовательские настройки в `config.json` (.gitignore).
 
 ## Безопасность
 
-- **SSRF защита**: `/api/webfetch` валидирует URL по allowlist (`deathgrind.club`, `cdn.deathgrind.club`). Запросы к другим доменам → 403.
-- **AbortController cleanup**: контроллеры удаляются из Map после завершения запроса (success/error). Предотвращает утечку памяти.
-- **Startup error handling**: async IIFE обёрнут в try/catch + `process.exit(1)` при ошибке.
-- **Path traversal**: `/api/tags`, `/api/library/children`, `/api/tags/update` проверяют что путь внутри musicRoot.
+- SSRF: `/api/webfetch` — allowlist `deathgrind.club`
+- Path traversal: проверка `musicRoot` для всех file ops
+- AbortController cleanup — нет утечек памяти
 
 ## Заметки
 
-- **Puppeteer** — persistent browser, не закрывается между запусками. `userDataDir` в `user_data/`. Сброс: удали папку.
-- **Cloudflare** — при первом запуске реши челлендж вручную в браузере. Session кэшируется.
-- **Taxonomy** — genre/type mapping загружается из DGC JS bundle, кэшируется в `taxonomy-cache.json` (7d TTL). Файл обновляется автоматически раз в неделю.
-- **Music library** — папки `Artist/Year - Album/` с MP3.
-- **Dev mode** — `npm run dev` запускает `tsx watch server/src/index.ts`. Vite middleware на том же порту. Нет отдельного dev сервера на 5173.
-- **LibraryTree** — стрелки 6px, отступ между уровнями 5px, шрифт текста 15px.
+- **Puppeteer** — persistent browser, `userDataDir` в `user_data/`
+- **Cloudflare** — челлендж вручную при первом запуске
+- **Taxonomy** — genre/type из DGC JS, кэш 7d TTL
+- **MusicBrainz** — rate limit 1 req/sec, User-Agent обязателен

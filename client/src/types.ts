@@ -29,6 +29,8 @@ export interface AlbumTags {
 }
 
 export interface SearchResult {
+  source: 'dgc' | 'deezer' | 'musicbrainz' | string;
+  id: string;
   postId: number;
   albumName: string | null;
   artist: string;
@@ -49,6 +51,7 @@ export interface SearchResult {
   artworkBy?: string;
   compilation?: boolean;
   parsedTracks?: { num: string; artist: string; name: string; duration?: number }[];
+  trackCount?: number;
   // MusicBrainz fields
   musicbrainzReleaseId?: string;
   musicbrainzArtistId?: string;
@@ -71,6 +74,7 @@ export interface MatchResult {
 
 export interface DeezerSearchResult {
   source: 'deezer';
+  id: string;
   albumId: number;
   albumName: string;
   artist: string;

@@ -83,19 +83,23 @@ async function writeSingleTag(
         updatedTags.title = perTrackName;
     }
 
+    const customFields: Record<string, string | undefined> = {
+        'Country': tags.country,
+        'RELEASETYPE': tags.releaseType,
+        'DGC_POST_ID': tags.postId != null ? String(tags.postId) : undefined,
+        'DEEZER_ID': tags.deezerId != null ? String(tags.deezerId) : undefined,
+        'MusicBrainz Album Id': (tags as any).musicbrainzReleaseId,
+        'MusicBrainz Artist Id': (tags as any).musicbrainzArtistId,
+        'MusicBrainz Album Artist Id': (tags as any).musicbrainzAlbumArtistId,
+        'MusicBrainz Release Group Id': (tags as any).musicbrainzReleaseGroupId,
+        'CATALOGNUMBER': (tags as any).catalogNumber,
+        'DISCID': (tags as any).discId,
+        'originalyear': (tags as any).originalYear,
+    };
+    logger.info(`[writeSingleTag] custom fields: ${JSON.stringify(customFields)}`);
     updatedTags.userDefinedText = writeUserDefinedText(
         (currentTags.userDefinedText as { description?: string; value?: string }[]) || [],
-        tags.country,
-        tags.releaseType,
-        tags.postId != null ? String(tags.postId) : undefined,
-        tags.deezerId != null ? String(tags.deezerId) : undefined,
-        (tags as any).musicbrainzReleaseId,
-        (tags as any).musicbrainzArtistId,
-        (tags as any).musicbrainzAlbumArtistId,
-        (tags as any).musicbrainzReleaseGroupId,
-        (tags as any).catalogNumber,
-        (tags as any).discId,
-        (tags as any).originalYear
+        customFields
     );
 
     let fileBuffer: Buffer;
@@ -112,46 +116,25 @@ async function writeSingleTag(
 
 function writeUserDefinedText(
     current: any[],
-    country?: string,
-    releaseType?: string,
-    postId?: string,
-    deezerId?: string,
-    mbReleaseId?: string,
-    mbArtistId?: string,
-    mbAlbumArtistId?: string,
-    mbReleaseGroupId?: string,
-    catalogNumber?: string,
-    discId?: string,
-    originalYear?: string,
+    fields: Record<string, string | undefined>,
 ): any[] {
     const result = [...current];
     const findIdx = (desc: string) =>
         result.findIndex((t: any) => t.description?.toLowerCase() === desc.toLowerCase());
 
-    const setField = (desc: string, value: string | undefined) => {
+    for (const [desc, value] of Object.entries(fields)) {
         const idx = findIdx(desc);
-        if (value !== undefined) {
+        if (value !== undefined && value !== '') {
             if (idx > -1) {
                 result[idx] = { ...result[idx], description: desc, value };
-            } else if (value) {
+            } else {
                 result.push({ description: desc, value });
             }
         } else if (idx > -1) {
             result.splice(idx, 1);
         }
-    };
+    }
 
-    setField('Country', country);
-    setField('RELEASETYPE', releaseType);
-    setField('DGC_POST_ID', postId);
-    setField('DEEZER_ID', deezerId);
-    setField('MusicBrainz Album Id', mbReleaseId);
-    setField('MusicBrainz Artist Id', mbArtistId);
-    setField('MusicBrainz Album Artist Id', mbAlbumArtistId);
-    setField('MusicBrainz Release Group Id', mbReleaseGroupId);
-    setField('CATALOGNUMBER', catalogNumber);
-    setField('DISCID', discId);
-    setField('originalyear', originalYear);
     return result;
 }
 

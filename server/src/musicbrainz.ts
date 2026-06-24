@@ -6,6 +6,7 @@ const USER_AGENT = 'DGCTagger/1.0 ( https://github.com/dgc-tagger )';
 
 export interface MusicBrainzResult {
   source: 'musicbrainz';
+  id: string;
   releaseId: string;
   title: string;
   artist: string;
@@ -38,11 +39,84 @@ interface MbRelease {
   relations?: { type: string; url?: { resource: string } }[];
 }
 
-interface MbReleaseDetail extends MbRelease {
-  tracks?: {
-    'track-list'?: { number: string; title: string; length?: number }[];
-  };
+// ── Dynamic field extraction ──────────────────────────────────
+
+const FIELD_MAP: Record<string, string> = {
+  'id': 'MusicBrainz Album Id',
+  'status': 'MusicBrainz Album Status',
+  'date': 'originalyear',
+  'country': 'MusicBrainz Album Release Country',
+  'barcode': 'Barcode',
+  'asin': 'ASIN',
+  'quality': 'MusicBrainz Album Quality',
+  'packaging': 'MusicBrainz Album Packaging',
+  'disambiguation': 'MusicBrainz Album Disambiguation',
+  'text-representation.language': 'Language',
+  'text-representation.script': 'Script',
+  'artist-credit.0.artist.id': 'MusicBrainz Artist Id',
+  'artist-credit.0.artist.name': 'ARTISTS',
+  'artist-credit.0.artist.sort-name': 'MusicBrainz Artist Sort Name',
+  'artist-credit.0.artist.disambiguation': 'MusicBrainz Artist Disambiguation',
+  'artist-credit.0.artist.country': 'MusicBrainz Artist Country',
+  'artist-credit.0.artist.type': 'MusicBrainz Artist Type',
+  'label-info.0.label.id': 'MusicBrainz Label Id',
+  'label-info.0.label.name': 'MusicBrainz Label Name',
+  'label-info.0.label.type': 'MusicBrainz Label Type',
+  'label-info.0.catalog-number': 'CATALOGNUMBER',
+  'release-group.id': 'MusicBrainz Release Group Id',
+  'release-group.title': 'MusicBrainz Release Group Title',
+  'release-group.primary-type': 'MusicBrainz Release Group Type',
+  'release-group.disambiguation': 'MusicBrainz Release Group Disambiguation',
+  'release-group.first-release-date': 'MusicBrainz Release Group First Release Date',
+  'media.0.format': 'MusicBrainz Medium Format',
+};
+
+function getByPath(obj: any, path: string): any {
+  const parts = path.split('.');
+  let cur = obj;
+  for (const p of parts) {
+    if (cur == null) return undefined;
+    const idx = parseInt(p, 10);
+    cur = isNaN(idx) ? cur[p] : cur[idx];
+  }
+  return cur;
 }
+
+function extractExtraTags(data: any, tracks: { num: string; recordingId?: string }[]): Record<string, string> {
+  const tags: Record<string, string> = {};
+
+  // Map known fields
+  for (const [jsonPath, tagName] of Object.entries(FIELD_MAP)) {
+    const val = getByPath(data, jsonPath);
+    if (val != null && val !== '' && typeof val === 'string') {
+      tags[tagName] = val;
+    }
+  }
+
+  // Per-track recording IDs
+  for (const track of tracks) {
+    if (track.recordingId) {
+      tags[`MusicBrainz Release Track Id ${track.num}`] = track.recordingId;
+    }
+  }
+
+  // Disc IDs
+  const discs = data.media?.[0]?.discs || [];
+  for (let i = 0; i < discs.length; i++) {
+    if (discs[i]?.id) tags[`MusicBrainz Disc Id ${i + 1}`] = discs[i].id;
+    if (discs[i]?.sectors) tags[`MusicBrainz Disc Sectors ${i + 1}`] = String(discs[i].sectors);
+  }
+
+  // Release-group genres
+  const rgGenres = data['release-group']?.genres || [];
+  if (rgGenres.length > 0) {
+    tags['MusicBrainz Release Group Genres'] = rgGenres.map((g: any) => g.name).join(', ');
+  }
+
+  return tags;
+}
+
+// ── API ───────────────────────────────────────────────────────
 
 export async function searchMusicBrainz(artist?: string, album?: string): Promise<MusicBrainzResult[]> {
   const parts: string[] = [];
@@ -79,8 +153,11 @@ export async function searchMusicBrainz(artist?: string, album?: string): Promis
       const mbUrl = rel.relations?.find(r => r.type === 'musicbrainz' && r.url)?.url?.resource
         || `https://musicbrainz.org/release/${rel.id}`;
 
+      const extraTags = extractExtraTags(rel, []);
+
       results.push({
         source: 'musicbrainz',
+        id: rel.id,
         releaseId: rel.id,
         title: rel.title,
         artist: artistName,
@@ -92,20 +169,13 @@ export async function searchMusicBrainz(artist?: string, album?: string): Promis
         year,
         label,
         releaseType: releaseType || null,
-        status: null,
+        status: (rel as any).status || null,
         country: (rel as any).country || null,
         trackCount: rel['track-count'] || 0,
         tracks: [],
         url: mbUrl,
         tags,
-        extraTags: {
-          ...(rel.id ? { 'MusicBrainz Album Id': rel.id } : {}),
-          ...((rel as any)['artist-credit']?.[0]?.artist?.id ? { 'MusicBrainz Artist Id': (rel as any)['artist-credit'][0].artist.id } : {}),
-          ...((rel as any)['release-group']?.id ? { 'MusicBrainz Release Group Id': (rel as any)['release-group'].id } : {}),
-          ...((rel as any)['label-info']?.[0]?.['catalog-number'] ? { 'CATALOGNUMBER': (rel as any)['label-info'][0]['catalog-number'] } : {}),
-          ...(rel.date ? { 'originalyear': rel.date } : {}),
-          ...((rel as any).country ? { 'MusicBrainz Album Release Country': (rel as any).country } : {}),
-        },
+        extraTags,
       });
     }
 
@@ -122,7 +192,7 @@ export async function getMusicBrainzRelease(releaseId: string): Promise<MusicBra
 
   try {
     const { data } = await axios.get(`${MB_BASE}/release/${releaseId}`, {
-      params: { inc: 'recordings', fmt: 'json' },
+      params: { inc: 'recordings+artist-credits+labels+discids+release-groups', fmt: 'json' },
       headers: { 'User-Agent': USER_AGENT },
       timeout: 10000,
     });
@@ -144,7 +214,6 @@ export async function getMusicBrainzRelease(releaseId: string): Promise<MusicBra
     const status = data.status || null;
     const country = data.country || null;
     const tags = (data.tags || []).map((t: any) => t.name);
-    const discId = data['id-discid'] || data.discs?.[0]?.id || null;
 
     const tracks = (data.media?.[0]?.tracks || []).map((t: any, i: number) => ({
       num: String(t.position || i + 1),
@@ -153,36 +222,18 @@ export async function getMusicBrainzRelease(releaseId: string): Promise<MusicBra
       recordingId: t.recording?.id || undefined,
     }));
 
-    // Collect ALL extra tags from MB
-    const extraTags: Record<string, string> = {};
-    if (data.id) extraTags['MusicBrainz Album Id'] = data.id;
-    if (artistId) extraTags['MusicBrainz Artist Id'] = artistId;
-    if (data['artist-credit']?.[0]?.artist?.name) extraTags['ARTISTS'] = data['artist-credit'][0].artist.name;
-    if (releaseGroupId) extraTags['MusicBrainz Release Group Id'] = releaseGroupId;
-    if (catalogNumber) extraTags['CATALOGNUMBER'] = catalogNumber;
-    if (discId) extraTags['DISCID'] = discId;
-    if (originalYear) extraTags['originalyear'] = originalYear;
-    if (status) extraTags['MusicBrainz Album Status'] = status;
-    if (country) extraTags['MusicBrainz Album Release Country'] = country;
-    if (data['release-group']?.['primary-type']) extraTags['MusicBrainz Release Group Type'] = data['release-group']['primary-type'];
-    if (data.barcode) extraTags['Barcode'] = data.barcode;
-    if (data.asin) extraTags['ASIN'] = data.asin;
-    if (data['text-representation']?.language) extraTags['Language'] = data['text-representation'].language;
-    if (data['text-representation']?.script) extraTags['Script'] = data['text-representation'].script;
-    if (data.quality) extraTags['Quality'] = data.quality;
-    for (const track of tracks) {
-      if (track.recordingId) extraTags[`MusicBrainz Release Track Id ${track.num}`] = track.recordingId;
-    }
+    const extraTags = extractExtraTags(data, tracks);
 
     return {
       source: 'musicbrainz',
+      id: data.id,
       releaseId: data.id,
       title: data.title,
       artist: artistName,
       artistId,
       releaseGroupId,
       catalogNumber,
-      discId,
+      discId: data.media?.[0]?.discs?.[0]?.id || null,
       originalYear,
       year,
       label,

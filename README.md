@@ -1,120 +1,81 @@
 # DGC Tagger
 
-Desktop application for batch-tagging MP3 files from [Deathgrind Club](https://deathgrind.club) and [Deezer](https://deezer.com) catalogs.
+Desktop application for batch-tagging MP3 files from [Deathgrind Club](https://deathgrind.club), [Deezer](https://deezer.com), and [MusicBrainz](https://musicbrainz.org).
 
 ## Features
 
-- **DGC + Deezer search** — find releases on both platforms
+- **3 search sources** — DGC (red), Deezer (green), MusicBrainz (orange) in parallel
+- **Plugin architecture** — add new sources with 1 file + 1 line in registry
 - **Compilation mode** — auto-detect VA compilations, per-track artist parsing
-- **Local tags editing** — edit tags without search results, panels always visible
+- **Local tags editing** — edit tags without search results
 - **Batch tag writing** — write ID3 tags, rename files, move to output folder
-- **Track matching** — automatic matching of remote tracks to local files
-- **Tag preservation** — DGC ID, Deezer ID, country, label preserved across source switches
-- **Puppeteer integration** — persistent browser for DGC API, Cloudflare bypass
+- **Track matching** — prefix/contains matching for files like "Track (Cover)"
+- **Tag preservation** — IDs preserved across source switches
+- **Extra Tags panel** — Current (in file) vs New (to be written)
+- **Result modal** — detailed tag change report instead of alert()
+- **Puppeteer integration** — persistent browser, Cloudflare bypass
 
 ## Quick Start
 
 ```bash
 npm install
-npm run dev        # Start dev server (port from config.json)
+npm run dev
 ```
-
-Open `http://localhost:3000` in your browser.
 
 ## Commands
 
 | Command | Description |
 |---------|-------------|
-| `npm run dev` | Dev mode — tsx watch + Vite middleware, single port |
-| `npm run dev:server` | Dev server only — tsx watch |
-| `npm run dev:client` | Dev client only — Vite |
-| `npm run build` | Build client (tsc -b && vite build) |
+| `npm run dev` | Dev mode — tsx watch + Vite middleware |
+| `npm run build` | Build client |
 | `npm start` | Production mode |
 
-## Configuration
+## Adding a New Source
 
-Edit `server/config.json` (auto-created on first run):
+1. Create `server/src/sources/my-source.ts`:
 
-```json
-{
-  "musicRoot": "/path/to/your/music",
-  "port": 3000,
-  "outputFolder": "/path/to/output",
-  "outputMode": "absolute"
-}
+```typescript
+import type { SearchSource } from './types.js';
+export const mySource: SearchSource = {
+  id: 'mysource',
+  label: 'My Source',
+  accentColor: '#aabbcc',
+  async search(artist, album) { return fetchFromApi(artist, album); },
+  async getDetails(id) { return fetchDetails(id); },  // optional
+};
 ```
 
-## How It Works
+2. Register in `server/src/sources/index.ts`:
 
-1. **Select folder** — browse your music library in the sidebar
-2. **Search** — find the release on DGC or Deezer
-3. **Compare tags** — review and edit tags in the comparison panel
-4. **Match tracks** — verify track matching in the tracks panel
-5. **Apply** — write tags, rename files, and/or move to output folder
+```typescript
+import { mySource } from './my-source.js';
+export const sources = [..., mySource];
+```
 
-### Apply Modes
-
-- **WRITE** — write ID3 tags only
-- **WRITE & RENAME** — tags + rename to `NN. Artist - Title.mp3`
-- **WRITE & MOVE** — tags + rename + move to `outputFolder/Artist/Year - Album/`
+Routes auto-generated: `POST /api/search-mysource`, `GET /api/mysource/:id`
 
 ## Architecture
 
-- **Single process** — Express + Vite middleware in one Node.js process
-- **Dev mode** — tsx watch + Vite `middlewareMode: true`, HMR
-- **Client** — React 19 + TypeScript + Vite
-- **Server** — Express 5 + Puppeteer + NodeID3
-- **Workspaces** — npm workspaces, dependencies hoisted to root
+- **Single process** — Express + Vite middleware, one port
+- **Plugin sources** — `sources/` with `SearchSource` interface
+- **Unified SearchResult** — all sources normalize to common type
+- **Data-driven tags** — `writeUserDefinedText(current, Record<string, string | undefined>)`
+- **CSS Variables** — all colors in `:root`, themable
+- **Workspaces** — npm workspaces, hoisted to root
+
+## UI/UX
+
+- Focus indicators (`:focus-visible`) on all interactive elements
+- Hover states on sidebar, tree, tags, tracks, buttons
+- Cover image preview on hover
+- Escape closes all modals
+- Result modal with tag change details
 
 ## Security
 
-- SSRF protection on `/api/webfetch` — only `deathgrind.club` URLs allowed
-- Path traversal protection — all file operations validated against `musicRoot`
-- AbortController cleanup — no memory leaks from request tracking
-
-## Project Structure
-
-```
-client/src/
-├── App.tsx                    # Main layout + pipeline
-├── api.ts                     # Axios + interceptors
-├── build.ts                   # Build version
-├── index.css                  # Global styles
-├── main.tsx                   # Entry point
-├── types.ts                   # AlbumTags, SearchResult, etc.
-├── hooks/
-│   └── useAppContext.tsx       # useReducer: state + business logic
-├── utils/
-│   ├── index.ts               # Barrel export
-│   ├── similarity.ts          # Levenshtein distance
-│   └── trackMatching.ts       # matchTracks(): remote vs local
-└── components/
-    ├── styles.ts              # Design tokens (COLORS, FONT...)
-    ├── ErrorBoundary.tsx      # Error boundary with fallback UI
-    ├── LibraryTree.tsx        # File browser
-    ├── SearchBar.tsx          # Artist + album search field
-    ├── SearchResults.tsx      # DGC + Deezer results
-    ├── DgcResults.tsx         # DGC results list
-    ├── DeezerResults.tsx      # Deezer results list
-    ├── TagComparison.tsx      # Tag editing panel
-    ├── TrackMatcher.tsx       # Track matching panel
-    ├── ApplyPanel.tsx         # WRITE/RENAME/MOVE buttons
-    ├── SettingsModal.tsx      # Settings
-    ├── WebfetchOverlay.tsx    # DGC page preview
-    └── Footer.tsx             # Footer
-
-server/src/
-├── index.ts                   # Express routes + Vite middleware
-├── scraper.ts                 # DGC API (Puppeteer + stealth)
-├── deezer.ts                  # Deezer API
-├── tagger.ts                  # Read ID3 tags from folder
-├── tagWriter.ts               # Write ID3, rename, move
-├── scanner.ts                 # File system traversal
-├── config.ts                  # config.json load/save
-├── cache.ts                   # File cache for bands/releases
-├── logger.ts                  # Leveled logger
-└── trackUtils.ts              # Extract track# from ID3/filename
-```
+- SSRF protection on `/api/webfetch`
+- Path traversal protection
+- AbortController cleanup
 
 ## License
 

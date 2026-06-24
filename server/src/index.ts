@@ -14,8 +14,7 @@ import { writeTags, moveProcessedFiles, renameFilesInPlace } from './tagWriter.j
 import { searchAlbums, getAlbumDetails, fetchPageContent, parseGenresFromPage, getBrowserStatus, ensureTaxonomy } from './scraper.js';
 import { loadConfig, saveConfig, type Config, type TagDefaults } from './config.js';
 import { clearCache } from './cache.js';
-import { searchDeezer } from './deezer.js';
-import { searchMusicBrainz, getMusicBrainzRelease } from './musicbrainz.js';
+import { sources } from './sources/index.js';
 import { logger } from './logger.js';
 
 const app = express();
@@ -172,7 +171,7 @@ app.get('/api/post/:id', async (req, res) => {
         const details = await getAlbumDetails(postId);
         res.json(details);
     } catch (error) {
-        logger.error(`POST /api/post/${req.params.id} error:`, error);
+        logger.error(`GET /api/post/${req.params.id} error:`, error);
         res.status(500).json({ error: (error as Error).message });
     }
 });
@@ -180,6 +179,8 @@ app.get('/api/post/:id', async (req, res) => {
 app.post('/api/tags/update', async (req, res) => {
     const { folderPath, tags, trackArtists, trackNames, moveFiles, renameFiles } = req.body;
     if (!folderPath || !tags) return res.status(400).json({ error: 'folderPath and tags are required' });
+
+    logger.info(`[updateTags] tags keys: ${Object.keys(tags).join(', ')}`);
 
     logger.info(`[updateTags] trackArtists keys=${trackArtists ? Object.keys(trackArtists).join(',') : 'none'} trackNames keys=${trackNames ? Object.keys(trackNames).join(',') : 'none'}`);
 
@@ -353,49 +354,37 @@ app.post('/api/cache/clear', async (_req, res) => {
     }
 });
 
-app.post('/api/search-deezer', async (req, res) => {
-    const { artist, album } = req.body;
-    logger.info(`POST /api/search-deezer artist="${artist || ''}" album="${album || ''}"`);
-    if (!artist && !album) return res.status(400).json({ error: 'artist or album is required' });
+// ─── Auto-generated source routes ──────────────────────────────
+for (const src of sources) {
+    app.post(`/api/search-${src.id}`, async (req, res) => {
+        const { artist, album, query } = req.body;
+        logger.info(`POST /api/search-${src.id} artist="${artist || ''}" album="${album || ''}" query="${query || ''}"`);
 
-    try {
-        const results = await searchDeezer(artist, album);
-        logger.info(`POST /api/search-deezer → ${results.length} results`);
-        res.json(results);
-    } catch (error) {
-        logger.error(`POST /api/search-deezer error:`, error);
-        res.status(500).json({ error: (error as Error).message });
+        try {
+            const results = await src.search(artist, album, query);
+            logger.info(`POST /api/search-${src.id} → ${results.length} results`);
+            res.json(results);
+        } catch (error) {
+            logger.error(`POST /api/search-${src.id} error:`, error);
+            res.status(500).json({ error: (error as Error).message });
+        }
+    });
+
+    if (src.getDetails) {
+        app.get(`/api/${src.id}/:id`, async (req, res) => {
+            logger.info(`GET /api/${src.id}/${req.params.id}`);
+
+            try {
+                const result = await src.getDetails!(req.params.id);
+                if (!result) return res.status(404).json({ error: 'Not found' });
+                res.json(result);
+            } catch (error) {
+                logger.error(`GET /api/${src.id}/${req.params.id} error:`, error);
+                res.status(500).json({ error: (error as Error).message });
+            }
+        });
     }
-});
-
-app.post('/api/search-mbrainz', async (req, res) => {
-    const { artist, album } = req.body;
-    logger.info(`POST /api/search-mbrainz artist="${artist || ''}" album="${album || ''}"`);
-    if (!artist && !album) return res.status(400).json({ error: 'artist or album is required' });
-
-    try {
-        const results = await searchMusicBrainz(artist, album);
-        logger.info(`POST /api/search-mbrainz → ${results.length} results`);
-        res.json(results);
-    } catch (error) {
-        logger.error(`POST /api/search-mbrainz error:`, error);
-        res.status(500).json({ error: (error as Error).message });
-    }
-});
-
-app.get('/api/mbrainz/:id', async (req, res) => {
-    const { id } = req.params;
-    logger.info(`GET /api/mbrainz/${id}`);
-
-    try {
-        const result = await getMusicBrainzRelease(id);
-        if (!result) return res.status(404).json({ error: 'Release not found' });
-        res.json(result);
-    } catch (error) {
-        logger.error(`GET /api/mbrainz/${id} error:`, error);
-        res.status(500).json({ error: (error as Error).message });
-    }
-});
+}
 
 // ─── Vite integration (dev only) — must be after API routes ────
 if (DEV && vite) {
