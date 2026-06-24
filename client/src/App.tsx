@@ -34,10 +34,10 @@ function AppContent() {
   return (
     <div className="dashboard" style={{ display: 'flex', height: '100vh', backgroundColor: '#09090b', color: '#f4f4f5', fontFamily: 'Inter, system-ui, sans-serif' }}>
 
-      {/* Sidebar: Library Tree + Matches */}
-      <div className="sidebar" style={{ display: 'flex', flexDirection: 'row', borderRight: '1px solid #27272a' }}>
-        <div style={{ flex: 2, minWidth: 0, display: 'flex', flexDirection: 'column', backgroundColor: '#0c0c0e' }}>
-          <div style={{ padding: '10px 12px', borderBottom: '1px solid #27272a', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      {/* Sidebar: Library Tree */}
+      <div className="sidebar" style={{ display: 'flex', flexDirection: 'column', borderRight: '1px solid #27272a' }}>
+        <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', backgroundColor: '#0c0c0e', overflow: 'hidden' }}>
+          <div style={{ padding: '10px 12px', borderBottom: '1px solid #27272a', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexShrink: 0 }}>
             <h2 style={{ fontSize: FS, fontWeight: '600', margin: 0, letterSpacing: '0.3px', fontFamily: FONT, color: '#f4f4f5' }}>
               DGC TAGGER
             </h2>
@@ -62,18 +62,6 @@ function AppContent() {
             onCollapseAll={ctx.collapseAll}
           />
         </div>
-
-        <SearchResults
-          results={ctx.searchResults}
-          deezerResults={ctx.deezerResults}
-          dgcLoading={ctx.dgcLoading}
-          deezerLoading={ctx.deezerLoading}
-          searchTimeMs={ctx.searchTimeMs}
-          selectedResult={ctx.selectedResult}
-          onSelectResult={ctx.handleSelectResult}
-          onSelectDeezer={ctx.handleSelectDeezer}
-          selectedDeezerId={ctx.selectedDeezer?.albumId ?? null}
-        />
       </div>
 
       {/* Main Content Area */}
@@ -96,6 +84,19 @@ function AppContent() {
               onArtistEnabledChange={(v) => ctx.dispatch({ type: 'SET_SEARCH_ARTIST_ENABLED', payload: v })}
               onAlbumEnabledChange={(v) => ctx.dispatch({ type: 'SET_SEARCH_ALBUM_ENABLED', payload: v })}
               onSearch={() => ctx.handleSearch()}
+            />
+
+            {/* Matches: DGC + Deezer horizontal */}
+            <SearchResults
+              results={ctx.searchResults}
+              deezerResults={ctx.deezerResults}
+              dgcLoading={ctx.dgcLoading}
+              deezerLoading={ctx.deezerLoading}
+              searchTimeMs={ctx.searchTimeMs}
+              selectedResult={ctx.selectedResult}
+              onSelectResult={ctx.handleSelectResult}
+              onSelectDeezer={ctx.handleSelectDeezer}
+              selectedDeezerId={ctx.selectedDeezer?.albumId ?? null}
             />
 
             {(ctx.selectedResult || ctx.localTags) ? (
