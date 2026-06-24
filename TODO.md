@@ -90,6 +90,102 @@ Fix: привести config.ts DEFAULTS к реальным значениям 
 
 ---
 
+## Поддержка форматов
+
+### Расширение поддержки аудиоформатов
+СкANNER (`scanner.ts:21`) уже определяет `.mp3`, `.flac`, `.m4a`, `.ogg`, `.wav`, `.wma`, `.aac`. Но tag reading/writing работает ТОЛЬКО с MP3.
+
+**Что нужно:**
+- `tagger.ts:53` — `.endsWith('.mp3')` → поддержать FLAC, M4A, OGG, AAC
+- `tagWriter.ts:45,153` — аналогично
+- `index.ts:198` — аналогично
+- Нужна библиотека для чтения/записи тегов в других форматах:
+  - FLAC: `flac-metadata` или `metaflac`
+  - M4A/AAC: `mp4box` или `atomic-parsley`
+  - OGG: `ogg-metadata`
+  - Или: `music-metadata` (универсальная, поддерживает все форматы)
+- UI: показывать формат в TagComparison (MP3/FLAC/M4A)
+
+**Приоритет:** Средний — MP3 основной формат для DGC, но FLAC популярен среди коллекционеров.
+
+---
+
+## Сетевая совместимость (Samba / Windows UNC)
+
+### UNC пути (`\\server\share\folder`)
+Код использует `path.resolve()` и `path.join()` — Node.js поддерживает UNC на Windows. Но есть проблемы:
+
+**Потенциальные баги:**
+1. **Path traversal check** (`index.ts:122,141,188`):
+   ```ts
+   if (!absolutePath.startsWith(path.resolve(cfg.musicRoot)))
+   ```
+   - UNC пути могут иметь разный регистр (`\\SERVER\share` vs `\\server\share`)
+   - `path.resolve()` не нормализует регистр на Windows
+   - **Fix:** использовать `path.resolve().toLowerCase()` для сравнения
+
+2. **fs.realpath() в scanner.ts:55**:
+   - Может не работать с сетевыми путями (зависит от монтирования)
+   - **Fix:** catch и fallback на исходный путь (уже есть)
+
+3. **fs.rename() в tagWriter.ts:200**:
+   - Не работает через сеть (cross-device rename)
+   - **Fix:** fallback на copy+delete (уже есть в moveProcessedFiles)
+
+4. **Путь конфигурации** (`config.ts:57`):
+   ```ts
+   musicRoot: 'c:\\vibecode\\dgc2tag\\test_muz'
+   ```
+   - hardcoded Windows путь в DEFAULTS
+   - **Fix:** использовать относительные пути или env variables
+
+5. **Символы в именах файлов** (`tagWriter.ts:301`):
+   ```ts
+   name.replace(/[<>:"/\\|?*]/g, '_')
+   ```
+   - UNC пути содержат `\` — sanitize может сломать путь
+   - **Fix:** sanitize применяется только к имени файла/папки, не к полному пути
+
+**Рекомендации:**
+- Добавить тест с UNC путями в config
+- Документировать поддержку сетевых путей
+- Добавить warning в UI приUNC путях (медленные операции)
+
+---
+
+## Новые источники данных
+
+### MusicBrainz — поиск альбомов
+Добавить MusicBrainz как третий источник поиска (после DGC и Deezer).
+- Сервер: `server/src/musicbrainz.ts` — API клиент (`musicbrainz.org/ws/2/release/?query=...&fmt=json`)
+- Rate limit: 1 req/sec, требуется User-Agent
+- Клиент: `MusicBrainzSearchResult` тип, `searchAlbumsMusicbrainz()` функция
+- UI: `MusicBrainzResults.tsx` — синий цвет (#60a5fa)
+- Интеграция: параллельный запрос в `handleSearch()` вместе с DGC и Deezer
+
+### Spotify — поиск альбомов
+Добавить Spotify как источник поиска.
+- Требуется Spotify Web API (client credentials flow)
+- Эндпоинт: `GET /v1/search?type=album&q=...`
+- Требуется регистрация приложения + client_id/client_secret в config
+- Клиент: `SpotifySearchResult` тип
+
+### Bandcamp — теги и дискография
+Исследовать Bandcamp как источник:
+- Теги: artist, album, year, genre, tracks
+- Дискография: список альбомов артиста
+- Проблема: нет публичного API, нужен скрапинг (Puppeteer)
+- Проверить: robots.txt, структура HTML, стабильность верстки
+
+### Дискография артиста — проверка наличия альбомов
+Парсить дискографию артиста из всех источников и показывать какие альбомы есть/нет в локальной библиотеке.
+- Источники: DGC (band page), Deezer (artist albums), MusicBrainz (artist releases), Spotify
+- Сравнение: по имени альбома + году (fuzzy matching)
+- UI: отдельная панель "DISCOGRAPHY" с пометками ✓ есть / ✗ нет
+- Действие: клик по отсутствующему альбому → поиск на DGC/Deezer
+
+---
+
 ## Реализованные фичи
 
 ### ✅ Compilation mode: парсинг треклистов сборников

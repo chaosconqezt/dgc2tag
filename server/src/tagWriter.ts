@@ -2,6 +2,9 @@ import NodeID3 from 'node-id3';
 import fs from 'fs/promises';
 import path from 'path';
 import { logger } from './logger.js';
+import type { AlbumTags } from './types.js';
+
+export type { AlbumTags } from './types.js';
 
 interface Id3Tags {
     artist?: string;
@@ -20,24 +23,6 @@ interface Id3Tags {
     [key: string]: unknown;
 }
 
-export interface AlbumTags {
-    artist?: string;
-    albumArtist?: string;
-    album?: string;
-    year?: string;
-    genre?: string;
-    country?: string;
-    label?: string;
-    releaseType?: string;
-    trackCount?: number;
-    files?: string[];
-    trackTitles?: Record<string, string>;
-    postId?: number | null;
-    deezerId?: number | null;
-    artists?: string[];
-    albumArtists?: string[];
-}
-
 export interface WriteOptions {
     folderPath: string;
     tags: AlbumTags;
@@ -48,8 +33,14 @@ export interface WriteOptions {
 
 // ── Write ID3 tags by full file path ────────────────────────────────
 
-export async function writeTags(options: WriteOptions): Promise<void> {
+export async function writeTags(options: WriteOptions, musicRoot?: string): Promise<void> {
     const { folderPath, tags, trackArtists, trackNames } = options;
+    if (musicRoot) {
+        const resolved = path.resolve(folderPath);
+        if (!resolved.startsWith(path.resolve(musicRoot))) {
+            throw new Error('folderPath must be inside musicRoot');
+        }
+    }
     const files = await fs.readdir(folderPath);
     const mp3Files = files.filter(f => f.toLowerCase().endsWith('.mp3'));
 
@@ -150,7 +141,14 @@ export async function renameFilesInPlace(
     albumArtist?: string,
     trackArtists?: Record<string, string>,
     trackNames?: Record<string, string>,
+    musicRoot?: string,
 ): Promise<{ renamed: string[] }> {
+    if (musicRoot) {
+        const resolved = path.resolve(folderPath);
+        if (!resolved.startsWith(path.resolve(musicRoot))) {
+            throw new Error('folderPath must be inside musicRoot');
+        }
+    }
     const files = await fs.readdir(folderPath);
     const mp3Files = files.filter(f => f.toLowerCase().endsWith('.mp3'));
     const renamed: string[] = [];

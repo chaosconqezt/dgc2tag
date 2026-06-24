@@ -96,7 +96,7 @@ export async function searchDeezer(artist?: string, album?: string): Promise<Dee
         const year = detail.release_date?.substring(0, 4) || null;
         const isCompilation = detail.record_type === 'compile';
         const tracks = (detail.tracks?.data || []).map(t => ({
-            num: String(t.track_position),
+            num: String(t.track_position ?? ''),
             name: t.title,
             duration: t.duration,
             ...(t.artist?.name ? { artist: t.artist.name } : {}),

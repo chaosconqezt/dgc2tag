@@ -37,31 +37,34 @@ export function matchTracks(
   });
   const usedLocal = new Set<number>();
 
+  // Pass 1: Match by track number (primary key — handles Part I/II/III correctly)
   const results: MatchResult[] = remote.map(rt => {
+    const byNum = localParsed.findIndex(
+      (l, i) => !usedLocal.has(i) && l.num && rt.num && parseInt(l.num, 10) === parseInt(rt.num, 10)
+    );
+    if (byNum >= 0) {
+      usedLocal.add(byNum);
+      const comparisonName = matchByFilename ? localParsed[byNum].fileName : localParsed[byNum].name;
+      return { remote: { num: rt.num, artist: rt.artist, name: rt.name, duration: rt.duration }, local: localParsed[byNum], sim: similarity(rt.name, comparisonName) };
+    }
+    return { remote: { num: rt.num, artist: rt.artist, name: rt.name, duration: rt.duration }, local: null, sim: 0 };
+  });
+
+  // Pass 2: Match remaining by similarity (for tracks without numbers)
+  for (const r of results) {
+    if (r.local) continue;
     let bestIdx = -1;
     let bestSim = 0;
     for (let i = 0; i < localParsed.length; i++) {
       if (usedLocal.has(i)) continue;
       const comparisonName = matchByFilename ? localParsed[i].fileName : localParsed[i].name;
-      const s = similarity(rt.name, comparisonName);
+      const s = similarity(r.remote.name, comparisonName);
       if (s > bestSim) { bestSim = s; bestIdx = i; }
     }
     if (bestIdx >= 0 && bestSim >= 50) {
       usedLocal.add(bestIdx);
-      return { remote: { num: rt.num, artist: rt.artist, name: rt.name, duration: rt.duration }, local: localParsed[bestIdx]!, sim: bestSim };
-    }
-    return { remote: { num: rt.num, artist: rt.artist, name: rt.name, duration: rt.duration }, local: null, sim: 0 };
-  });
-
-  for (const r of results) {
-    if (r.local) continue;
-    // Compare as numbers to handle leading zero differences (e.g. '1' vs '01')
-    const byNum = localParsed.findIndex((l, i) => parseInt(l.num || '0', 10) === parseInt(r.remote.num, 10) && !usedLocal.has(i));
-    if (byNum >= 0) {
-      usedLocal.add(byNum);
-      r.local = localParsed[byNum];
-      const comparisonName = matchByFilename ? localParsed[byNum]!.fileName : localParsed[byNum]!.name;
-      r.sim = similarity(r.remote.name, comparisonName);
+      r.local = localParsed[bestIdx];
+      r.sim = bestSim;
     }
   }
 

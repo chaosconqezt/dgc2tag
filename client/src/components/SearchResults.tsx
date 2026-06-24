@@ -27,7 +27,7 @@ export function SearchResults({ results, deezerResults, dgcLoading, deezerLoadin
         <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
           {anyLoading && <RefreshCw size={10} color="#ef4444" className="animate-spin" />}
           {!anyLoading && searchTimeMs !== null && (
-            <span style={{ fontSize: '11px', color: COLORS.textDim, fontFamily: FONT, display: 'flex', alignItems: 'center', gap: '2px' }}>
+            <span style={{ fontSize: '12px', color: COLORS.textDim, fontFamily: FONT, display: 'flex', alignItems: 'center', gap: '2px' }}>
               <Clock size={9} />{(searchTimeMs / 1000).toFixed(1)}s
             </span>
           )}

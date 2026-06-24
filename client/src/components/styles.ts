@@ -1,5 +1,5 @@
 export const FONT = 'Inter, system-ui, sans-serif';
-export const FS = '15px';
+export const FS = '14px';
 
 export const COLORS = {
   bg: '#111114',

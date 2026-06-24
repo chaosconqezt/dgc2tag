@@ -25,6 +25,7 @@ export interface AlbumTags {
   deezerId?: number;
   artists?: string[];
   albumArtists?: string[];
+  extraTags?: Record<string, string>;
 }
 
 export interface SearchResult {

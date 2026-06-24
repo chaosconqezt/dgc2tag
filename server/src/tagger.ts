@@ -2,6 +2,9 @@ import NodeID3 from 'node-id3';
 import fs from 'fs/promises';
 import path from 'path';
 import { logger } from './logger.js';
+import type { AlbumTags } from './types.js';
+
+export type { AlbumTags } from './types.js';
 
 // Type for NodeID3.read() result — matches the actual runtime shape
 interface Id3Tags {
@@ -21,27 +24,6 @@ interface Id3Tags {
     userDefinedText?: { key: string; value: string; description?: string }[];
     recordingTime?: string;
     [key: string]: unknown;
-}
-
-export interface AlbumTags {
-    artist?: string;
-    albumArtist?: string;
-    album?: string;
-    year?: string;
-    genre?: string;
-    country?: string;
-    label?: string;
-    releaseType?: string;
-    trackCount?: number;
-    // ALL keys are FULL FILE PATHS — immutable identifiers
-    files?: string[];
-    trackTitles?: Record<string, string>;  // filePath → title
-    trackArtists?: Record<string, string>; // filePath → artist
-    trackDurations?: Record<string, number>; // filePath → duration
-    postId?: number | null;
-    deezerId?: number | null;
-    artists?: string[];
-    albumArtists?: string[];
 }
 
 function readTags(filePath: string): Id3Tags {
@@ -111,7 +93,17 @@ export async function getTags(folderPath: string): Promise<AlbumTags> {
     // Album-level info from first file
     const firstTags = readTags(filePaths[0]!);
     const rawYear = firstTags.year || firstTags.recordingTime || null;
-    const year = rawYear && /^\d{4}$/.test(rawYear) ? rawYear : null;
+    let year: string | null = null;
+    if (rawYear) {
+        // Try exact 4-digit year first
+        if (/^\d{4}$/.test(rawYear)) {
+            year = rawYear;
+        } else {
+            // Extract year from full date like "2024-03-15" or "20240315"
+            const m = rawYear.match(/(\d{4})/);
+            if (m?.[1]) year = m[1];
+        }
+    }
 
     const countryFrame = firstTags.userDefinedText?.find(
         (t: { description?: string; value?: string }) => t.description?.toLowerCase() === 'country'
@@ -132,6 +124,7 @@ export async function getTags(folderPath: string): Promise<AlbumTags> {
     const albumArtist = (firstTags.performerInfo as string | undefined) || (firstTags.artist as string | undefined);
 
     const result: AlbumTags = {};
+
     if (artist !== undefined) result.artist = artist;
     if (albumArtist !== undefined) result.albumArtist = albumArtist;
     if ((firstTags.album as string | undefined) !== undefined) result.album = firstTags.album as string;
@@ -144,6 +137,49 @@ export async function getTags(folderPath: string): Promise<AlbumTags> {
     if (pub !== undefined) result.label = pub;
     const rt = releaseTypeFrame?.value;
     if (rt !== undefined) result.releaseType = rt;
+
+    // Collect extra userDefinedText tags from ALL tracks (track unique values)
+    const knownFrames = ['country', 'releasetype', 'musicbrainz album type', 'dgc_post_id', 'deezer_id'];
+    const extraTagsMap: Record<string, Set<string>> = {};
+
+    for (const file of mp3Files) {
+        const filePath = path.join(folderPath, file);
+        const tags = readTags(filePath);
+
+        if (tags.userDefinedText) {
+            for (const frame of tags.userDefinedText) {
+                const desc = frame.description?.toLowerCase() || '';
+                if (desc && !knownFrames.includes(desc) && frame.value) {
+                    const key = frame.description!;
+                    if (!extraTagsMap[key]) extraTagsMap[key] = new Set();
+                    extraTagsMap[key]!.add(frame.value);
+                }
+            }
+        }
+        if (tags.notes) {
+            if (!extraTagsMap['Notes']) extraTagsMap['Notes'] = new Set();
+            extraTagsMap['Notes'].add(tags.notes);
+        }
+        if (tags.bitrate) {
+            if (!extraTagsMap['Bitrate']) extraTagsMap['Bitrate'] = new Set();
+            extraTagsMap['Bitrate'].add(String(tags.bitrate));
+        }
+        if (tags.audioFormat) {
+            if (!extraTagsMap['Format']) extraTagsMap['Format'] = new Set();
+            extraTagsMap['Format'].add(tags.audioFormat);
+        }
+    }
+
+    const extraTags: Record<string, string> = {};
+    for (const [key, values] of Object.entries(extraTagsMap)) {
+        const arr = [...values];
+        if (arr.length === 1) {
+            extraTags[key] = arr[0]!;
+        } else {
+            extraTags[key] = `${arr[0]} (+${arr.length - 1} more)`;
+        }
+    }
+
     result.trackCount = filePaths.length;
     result.files = filePaths;
     result.trackTitles = trackTitles;
@@ -153,5 +189,6 @@ export async function getTags(folderPath: string): Promise<AlbumTags> {
     if (deezerIdFrame) result.deezerId = Number(deezerIdFrame.value) || null;
     result.artists = [...trackArtistsSet];
     result.albumArtists = [...albumArtistsSet];
+    if (Object.keys(extraTags).length > 0) result.extraTags = extraTags;
     return result;
 }

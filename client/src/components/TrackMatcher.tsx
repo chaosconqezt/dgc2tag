@@ -191,6 +191,7 @@ function MatchRow({
               color: COLORS.textMuted,
               overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
             }}>
+              <span style={{ fontSize: '12px', color: COLORS.textFaint, fontFamily: 'monospace', marginRight: '4px' }}>{m.local.num || '?'}</span>
               {localLabel || '—'}
             </div>
             {showFilenamePreviews && m.local && filenameMode === 'id3' && m.local.file !== m.local.name && (
@@ -227,8 +228,9 @@ function MatchRow({
         {formatDuration(remoteDuration)}
       </div>
 
-      {/* right side: from DGC (name editable) */}
-      <div style={{ flex: 1, paddingLeft: '4px', minWidth: 0 }}>
+      {/* right side: from catalog (name editable) */}
+      <div style={{ flex: 1, paddingLeft: '4px', minWidth: 0, display: 'flex', alignItems: 'center', gap: '4px' }}>
+        <span style={{ fontSize: '12px', color: COLORS.textFaint, fontFamily: 'monospace', flexShrink: 0 }}>{m.remote.num}</span>
         <input
           type="text"
           value={displayName}
@@ -238,8 +240,8 @@ function MatchRow({
           }}
           style={{
             ...INPUT_STYLE,
-            width: '100%',
-            boxSizing: 'border-box',
+            flex: 1,
+            minWidth: 0,
             fontSize: FS,
             fontFamily: FONT,
             color: isUnmatched ? COLORS.red : (isNameEdited ? COLORS.green : (m.sim === 100 ? COLORS.textMuted : COLORS.yellow)),
@@ -492,13 +494,6 @@ export function TrackMatcher({
 
   return (
     <div style={PANEL_STYLE}>
-      <div style={{ ...HEADER_STYLE, justifyContent: 'space-between' }}>
-        <span style={{ flex: 1, textAlign: 'left', color: COLORS.textDim, fontSize: FS, fontFamily: FONT }}>from tag</span>
-        <span style={{ color: COLORS.text, fontWeight: '600', fontSize: FS, fontFamily: FONT }}>
-          {albumDetails ? 'TRACKS' : 'LOCAL TRACKS'}
-        </span>
-        <span style={{ flex: 1, textAlign: 'right', color: COLORS.textDim, fontSize: FS, fontFamily: FONT }}>from DGC</span>
-      </div>
 
       {/* Controls */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px', fontSize: FS, fontFamily: FONT, color: COLORS.textDim, flexWrap: 'wrap' }}>
@@ -507,27 +502,7 @@ export function TrackMatcher({
             onChange={(e) => handleTitlesToggle(e.target.checked)}
             style={CHECKBOX}
           />
-          titles
-        </label>
-        {hasMultiArtist && (
-          <>
-            <span style={{ color: COLORS.textInvisible }}>·</span>
-            <label style={{ display: 'flex', alignItems: 'center', gap: '3px', cursor: 'pointer' }}>
-              <input type="checkbox" checked={writeTrackArtists}
-                onChange={(e) => handleArtistsToggle(e.target.checked)}
-                style={CHECKBOX}
-              />
-              artists
-            </label>
-          </>
-        )}
-        <span style={{ color: COLORS.textInvisible }}>·</span>
-        <label style={{ display: 'flex', alignItems: 'center', gap: '3px', cursor: 'pointer' }}>
-          <input type="checkbox" checked={compilation}
-            onChange={(e) => onCompilationChange(e.target.checked)}
-            style={CHECKBOX}
-          />
-          compilation
+          write track titles
         </label>
         <span style={{ color: COLORS.textInvisible }}>·</span>
         <label style={{ display: 'flex', alignItems: 'center', gap: '3px', cursor: 'pointer', opacity: hasAnyTags ? 1 : 0.3 }}>
@@ -543,7 +518,7 @@ export function TrackMatcher({
           <span style={{ color: countMatch ? COLORS.green : COLORS.yellow, fontWeight: '600' }}>{localCount}</span>
           <span> / </span>
           <span style={{ color: countMatch ? COLORS.green : COLORS.yellow, fontWeight: '600' }}>{remoteCount}</span>
-          <span> files</span>
+          <span> tracks</span>
         </span>
         {exactCount > 0 && <span style={{ color: COLORS.green }}>{exactCount} exact</span>}
         {closeCount > 0 && <span style={{ color: COLORS.yellow }}>{closeCount} close</span>}
@@ -566,15 +541,25 @@ export function TrackMatcher({
             filename
           </label>
         </span>
-        <span style={{ flex: 1 }} />
+        <span style={{ color: COLORS.textInvisible }}>·</span>
+        <label style={{ display: 'flex', alignItems: 'center', gap: '3px', cursor: 'pointer' }}>
+          <input type="checkbox" checked={compilation}
+            onChange={(e) => onCompilationChange(e.target.checked)}
+            style={CHECKBOX}
+          />
+          compilation
+        </label>
         {hasMultiArtist && (
-          <label style={{ display: 'flex', alignItems: 'center', gap: '3px', cursor: 'pointer' }} title="Strip (text) from DGC artists">
-            <input type="checkbox" checked={stripRemoteParentheses}
-              onChange={(e) => onStripRemoteParenthesesChange(e.target.checked)}
-              style={CHECKBOX}
-            />
-            strip parens
-          </label>
+          <>
+            <span style={{ color: COLORS.textInvisible }}>·</span>
+            <label style={{ display: 'flex', alignItems: 'center', gap: '3px', cursor: 'pointer' }}>
+              <input type="checkbox" checked={writeTrackArtists}
+                onChange={(e) => handleArtistsToggle(e.target.checked)}
+                style={CHECKBOX}
+              />
+              artists
+            </label>
+          </>
         )}
       </div>
 

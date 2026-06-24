@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import type { AlbumTags, SearchResult } from '../types';
 import { similarity } from '../utils';
 import { FONT, FS, COLORS, CHECKBOX, CELL_STYLE, INPUT_STYLE, PERCENT_STYLE, HEADER_STYLE, PANEL_STYLE, GRID_STYLE, ROW_STYLE } from './styles';
@@ -17,6 +17,50 @@ function formatReleaseType(val: string): string {
   if (!val) return val;
   if (val.toLowerCase() === 'ep') return 'EP';
   return val.charAt(0).toUpperCase() + val.slice(1);
+}
+
+function ExtraTagsSection({ extraTags }: { extraTags: Record<string, string> }) {
+  const [expanded, setExpanded] = useState(false);
+  const entries = Object.entries(extraTags);
+
+  if (entries.length === 0) return null;
+
+  return (
+    <div style={{ marginTop: '4px' }}>
+      <button
+        onClick={() => setExpanded(!expanded)}
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '4px',
+          background: 'none',
+          border: 'none',
+          color: COLORS.textDim,
+          cursor: 'pointer',
+          fontSize: FS,
+          fontFamily: FONT,
+          padding: '4px 0',
+        }}
+      >
+        <span style={{ transform: expanded ? 'rotate(90deg)' : 'rotate(0deg)', transition: 'transform 0.15s', fontSize: '10px' }}>▶</span>
+        {entries.length} extra tag{entries.length > 1 ? 's' : ''}
+      </button>
+      {expanded && (
+        <div style={{ marginTop: '4px' }}>
+          {entries.map(([key, value]) => (
+            <div key={key} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '4px', marginBottom: '2px' }}>
+              <div style={{ ...CELL_STYLE, textAlign: 'right', color: COLORS.textDim }}>
+                {key}
+              </div>
+              <div style={{ ...CELL_STYLE, color: COLORS.textMuted }}>
+                {value}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
 }
 
 export function TagComparison({
@@ -113,10 +157,10 @@ export function TagComparison({
 
   return (
     <div style={PANEL_STYLE}>
-      <div style={HEADER_STYLE}>
-        <span style={{ color: isDeezer ? '#4ade80' : COLORS.text, fontWeight: '600', fontSize: FS, fontFamily: FONT }}>
-          {isDeezer ? 'DEEZER · TAG COMPARISON' : selectedResult ? 'TAG COMPARISON' : 'LOCAL TAGS'}
-        </span>
+      <div style={{ display: 'flex', alignItems: 'center', marginBottom: '8px', paddingBottom: '6px', borderBottom: `1px solid ${COLORS.borderLight}` }}>
+        <span style={{ flex: 1, textAlign: 'center', color: COLORS.textDim, fontSize: FS, fontFamily: FONT, fontWeight: '600' }}>FILE</span>
+        <span style={{ textAlign: 'center', color: COLORS.text, fontWeight: '700', fontSize: FS, fontFamily: FONT, padding: '0 8px' }}>TAGS</span>
+        <span style={{ flex: 1, textAlign: 'center', color: COLORS.textDim, fontSize: FS, fontFamily: FONT, fontWeight: '600' }}>CATALOG</span>
       </div>
 
       <div>
@@ -206,6 +250,11 @@ export function TagComparison({
             </div>
           </div>
         </div>
+
+        {/* Extra tags expandable section */}
+        {localTags?.extraTags && Object.keys(localTags.extraTags).length > 0 && (
+          <ExtraTagsSection extraTags={localTags.extraTags} />
+        )}
       </div>
     </div>
   );

@@ -188,7 +188,7 @@ app.post('/api/tags/update', async (req, res) => {
         if (!absolutePath.startsWith(path.resolve(cfg.musicRoot))) {
             return res.status(403).json({ error: 'Access denied' });
         }
-        await writeTags({ folderPath: absolutePath, tags, trackArtists, trackNames });
+        await writeTags({ folderPath: absolutePath, tags, trackArtists, trackNames }, cfg.musicRoot);
 
         let moved: string[] | undefined;
         let renamed: string[] | undefined;
@@ -211,7 +211,7 @@ app.post('/api/tags/update', async (req, res) => {
             }
             
             // MOVE always includes rename — rename in-place first, then move folder
-            const renameResult = await renameFilesInPlace(absolutePath, tags.artist, trackArtists, trackNames);
+            const renameResult = await renameFilesInPlace(absolutePath, tags.artist, trackArtists, trackNames, cfg.musicRoot);
             renamed = renameResult.renamed;
             logger.info(`[updateTags] pre-rename: ${JSON.stringify(renameResult)}`);
             // Pass metadata directly — no need to re-read files after rename
@@ -223,7 +223,7 @@ app.post('/api/tags/update', async (req, res) => {
             );
             moved = result.moved;
         } else if (renameFiles) {
-            const result = await renameFilesInPlace(absolutePath, tags.artist, trackArtists, trackNames);
+            const result = await renameFilesInPlace(absolutePath, tags.artist, trackArtists, trackNames, cfg.musicRoot);
             renamed = result.renamed;
             logger.info(`[updateTags] rename: ${JSON.stringify(result)}`);
         }
