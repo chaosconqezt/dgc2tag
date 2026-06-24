@@ -89,13 +89,17 @@ function AppContent() {
             <SearchResults
               results={ctx.searchResults}
               deezerResults={ctx.deezerResults}
+              mbrainzResults={ctx.mbrainzResults}
               dgcLoading={ctx.dgcLoading}
               deezerLoading={ctx.deezerLoading}
+              mbrainzLoading={ctx.mbrainzLoading}
               searchTimeMs={ctx.searchTimeMs}
               selectedResult={ctx.selectedResult}
               onSelectResult={ctx.handleSelectResult}
               onSelectDeezer={ctx.handleSelectDeezer}
               selectedDeezerId={ctx.selectedDeezer?.albumId ?? null}
+              selectedMbrainzId={ctx.selectedMbrainz?.releaseId ?? null}
+              onSelectMbrainz={ctx.handleSelectMbrainz}
             />
 
             {/* Apply buttons */}

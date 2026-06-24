@@ -88,7 +88,14 @@ async function writeSingleTag(
         tags.country,
         tags.releaseType,
         tags.postId != null ? String(tags.postId) : undefined,
-        tags.deezerId != null ? String(tags.deezerId) : undefined
+        tags.deezerId != null ? String(tags.deezerId) : undefined,
+        (tags as any).musicbrainzReleaseId,
+        (tags as any).musicbrainzArtistId,
+        (tags as any).musicbrainzAlbumArtistId,
+        (tags as any).musicbrainzReleaseGroupId,
+        (tags as any).catalogNumber,
+        (tags as any).discId,
+        (tags as any).originalYear
     );
 
     let fileBuffer: Buffer;
@@ -109,6 +116,13 @@ function writeUserDefinedText(
     releaseType?: string,
     postId?: string,
     deezerId?: string,
+    mbReleaseId?: string,
+    mbArtistId?: string,
+    mbAlbumArtistId?: string,
+    mbReleaseGroupId?: string,
+    catalogNumber?: string,
+    discId?: string,
+    originalYear?: string,
 ): any[] {
     const result = [...current];
     const findIdx = (desc: string) =>
@@ -131,6 +145,13 @@ function writeUserDefinedText(
     setField('RELEASETYPE', releaseType);
     setField('DGC_POST_ID', postId);
     setField('DEEZER_ID', deezerId);
+    setField('MusicBrainz Album Id', mbReleaseId);
+    setField('MusicBrainz Artist Id', mbArtistId);
+    setField('MusicBrainz Album Artist Id', mbAlbumArtistId);
+    setField('MusicBrainz Release Group Id', mbReleaseGroupId);
+    setField('CATALOGNUMBER', catalogNumber);
+    setField('DISCID', discId);
+    setField('originalyear', originalYear);
     return result;
 }
 

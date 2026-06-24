@@ -19,11 +19,11 @@ function formatReleaseType(val: string): string {
   return val.charAt(0).toUpperCase() + val.slice(1);
 }
 
-function ExtraTagsSection({ extraTags }: { extraTags: Record<string, string> }) {
+function ExtraTagsSection({ sourceTags, outputTags, onOutputChange }: { sourceTags: Record<string, string>; outputTags: Record<string, string>; onOutputChange: (key: string, value: string) => void }) {
   const [expanded, setExpanded] = useState(false);
-  const entries = Object.entries(extraTags);
+  const allKeys = [...new Set([...Object.keys(sourceTags), ...Object.keys(outputTags)])];
 
-  if (entries.length === 0) return null;
+  if (allKeys.length === 0) return null;
 
   return (
     <div style={{ marginTop: '4px' }}>
@@ -43,18 +43,25 @@ function ExtraTagsSection({ extraTags }: { extraTags: Record<string, string> }) 
         }}
       >
         <span style={{ transform: expanded ? 'rotate(90deg)' : 'rotate(0deg)', transition: 'transform 0.15s', fontSize: '10px' }}>▶</span>
-        {entries.length} extra tag{entries.length > 1 ? 's' : ''}
+        {allKeys.length} extra tag{allKeys.length > 1 ? 's' : ''}
       </button>
       {expanded && (
         <div style={{ marginTop: '4px' }}>
-          {entries.map(([key, value]) => (
-            <div key={key} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '4px', marginBottom: '2px' }}>
-              <div style={{ ...CELL_STYLE, textAlign: 'right', color: COLORS.textDim }}>
-                {key}
-              </div>
-              <div style={{ ...CELL_STYLE, color: COLORS.textMuted }}>
-                {value}
-              </div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '4px', marginBottom: '2px' }}>
+            <div style={{ fontSize: '10px', color: COLORS.textDim, fontWeight: '700', textTransform: 'uppercase', fontFamily: FONT }}>Tag</div>
+            <div style={{ fontSize: '10px', color: COLORS.textDim, fontWeight: '700', textTransform: 'uppercase', fontFamily: FONT }}>Current</div>
+            <div style={{ fontSize: '10px', color: COLORS.green, fontWeight: '700', textTransform: 'uppercase', fontFamily: FONT }}>New</div>
+          </div>
+          {allKeys.map(key => (
+            <div key={key} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '4px', marginBottom: '2px', alignItems: 'center' }}>
+              <div style={{ ...CELL_STYLE, textAlign: 'right', color: COLORS.textDim, fontSize: '12px' }}>{key}</div>
+              <div style={{ ...CELL_STYLE, color: COLORS.textMuted, fontSize: '12px' }}>{sourceTags[key] || <span style={{ color: COLORS.textInvisible }}>—</span>}</div>
+              <input
+                type="text"
+                value={outputTags[key] ?? ''}
+                onChange={(e) => onOutputChange(key, e.target.value)}
+                style={{ ...INPUT_STYLE, color: COLORS.green, backgroundColor: COLORS.greenBg, border: `1px solid ${COLORS.greenBorder}`, fontSize: '12px' }}
+              />
             </div>
           ))}
         </div>
@@ -252,9 +259,29 @@ export function TagComparison({
         </div>
 
         {/* Extra tags expandable section */}
-        {localTags?.extraTags && Object.keys(localTags.extraTags).length > 0 && (
-          <ExtraTagsSection extraTags={localTags.extraTags} />
-        )}
+        <ExtraTagsSection
+          sourceTags={localTags?.extraTags || {}}
+          outputTags={(() => {
+            const tags: Record<string, string> = {};
+            const skip = new Set(['country', 'label', 'releasetype']);
+            if (localTags?.extraTags) {
+              for (const [k, v] of Object.entries(localTags.extraTags)) {
+                if (!skip.has(k.toLowerCase())) tags[k] = v;
+              }
+            }
+            if (selectedResult?.extraTags) {
+              for (const [k, v] of Object.entries(selectedResult.extraTags)) {
+                if (!skip.has(k.toLowerCase()) && !tags[k]) tags[k] = v;
+              }
+            }
+            if (localTags?.postId) tags['DGC_POST_ID'] = String(localTags.postId);
+            if (localTags?.deezerId) tags['DEEZER_ID'] = String(localTags.deezerId);
+            if (selectedResult?.postId && selectedResult.postId > 0 && !tags['DGC_POST_ID']) tags['DGC_POST_ID'] = String(selectedResult.postId);
+            if (selectedResult?.postId && selectedResult.postId < 0 && !tags['DEEZER_ID']) tags['DEEZER_ID'] = String(Math.abs(selectedResult.postId));
+            return tags;
+          })()}
+          onOutputChange={() => {}}
+        />
       </div>
     </div>
   );

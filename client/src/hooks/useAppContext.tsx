@@ -1,5 +1,6 @@
 import { createContext, useContext, useReducer, useCallback, useRef, useEffect } from 'react';
 import type { FileNode, AlbumTags, SearchResult, DeezerSearchResult } from '../types';
+import type { MusicBrainzSearchResult } from '../api';
 import * as api from '../api';
 import { matchTracks } from '../utils';
 
@@ -22,6 +23,8 @@ interface AppState {
   // Search
   searchResults: SearchResult[];
   deezerResults: DeezerSearchResult[];
+  mbrainzResults: MusicBrainzSearchResult[];
+  selectedMbrainz: MusicBrainzSearchResult | null;
   selectedResult: SearchResult | null;
   selectedDeezer: DeezerSearchResult | null;
   albumDetails: SearchResult | null;
@@ -31,6 +34,7 @@ interface AppState {
   searchAlbumEnabled: boolean;
   dgcLoading: boolean;
   deezerLoading: boolean;
+  mbrainzLoading: boolean;
   searchTimeMs: number | null;
 
   // UI state
@@ -78,6 +82,9 @@ type Action =
   | { type: 'SET_SEARCH_ALBUM_ENABLED'; payload: boolean }
   | { type: 'SET_DGC_LOADING'; payload: boolean }
   | { type: 'SET_DEEZER_LOADING'; payload: boolean }
+  | { type: 'SET_MBRAINZ_RESULTS'; payload: MusicBrainzSearchResult[] }
+  | { type: 'SET_MBRAINZ_LOADING'; payload: boolean }
+  | { type: 'SET_SELECTED_MBRAINZ'; payload: MusicBrainzSearchResult | null }
   | { type: 'SET_SEARCH_TIME'; payload: number | null }
   | { type: 'TOGGLE_NODE'; payload: string }
   | { type: 'COLLAPSE_ALL' }
@@ -112,6 +119,8 @@ const initialState: AppState = {
   localTags: null,
   searchResults: [],
   deezerResults: [],
+  mbrainzResults: [],
+  selectedMbrainz: null,
   selectedResult: null,
   selectedDeezer: null,
   albumDetails: null,
@@ -121,6 +130,7 @@ const initialState: AppState = {
   searchAlbumEnabled: true,
   dgcLoading: false,
   deezerLoading: false,
+  mbrainzLoading: false,
   searchTimeMs: null,
   loading: false,
   webfetchUrl: null,
@@ -163,6 +173,9 @@ function appReducer(state: AppState, action: Action): AppState {
     case 'SET_SEARCH_ALBUM_ENABLED': return { ...state, searchAlbumEnabled: action.payload };
     case 'SET_DGC_LOADING': return { ...state, dgcLoading: action.payload };
     case 'SET_DEEZER_LOADING': return { ...state, deezerLoading: action.payload };
+    case 'SET_MBRAINZ_RESULTS': return { ...state, mbrainzResults: action.payload };
+    case 'SET_MBRAINZ_LOADING': return { ...state, mbrainzLoading: action.payload };
+    case 'SET_SELECTED_MBRAINZ': return { ...state, selectedMbrainz: action.payload };
     case 'SET_SEARCH_TIME': return { ...state, searchTimeMs: action.payload };
     case 'TOGGLE_NODE': {
       const next = new Set(state.expandedNodes);
@@ -176,6 +189,7 @@ function appReducer(state: AppState, action: Action): AppState {
         ...state,
         selectedResult: null,
         selectedDeezer: null,
+        selectedMbrainz: null,
         albumDetails: null,
         tagEnabled: { ...DEFAULT_TAG_DEFAULTS },
         editedSiteValues: {},
@@ -236,6 +250,7 @@ interface AppContextType extends AppState {
   loadAlbumDetails: (postId: number) => Promise<void>;
   handleSelectResult: (res: SearchResult) => void;
   handleSelectDeezer: (dz: DeezerSearchResult) => void;
+  handleSelectMbrainz: (mb: MusicBrainzSearchResult) => void;
   handleWebfetch: (url: string) => Promise<void>;
   closeWebfetch: () => void;
   clearSelectionState: () => void;
@@ -384,8 +399,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     if (import.meta.env.DEV) console.log(`[client] search DGC: "${dgcQuery}"`);
     dispatch({ type: 'SET_DGC_LOADING', payload: true });
     dispatch({ type: 'SET_DEEZER_LOADING', payload: true });
+    dispatch({ type: 'SET_MBRAINZ_LOADING', payload: true });
     dispatch({ type: 'SET_SEARCH_RESULTS', payload: [] });
     dispatch({ type: 'SET_DEEZER_RESULTS', payload: [] });
+    dispatch({ type: 'SET_MBRAINZ_RESULTS', payload: [] });
     dispatch({ type: 'SET_SEARCH_TIME', payload: null });
 
     const start = Date.now();
@@ -408,8 +425,16 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         dispatch({ type: 'SET_DEEZER_RESULTS', payload: data });
       })
       .catch(() => {})
+      .finally(() => dispatch({ type: 'SET_DEEZER_LOADING', payload: false }));
+
+    api.searchAlbumsMusicBrainz(dzArtist, dzAlbum)
+      .then(data => {
+        if (import.meta.env.DEV) console.log(`[client] MusicBrainz results: ${data.length}`);
+        dispatch({ type: 'SET_MBRAINZ_RESULTS', payload: data });
+      })
+      .catch(() => {})
       .finally(() => {
-        dispatch({ type: 'SET_DEEZER_LOADING', payload: false });
+        dispatch({ type: 'SET_MBRAINZ_LOADING', payload: false });
         dispatch({ type: 'SET_SEARCH_TIME', payload: Date.now() - start });
         searchInProgressRef.current = false;
       });
@@ -470,6 +495,59 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     // Merge tag defaults for Deezer
     dispatch({ type: 'SET_TAG_ENABLED', payload: { ...state.tagEnabled, artist: true, album: true, year: true, label: true, postId: false } });
   }, [state.selectedDeezer, state.tagEnabled, clearSelectionState]);
+
+  const handleSelectMbrainz = useCallback(async (mb: MusicBrainzSearchResult) => {
+    clearSelectionState();
+
+    // Build synthetic result immediately with empty tracks
+    const baseResult: SearchResult = {
+      postId: 0,
+      albumName: mb.title,
+      artist: mb.artist,
+      albumArtist: mb.artist,
+      coverUrl: null,
+      country: mb.country,
+      year: mb.year,
+      label: mb.label,
+      genres: [],
+      releaseType: mb.releaseType,
+      url: mb.url,
+      parsedTracks: [],
+      musicbrainzReleaseId: mb.releaseId,
+      musicbrainzArtistId: mb.artistId,
+      musicbrainzReleaseGroupId: mb.releaseGroupId,
+      catalogNumber: mb.catalogNumber,
+      discId: mb.discId,
+      originalYear: mb.originalYear,
+      extraTags: mb.extraTags || {},
+    };
+
+    dispatch({ type: 'SET_SELECTED_RESULT', payload: baseResult });
+    dispatch({ type: 'SET_SELECTED_MBRAINZ', payload: mb });
+    dispatch({ type: 'SET_ALBUM_DETAILS', payload: baseResult });
+    dispatch({ type: 'SET_TAG_ENABLED', payload: { ...state.tagEnabled, artist: true, album: true, year: true, label: true, postId: false } });
+
+    // Fetch full release with tracks in background
+    try {
+      const fullRelease = await api.fetchMusicBrainzRelease(mb.releaseId);
+      const parsedTracks = fullRelease.tracks.map(t => ({
+        num: t.num,
+        artist: fullRelease.artist,
+        name: t.name,
+        duration: t.duration,
+      }));
+
+      const fullResult: SearchResult = {
+        ...baseResult,
+        parsedTracks,
+        musicbrainzReleaseTrackIds: fullRelease.tracks.map(t => t.recordingId).filter(Boolean) as string[],
+      };
+
+      dispatch({ type: 'SET_ALBUM_DETAILS', payload: fullResult });
+    } catch (err) {
+      if (import.meta.env.DEV) console.error('[client] mbrainz release error:', err);
+    }
+  }, [state.tagEnabled, clearSelectionState]);
 
   const handleWebfetch = useCallback(async (url: string) => {
     dispatch({ type: 'SET_WEBFETCH_URL', payload: url });
@@ -544,6 +622,15 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     } else if (state.localTags?.deezerId != null) {
       tagsToApply.deezerId = String(state.localTags.deezerId);
     }
+
+    // MusicBrainz fields
+    if (sr?.musicbrainzReleaseId) tagsToApply.musicbrainzReleaseId = sr.musicbrainzReleaseId;
+    if (sr?.musicbrainzArtistId) tagsToApply.musicbrainzArtistId = sr.musicbrainzArtistId;
+    if (sr?.musicbrainzAlbumArtistId) tagsToApply.musicbrainzAlbumArtistId = sr.musicbrainzAlbumArtistId;
+    if (sr?.musicbrainzReleaseGroupId) tagsToApply.musicbrainzReleaseGroupId = sr.musicbrainzReleaseGroupId;
+    if (sr?.catalogNumber) tagsToApply.catalogNumber = sr.catalogNumber;
+    if (sr?.discId) tagsToApply.discId = sr.discId;
+    if (sr?.originalYear) tagsToApply.originalYear = sr.originalYear;
 
     // Generate parsedTracks from local tags when no albumDetails
     const parsedTracks = state.albumDetails?.parsedTracks ?? (state.localTags?.files || []).map((filePath, i) => {
@@ -634,6 +721,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     loadAlbumDetails,
     handleSelectResult,
     handleSelectDeezer,
+    handleSelectMbrainz,
     handleWebfetch,
     closeWebfetch,
     clearSelectionState,

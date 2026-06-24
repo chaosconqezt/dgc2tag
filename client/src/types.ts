@@ -49,6 +49,16 @@ export interface SearchResult {
   artworkBy?: string;
   compilation?: boolean;
   parsedTracks?: { num: string; artist: string; name: string; duration?: number }[];
+  // MusicBrainz fields
+  musicbrainzReleaseId?: string;
+  musicbrainzArtistId?: string;
+  musicbrainzAlbumArtistId?: string;
+  musicbrainzReleaseGroupId?: string;
+  musicbrainzReleaseTrackIds?: string[];
+  catalogNumber?: string;
+  discId?: string;
+  originalYear?: string;
+  extraTags?: Record<string, string>;
 }
 
 export interface MatchResult {

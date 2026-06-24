@@ -1,24 +1,30 @@
 import { RefreshCw, AlertCircle, Clock } from 'lucide-react';
 import type { SearchResult, DeezerSearchResult } from '../types';
+import type { MusicBrainzSearchResult } from '../api';
 import { FONT, FS, COLORS } from './styles';
 import { DgcResults } from './DgcResults';
 import { DeezerResults } from './DeezerResults';
+import { MusicBrainzResults } from './MusicBrainzResults';
 
 interface SearchResultsProps {
   results: SearchResult[];
   deezerResults: DeezerSearchResult[];
+  mbrainzResults: MusicBrainzSearchResult[];
   dgcLoading: boolean;
   deezerLoading: boolean;
+  mbrainzLoading: boolean;
   searchTimeMs: number | null;
   selectedResult: SearchResult | null;
   selectedDeezerId: number | null;
+  selectedMbrainzId: string | null;
   onSelectResult: (result: SearchResult) => void;
   onSelectDeezer: (result: DeezerSearchResult) => void;
+  onSelectMbrainz: (result: MusicBrainzSearchResult) => void;
 }
 
-export function SearchResults({ results, deezerResults, dgcLoading, deezerLoading, searchTimeMs, selectedResult, selectedDeezerId, onSelectResult, onSelectDeezer }: SearchResultsProps) {
-  const totalCount = results.length + deezerResults.length;
-  const anyLoading = dgcLoading || deezerLoading;
+export function SearchResults({ results, deezerResults, mbrainzResults, dgcLoading, deezerLoading, mbrainzLoading, searchTimeMs, selectedResult, selectedDeezerId, selectedMbrainzId, onSelectResult, onSelectDeezer, onSelectMbrainz }: SearchResultsProps) {
+  const totalCount = results.length + deezerResults.length + mbrainzResults.length;
+  const anyLoading = dgcLoading || deezerLoading || mbrainzLoading;
 
   return (
     <div style={{ marginBottom: '8px', borderBottom: `1px solid ${COLORS.border}`, paddingBottom: '8px', overflow: 'hidden', minWidth: 0, width: '100%' }}>
@@ -34,6 +40,11 @@ export function SearchResults({ results, deezerResults, dgcLoading, deezerLoadin
               DEEZER · {deezerLoading ? '...' : deezerResults.length}
             </span>
           )}
+          {mbrainzResults.length > 0 && (
+            <span style={{ fontSize: '10px', color: '#f97316', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.5px', fontFamily: FONT }}>
+              MBRAINZ · {mbrainzLoading ? '...' : mbrainzResults.length}
+            </span>
+          )}
         </div>
         <span style={{ fontSize: FS, fontWeight: '700', color: COLORS.textDim, textTransform: 'uppercase', letterSpacing: '1px', fontFamily: FONT, width: '100%', textAlign: 'center' }}>MATCHES</span>
         <div style={{ display: 'flex', alignItems: 'center', gap: '6px', position: 'absolute', right: 0 }}>
@@ -46,7 +57,7 @@ export function SearchResults({ results, deezerResults, dgcLoading, deezerLoadin
           <span style={{ fontSize: FS, background: COLORS.inputBg, padding: '1px 5px', borderRadius: '8px', color: COLORS.textDim, fontFamily: FONT }}>{totalCount}</span>
         </div>
       </div>
-      {!anyLoading && totalCount === 0 && !dgcLoading && !deezerLoading ? (
+      {!anyLoading && totalCount === 0 && !dgcLoading && !deezerLoading && !mbrainzLoading ? (
         <div style={{ display: 'flex', alignItems: 'center', padding: '8px', color: COLORS.textInvisible, gap: '6px' }}>
           <AlertCircle size={14} style={{ opacity: 0.3 }} />
           <span style={{ fontSize: FS, fontFamily: FONT }}>No matches</span>
@@ -57,8 +68,10 @@ export function SearchResults({ results, deezerResults, dgcLoading, deezerLoadin
           onWheel={(e) => { e.currentTarget.scrollLeft += e.deltaY; }}
         >
           <DgcResults results={results} loading={dgcLoading} selectedResult={selectedResult} onSelectResult={onSelectResult} />
-          {results.length > 0 && deezerResults.length > 0 && <div style={{ width: '1px', alignSelf: 'stretch', background: COLORS.border, flexShrink: 0 }} />}
+          {results.length > 0 && (deezerResults.length > 0 || mbrainzResults.length > 0) && <div style={{ width: '1px', alignSelf: 'stretch', background: COLORS.border, flexShrink: 0 }} />}
           <DeezerResults results={deezerResults} loading={deezerLoading} selectedId={selectedDeezerId} onSelect={onSelectDeezer} />
+          {deezerResults.length > 0 && mbrainzResults.length > 0 && <div style={{ width: '1px', alignSelf: 'stretch', background: COLORS.border, flexShrink: 0 }} />}
+          <MusicBrainzResults results={mbrainzResults} loading={mbrainzLoading} selectedId={selectedMbrainzId} onSelect={onSelectMbrainz} />
         </div>
       )}
     </div>

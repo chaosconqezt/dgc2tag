@@ -152,3 +152,35 @@ export async function searchAlbumsDeezer(artist?: string, album?: string): Promi
   const res = await api.post('/search-deezer', { artist, album });
   return res.data;
 }
+
+export interface MusicBrainzSearchResult {
+  source: 'musicbrainz';
+  releaseId: string;
+  title: string;
+  artist: string;
+  artistId: string | null;
+  releaseGroupId: string | null;
+  catalogNumber: string | null;
+  discId: string | null;
+  originalYear: string | null;
+  year: string | null;
+  label: string | null;
+  releaseType: string | null;
+  status: string | null;
+  country: string | null;
+  trackCount: number;
+  tracks: { num: string; name: string; duration?: number; recordingId?: string }[];
+  url: string;
+  tags: string[];
+  extraTags: Record<string, string>;
+}
+
+export async function searchAlbumsMusicBrainz(artist?: string, album?: string): Promise<MusicBrainzSearchResult[]> {
+  const res = await api.post('/search-mbrainz', { artist, album });
+  return res.data;
+}
+
+export async function fetchMusicBrainzRelease(releaseId: string): Promise<MusicBrainzSearchResult> {
+  const res = await api.get(`/mbrainz/${releaseId}`);
+  return res.data;
+}

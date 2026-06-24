@@ -15,6 +15,7 @@ import { searchAlbums, getAlbumDetails, fetchPageContent, parseGenresFromPage, g
 import { loadConfig, saveConfig, type Config, type TagDefaults } from './config.js';
 import { clearCache } from './cache.js';
 import { searchDeezer } from './deezer.js';
+import { searchMusicBrainz, getMusicBrainzRelease } from './musicbrainz.js';
 import { logger } from './logger.js';
 
 const app = express();
@@ -363,6 +364,35 @@ app.post('/api/search-deezer', async (req, res) => {
         res.json(results);
     } catch (error) {
         logger.error(`POST /api/search-deezer error:`, error);
+        res.status(500).json({ error: (error as Error).message });
+    }
+});
+
+app.post('/api/search-mbrainz', async (req, res) => {
+    const { artist, album } = req.body;
+    logger.info(`POST /api/search-mbrainz artist="${artist || ''}" album="${album || ''}"`);
+    if (!artist && !album) return res.status(400).json({ error: 'artist or album is required' });
+
+    try {
+        const results = await searchMusicBrainz(artist, album);
+        logger.info(`POST /api/search-mbrainz → ${results.length} results`);
+        res.json(results);
+    } catch (error) {
+        logger.error(`POST /api/search-mbrainz error:`, error);
+        res.status(500).json({ error: (error as Error).message });
+    }
+});
+
+app.get('/api/mbrainz/:id', async (req, res) => {
+    const { id } = req.params;
+    logger.info(`GET /api/mbrainz/${id}`);
+
+    try {
+        const result = await getMusicBrainzRelease(id);
+        if (!result) return res.status(404).json({ error: 'Release not found' });
+        res.json(result);
+    } catch (error) {
+        logger.error(`GET /api/mbrainz/${id} error:`, error);
         res.status(500).json({ error: (error as Error).message });
     }
 });
