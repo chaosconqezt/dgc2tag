@@ -142,7 +142,7 @@ export async function renameFilesInPlace(
     trackArtists?: Record<string, string>,
     trackNames?: Record<string, string>,
     musicRoot?: string,
-): Promise<{ renamed: string[] }> {
+): Promise<{ renamed: { from: string; to: string }[] }> {
     if (musicRoot) {
         const resolved = path.resolve(folderPath);
         if (!resolved.startsWith(path.resolve(musicRoot))) {
@@ -151,7 +151,7 @@ export async function renameFilesInPlace(
     }
     const files = await fs.readdir(folderPath);
     const mp3Files = files.filter(f => f.toLowerCase().endsWith('.mp3'));
-    const renamed: string[] = [];
+    const renamed: { from: string; to: string }[] = [];
 
     for (const file of mp3Files) {
         const filePath = path.join(folderPath, file);
@@ -197,7 +197,7 @@ export async function renameFilesInPlace(
             try {
                 await fs.rename(filePath, newPath);
                 logger.info(`renamed: ${file} → ${newName}`);
-                renamed.push(newName);
+                renamed.push({ from: file, to: newName });
             } catch (err) {
                 logger.error(`failed to rename ${file}: ${(err as Error).message}`);
             }

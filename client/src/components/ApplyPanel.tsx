@@ -1,11 +1,9 @@
-import { Check, Globe, ExternalLink, ArrowRightLeft, FileEdit } from 'lucide-react';
-import type { SearchResult, AlbumTags } from '../types';
-import { FONT, FS } from './styles';
+import { Check, ArrowRightLeft, FileEdit, X } from 'lucide-react';
+import { FONT, FS, COLORS } from './styles';
 
 interface ApplyPanelProps {
-  selectedResult: SearchResult | null;
-  localTags?: AlbumTags | null;
   onApplyTags: (mode: 'write' | 'rename' | 'move') => void;
+  onCancel: () => void;
 }
 
 const btnBase = {
@@ -15,7 +13,7 @@ const btnBase = {
   gap: '5px',
   flex: 1,
   height: '32px',
-  padding: '0 7px',
+  padding: '0 12px',
   fontSize: FS,
   fontWeight: '700' as const,
   letterSpacing: '0.3px',
@@ -23,22 +21,27 @@ const btnBase = {
   borderRadius: '5px',
   cursor: 'pointer' as const,
   fontFamily: FONT,
+  whiteSpace: 'nowrap' as const,
 };
 
-export function ApplyPanel({ selectedResult, onApplyTags }: ApplyPanelProps) {
+export function ApplyPanel({ onApplyTags, onCancel }: ApplyPanelProps) {
   return (
-    <div style={{ padding: '10px', background: '#111114', borderRadius: '8px', border: '1px solid #27272a', display: 'flex', alignItems: 'center', gap: '6px', fontSize: FS, fontFamily: FONT }}>
+    <div style={{ padding: '10px', background: COLORS.bg, borderRadius: '8px', border: `1px solid ${COLORS.border}`, display: 'flex', justifyContent: 'center', gap: '10px', fontSize: FS, fontFamily: FONT }}>
       <button
         onClick={() => onApplyTags('move')}
         title="Write tags, rename files, and move to output folder"
-        style={{ ...btnBase, background: 'linear-gradient(180deg, #2563eb 0%, #1d4ed8 100%)', color: '#fff', boxShadow: '0 1px 6px rgba(37, 99, 243, 0.3)' }}
+        onMouseEnter={(e) => (e.currentTarget.style.transform = 'translateY(-1px)')}
+        onMouseLeave={(e) => (e.currentTarget.style.transform = 'none')}
+        style={{ ...btnBase, background: 'linear-gradient(180deg, #2563eb 0%, #1d4ed8 100%)', color: '#fff', boxShadow: '0 1px 6px rgba(37, 99, 243, 0.3)', transition: 'transform 0.15s' }}
       >
         <ArrowRightLeft size={11} /> WRITE & MOVE
       </button>
       <button
         onClick={() => onApplyTags('rename')}
         title="Write tags and rename files to 'Track. Artist - Title.ext'"
-        style={{ ...btnBase, background: 'linear-gradient(180deg, #a78bfa 0%, #7c3aed 100%)', color: '#fff', boxShadow: '0 1px 6px rgba(167, 139, 250, 0.3)' }}
+        onMouseEnter={(e) => (e.currentTarget.style.transform = 'translateY(-1px)')}
+        onMouseLeave={(e) => (e.currentTarget.style.transform = 'none')}
+        style={{ ...btnBase, background: `linear-gradient(180deg, ${COLORS.purple} 0%, #7c3aed 100%)`, color: '#fff', boxShadow: `0 1px 6px rgba(167, 139, 250, 0.3)`, transition: 'transform 0.15s' }}
       >
         <FileEdit size={11} /> WRITE & RENAME
       </button>
@@ -46,24 +49,19 @@ export function ApplyPanel({ selectedResult, onApplyTags }: ApplyPanelProps) {
         onClick={() => onApplyTags('write')}
         title="Write tags only, do not rename or move files"
         className="btn-primary"
-        style={{ ...btnBase, background: 'linear-gradient(180deg, #ef4444 0%, #dc2626 100%)', color: '#fff', boxShadow: '0 1px 6px rgba(239, 68, 68, 0.3)' }}
+        style={{ ...btnBase, background: `linear-gradient(180deg, ${COLORS.red} 0%, #dc2626 100%)`, color: '#fff', boxShadow: `0 1px 6px rgba(239, 68, 68, 0.3)` }}
       >
         <Check size={11} /> WRITE
       </button>
-      {selectedResult?.url && (
-        <div style={{ flex: 1 }} />
-      )}
-      {selectedResult?.url && (
-        <a href={selectedResult.url} target="_blank" style={{ display: 'inline-flex', alignItems: 'center', gap: '3px', color: '#ef4444', textDecoration: 'none', fontWeight: '600' }}>
-          <Globe size={9} /> DGC <ExternalLink size={8} />
-        </a>
-      )}
-      {selectedResult?.metalArchivesUrl && (
-        <a href={selectedResult.metalArchivesUrl} target="_blank" style={{ display: 'inline-flex', alignItems: 'center', gap: '3px', color: '#71717a', textDecoration: 'none' }}>
-          <ExternalLink size={9} /> MA
-        </a>
-      )}
-      {selectedResult?.artworkBy && <span style={{ color: '#52525b' }}>Artwork: {selectedResult.artworkBy}</span>}
+      <button
+        onClick={onCancel}
+        title="Deselect current result"
+        onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-1px)'; e.currentTarget.style.backgroundColor = COLORS.textInvisible; }}
+        onMouseLeave={(e) => { e.currentTarget.style.transform = 'none'; e.currentTarget.style.backgroundColor = 'transparent'; }}
+        style={{ ...btnBase, background: 'transparent', color: COLORS.textDim, border: `1px solid ${COLORS.border}`, transition: 'all 0.15s' }}
+      >
+        <X size={11} /> ОТМЕНА
+      </button>
     </div>
   );
 }

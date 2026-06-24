@@ -113,7 +113,7 @@ export async function updateTags(payload: {
   trackNames?: Record<string, string>;
   moveFiles: boolean;
   renameFiles?: boolean;
-}): Promise<{ success: boolean; moved?: string[]; renamed?: string[] }> {
+}): Promise<{ success: boolean; moved?: string[]; renamed?: { from: string; to: string }[]; tagChanges?: string[] }> {
   const res = await api.post('/tags/update', payload);
   return res.data;
 }

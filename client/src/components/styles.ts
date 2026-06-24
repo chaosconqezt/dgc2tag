@@ -2,29 +2,30 @@ export const FONT = 'Inter, system-ui, sans-serif';
 export const FS = '14px';
 
 export const COLORS = {
-  bg: '#111114',
-  border: '#27272a',
-  borderLight: '#1f1f23',
-  text: '#f4f4f5',
-  textMuted: '#a1a1aa',
-  textDim: '#71717a',
-  textFaint: '#52525b',
-  textInvisible: '#3f3f46',
-  green: '#4ade80',
-  yellow: '#fbbf24',
-  red: '#ef4444',
-  purple: '#a78bfa',
-  inputBg: '#18181b',
-  inputBgAlt: '#0c0c0e',
-  inputBgAlt2: '#0f0f12',
-  greenBg: 'rgba(74,222,128,0.05)',
-  greenBorder: 'rgba(74,222,128,0.2)',
-  purpleBg: 'rgba(167,139,250,0.05)',
-  purpleBorder: 'rgba(167,139,250,0.2)',
+  bg: 'var(--bg)',
+  cardBg: 'var(--card-bg)',
+  border: 'var(--border)',
+  borderLight: 'var(--border-light)',
+  text: 'var(--text)',
+  textMuted: 'var(--text-muted)',
+  textDim: 'var(--text-dim)',
+  textFaint: 'var(--text-faint)',
+  textInvisible: 'var(--text-invisible)',
+  green: 'var(--green)',
+  yellow: 'var(--yellow)',
+  red: 'var(--red)',
+  purple: 'var(--purple)',
+  inputBg: 'var(--input-bg)',
+  inputBgAlt: 'var(--input-bg-alt)',
+  inputBgAlt2: 'var(--input-bg-alt2)',
+  greenBg: 'var(--green-bg)',
+  greenBorder: 'var(--green-border)',
+  purpleBg: 'var(--purple-bg)',
+  purpleBorder: 'var(--purple-border)',
 } as const;
 
 export const CHECKBOX = {
-  accentColor: '#ef4444',
+  accentColor: 'var(--red)',
   width: '11px',
   height: '11px',
   cursor: 'pointer' as const,
@@ -49,7 +50,6 @@ export const INPUT_STYLE = {
   overflow: 'hidden',
   textOverflow: 'ellipsis',
   whiteSpace: 'nowrap' as const,
-  outline: 'none',
   width: '100%',
   boxSizing: 'border-box' as const,
   fontFamily: FONT,
@@ -64,16 +64,6 @@ export const PERCENT_STYLE = {
 };
 
 export const simColor = (sim: number) => sim === 100 ? COLORS.green : sim >= 80 ? COLORS.yellow : COLORS.red;
-
-export const HEADER_STYLE = {
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  gap: '8px',
-  marginBottom: '8px',
-  paddingBottom: '6px',
-  borderBottom: `1px solid ${COLORS.borderLight}`,
-};
 
 export const PANEL_STYLE = {
   padding: '10px',

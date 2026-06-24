@@ -1,5 +1,5 @@
 import type { FileNode } from '../types';
-import { FONT, FS } from './styles';
+import { FONT, FS, COLORS } from './styles';
 
 interface LibraryTreeProps {
   tree: FileNode[];
@@ -7,7 +7,6 @@ interface LibraryTreeProps {
   expandedNodes: Set<string>;
   onToggleNode: (path: string) => void;
   onSelectFolder: (path: string) => void;
-  onCollapseAll?: () => void;
 }
 
 export function LibraryTree({ tree, selectedFolder, expandedNodes, onToggleNode, onSelectFolder }: LibraryTreeProps) {
@@ -35,12 +34,14 @@ export function LibraryTree({ tree, selectedFolder, expandedNodes, onToggleNode,
               paddingTop: '1px',
               paddingBottom: '1px',
               cursor: 'pointer',
-              backgroundColor: selectedFolder === node.path ? '#ef444420' : 'transparent',
+              backgroundColor: selectedFolder === node.path ? `${COLORS.red}20` : 'transparent',
               borderRadius: '3px',
-              color: selectedFolder === node.path ? '#ef4444' : '#f4f4f5',
-              border: selectedFolder === node.path ? '1px solid #ef444440' : '1px solid transparent',
+              color: selectedFolder === node.path ? COLORS.red : COLORS.text,
+              border: selectedFolder === node.path ? `1px solid ${COLORS.red}40` : '1px solid transparent',
               marginBottom: '0px',
             }}
+            onMouseEnter={(e) => { if (selectedFolder !== node.path) e.currentTarget.style.backgroundColor = COLORS.inputBg; }}
+            onMouseLeave={(e) => { if (selectedFolder !== node.path) e.currentTarget.style.backgroundColor = 'transparent'; }}
             title={node.name}
             onClick={() => {
               if (isDir) {
@@ -62,7 +63,7 @@ export function LibraryTree({ tree, selectedFolder, expandedNodes, onToggleNode,
                 <span style={{
                   fontSize: ARROW_W + 'px',
                   fontWeight: '700',
-                  color: '#52525b',
+                  color: COLORS.textFaint,
                   transform: isExpanded ? 'rotate(90deg)' : 'rotate(0deg)',
                   transition: 'transform 0.1s',
                   lineHeight: 1,
@@ -70,7 +71,7 @@ export function LibraryTree({ tree, selectedFolder, expandedNodes, onToggleNode,
                   &#9654;
                 </span>
               ) : (
-                <span style={{ fontSize: FS, color: '#27272a' }}>&bull;</span>
+                <span style={{ fontSize: FS, color: COLORS.border }}>&bull;</span>
               )}
             </span>
             <span style={{
@@ -84,7 +85,7 @@ export function LibraryTree({ tree, selectedFolder, expandedNodes, onToggleNode,
             </span>
           </div>
           {isExpanded && hasKids && (
-            <div style={{ borderLeft: '1px solid #27272a', marginLeft: (indent + 4) + 'px' }}>
+            <div style={{ borderLeft: `1px solid ${COLORS.border}`, marginLeft: (indent + 4) + 'px' }}>
               {renderTree(children, depth + 1)}
             </div>
           )}
@@ -100,7 +101,7 @@ export function LibraryTree({ tree, selectedFolder, expandedNodes, onToggleNode,
     <div style={{ flex: 1, overflowY: 'auto', padding: '8px' }}>
       {safeTree.length > 0
         ? renderTree(safeTree, 0)
-        : <div style={{ padding: '20px', color: '#3f3f46', textAlign: 'center', fontSize: FS, fontFamily: FONT }}>Loading library...</div>
+        : <div style={{ padding: '20px', color: COLORS.textInvisible, textAlign: 'center', fontSize: FS, fontFamily: FONT }}>Loading library...</div>
       }
     </div>
   );

@@ -39,6 +39,7 @@ interface AppState {
   webfetchContent: string | null;
   webfetchLoading: boolean;
   showSettings: boolean;
+  resultModal: { success: boolean; message: string; details?: string[] } | null;
 
   // Config
   configMusicRoot: string;
@@ -101,7 +102,8 @@ type Action =
   | { type: 'SET_CLEARING_CACHE'; payload: boolean }
   | { type: 'SET_STRIP_REMOTE_PARENS'; payload: boolean }
   | { type: 'SET_COMPILATION'; payload: boolean }
-  | { type: 'SET_SERVER_PARSED_TRACKS'; payload: { num: string; artist: string; name: string; duration?: number }[] | null };
+  | { type: 'SET_SERVER_PARSED_TRACKS'; payload: { num: string; artist: string; name: string; duration?: number }[] | null }
+  | { type: 'SET_RESULT_MODAL'; payload: { success: boolean; message: string; details?: string[] } | null };
 
 const initialState: AppState = {
   tree: [],
@@ -125,6 +127,7 @@ const initialState: AppState = {
   webfetchContent: null,
   webfetchLoading: false,
   showSettings: false,
+  resultModal: null,
   configMusicRoot: '',
   configOutputFolder: 'dgc',
   configOutputMode: 'subfolder',
@@ -210,6 +213,7 @@ function appReducer(state: AppState, action: Action): AppState {
     case 'SET_STRIP_REMOTE_PARENS': return { ...state, stripRemoteParentheses: action.payload };
     case 'SET_COMPILATION': return { ...state, compilation: action.payload };
     case 'SET_SERVER_PARSED_TRACKS': return { ...state, serverParsedTracks: action.payload };
+    case 'SET_RESULT_MODAL': return { ...state, resultModal: action.payload };
     default:
       return state;
   }
@@ -234,6 +238,7 @@ interface AppContextType extends AppState {
   handleSelectDeezer: (dz: DeezerSearchResult) => void;
   handleWebfetch: (url: string) => Promise<void>;
   closeWebfetch: () => void;
+  clearSelectionState: () => void;
   applyTags: (mode: 'write' | 'rename' | 'move') => Promise<void>;
 }
 
@@ -578,21 +583,37 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       });
 
       if (mode === 'move' && result.moved?.length) {
-        alert(`Tags updated! ${result.moved.length} files moved to /${state.configOutputFolder}/`);
+        const details: string[] = [...(result.tagChanges || [])];
+        if (result.renamed?.length) {
+          details.push('');
+          details.push('Renamed files:');
+          for (const r of result.renamed) details.push(`  ${r.from} → ${r.to}`);
+        }
+        if (result.moved.length) {
+          details.push('');
+          details.push(`Moved to ${state.configOutputFolder}/:`);
+          for (const f of result.moved) details.push(`  ${f}`);
+        }
+        dispatch({ type: 'SET_RESULT_MODAL', payload: { success: true, message: `${result.moved.length} files moved`, details } });
         clearSelectionState();
         await fetchLibrary();
       } else if (mode === 'rename' && result.renamed?.length) {
-        alert(`Tags updated! ${result.renamed.length} files renamed`);
+        const details: string[] = [...(result.tagChanges || [])];
+        details.push('');
+        details.push('Renamed files:');
+        for (const r of result.renamed) details.push(`  ${r.from} → ${r.to}`);
+        dispatch({ type: 'SET_RESULT_MODAL', payload: { success: true, message: `${result.renamed.length} files renamed`, details } });
         const refreshedTags = await api.fetchTags(state.selectedFolder);
         dispatch({ type: 'SET_LOCAL_TAGS', payload: refreshedTags });
       } else {
-        alert('Tags updated successfully!');
+        const details = result.tagChanges?.length ? result.tagChanges : undefined;
+        dispatch({ type: 'SET_RESULT_MODAL', payload: { success: true, message: 'Tags updated successfully!', details } });
         const refreshedTags = await api.fetchTags(state.selectedFolder);
         dispatch({ type: 'SET_LOCAL_TAGS', payload: refreshedTags });
       }
     } catch (err) {
       if (import.meta.env.DEV) console.error('[client] updateTags error:', err);
-      alert('Failed to update tags');
+      dispatch({ type: 'SET_RESULT_MODAL', payload: { success: false, message: 'Failed to update tags', details: [String(err)] } });
     }
   }, [state, clearSelectionState, fetchLibrary]);
 
@@ -615,6 +636,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     handleSelectDeezer,
     handleWebfetch,
     closeWebfetch,
+    clearSelectionState,
     applyTags,
   };
 

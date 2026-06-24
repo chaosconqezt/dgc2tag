@@ -1,13 +1,13 @@
 import { useEffect } from 'react';
 import ErrorBoundary from './components/ErrorBoundary';
 import { AppProvider, useAppContext } from './hooks/useAppContext';
-import type { FileNode, AlbumTags, SearchResult, DeezerSearchResult } from './types';
 import * as api from './api';
 import { RefreshCw, Layout, Settings } from 'lucide-react';
-import { FONT, FS } from './components/styles';
+import { FONT, FS, COLORS } from './components/styles';
 import { parseCompilationTracklist } from './utils';
 import { WebfetchOverlay } from './components/WebfetchOverlay';
 import { SettingsModal } from './components/SettingsModal';
+import { ResultModal } from './components/ResultModal';
 import { LibraryTree } from './components/LibraryTree';
 import { SearchBar } from './components/SearchBar';
 import { SearchResults } from './components/SearchResults';
@@ -32,23 +32,23 @@ function AppContent() {
   }, []);
 
   return (
-    <div className="dashboard" style={{ display: 'flex', height: '100vh', backgroundColor: '#09090b', color: '#f4f4f5', fontFamily: 'Inter, system-ui, sans-serif' }}>
+    <div className="dashboard" style={{ display: 'flex', height: '100vh', backgroundColor: COLORS.bg, color: COLORS.text, fontFamily: FONT }}>
 
       {/* Sidebar: Library Tree */}
-      <div className="sidebar" style={{ display: 'flex', flexDirection: 'column', borderRight: '1px solid #27272a' }}>
-        <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', backgroundColor: '#0c0c0e', overflow: 'hidden' }}>
-          <div style={{ padding: '10px 12px', borderBottom: '1px solid #27272a', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexShrink: 0 }}>
-            <h2 style={{ fontSize: FS, fontWeight: '600', margin: 0, letterSpacing: '0.3px', fontFamily: FONT, color: '#f4f4f5' }}>
+      <div className="sidebar" style={{ display: 'flex', flexDirection: 'column', borderRight: `1px solid ${COLORS.border}` }}>
+        <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', backgroundColor: COLORS.inputBgAlt, overflow: 'hidden' }}>
+          <div style={{ padding: '10px 12px', borderBottom: `1px solid ${COLORS.border}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexShrink: 0 }}>
+            <h2 style={{ fontSize: FS, fontWeight: '600', margin: 0, letterSpacing: '0.3px', fontFamily: FONT, color: COLORS.text }}>
               DGC TAGGER
             </h2>
             <div style={{ display: 'flex', gap: '4px' }}>
-              <button onClick={ctx.collapseAll} style={{ background: 'none', border: 'none', color: '#71717a', cursor: 'pointer', display: 'flex', fontSize: FS, fontWeight: '700' }} title="Collapse all">
+              <button onClick={ctx.collapseAll} onMouseEnter={(e) => { e.currentTarget.style.color = COLORS.text; e.currentTarget.style.backgroundColor = COLORS.inputBg; }} onMouseLeave={(e) => { e.currentTarget.style.color = COLORS.textDim; e.currentTarget.style.backgroundColor = 'none'; }} style={{ background: 'none', border: 'none', color: COLORS.textDim, cursor: 'pointer', display: 'flex', fontSize: FS, fontWeight: '700', borderRadius: '4px', padding: '4px' }} title="Collapse all">
                 &#9650;
               </button>
-              <button onClick={() => ctx.dispatch({ type: 'SET_SHOW_SETTINGS', payload: true })} style={{ background: 'none', border: 'none', color: '#71717a', cursor: 'pointer', display: 'flex' }}>
+              <button onClick={() => ctx.dispatch({ type: 'SET_SHOW_SETTINGS', payload: true })} onMouseEnter={(e) => { e.currentTarget.style.color = COLORS.text; e.currentTarget.style.backgroundColor = COLORS.inputBg; }} onMouseLeave={(e) => { e.currentTarget.style.color = COLORS.textDim; e.currentTarget.style.backgroundColor = 'none'; }} style={{ background: 'none', border: 'none', color: COLORS.textDim, cursor: 'pointer', display: 'flex', borderRadius: '4px', padding: '4px' }}>
                 <Settings size={14} />
               </button>
-              <button onClick={ctx.fetchLibrary} style={{ background: 'none', border: 'none', color: '#71717a', cursor: 'pointer', display: 'flex' }}>
+              <button onClick={ctx.fetchLibrary} onMouseEnter={(e) => { e.currentTarget.style.color = COLORS.text; e.currentTarget.style.backgroundColor = COLORS.inputBg; }} onMouseLeave={(e) => { e.currentTarget.style.color = COLORS.textDim; e.currentTarget.style.backgroundColor = 'none'; }} style={{ background: 'none', border: 'none', color: COLORS.textDim, cursor: 'pointer', display: 'flex', borderRadius: '4px', padding: '4px' }}>
                 <RefreshCw size={14} className={ctx.loading ? 'animate-spin' : ''} />
               </button>
             </div>
@@ -59,19 +59,18 @@ function AppContent() {
             expandedNodes={ctx.expandedNodes}
             onToggleNode={ctx.toggleNode}
             onSelectFolder={ctx.handleFolderSelect}
-            onCollapseAll={ctx.collapseAll}
           />
         </div>
       </div>
 
       {/* Main Content Area */}
-      <div className="main-content" style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+      <div className="main-content" style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0, overflow: 'hidden' }}>
 
         {/* Content Split: Comparison Panel */}
         <div className="bottom-panels" style={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
 
           {/* Comparison Panel */}
-          <div className="diff-panel" style={{ flex: 1, padding: '16px 20px', backgroundColor: '#0c0c0e', overflowY: 'auto' }}>
+          <div className="diff-panel" style={{ flex: 1, padding: '16px 20px', backgroundColor: COLORS.inputBgAlt, overflowY: 'auto', overflowX: 'hidden', minWidth: 0 }}>
 
             {/* Search bar */}
             <SearchBar
@@ -97,6 +96,12 @@ function AppContent() {
               onSelectResult={ctx.handleSelectResult}
               onSelectDeezer={ctx.handleSelectDeezer}
               selectedDeezerId={ctx.selectedDeezer?.albumId ?? null}
+            />
+
+            {/* Apply buttons */}
+            <ApplyPanel
+              onApplyTags={ctx.applyTags}
+              onCancel={() => ctx.clearSelectionState()}
             />
 
             {(ctx.selectedResult || ctx.localTags) ? (
@@ -144,20 +149,14 @@ function AppContent() {
                 />
 
                 {ctx.albumDetails?.notes && (
-                  <div style={{ marginTop: '10px', padding: '10px', background: '#111114', borderRadius: '8px', border: '1px solid #27272a' }}>
-                    <div style={{ fontSize: FS, color: '#71717a', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '6px', fontFamily: FONT }}>NOTES</div>
-                    <p style={{ fontSize: FS, color: '#a1a1aa', margin: 0, lineHeight: '1.5', fontFamily: FONT }}>{ctx.albumDetails.notes}</p>
+                  <div style={{ marginTop: '10px', padding: '10px', background: COLORS.bg, borderRadius: '8px', border: `1px solid ${COLORS.border}` }}>
+                    <div style={{ fontSize: FS, color: COLORS.textDim, fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '6px', fontFamily: FONT }}>NOTES</div>
+                    <p style={{ fontSize: FS, color: COLORS.textMuted, margin: 0, lineHeight: '1.5', fontFamily: FONT }}>{ctx.albumDetails.notes}</p>
                   </div>
                 )}
-
-                <ApplyPanel
-                  selectedResult={ctx.selectedResult}
-                  localTags={ctx.localTags}
-                  onApplyTags={ctx.applyTags}
-                />
               </div>
             ) : (
-              <div style={{ height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: '#3f3f46', opacity: 0.5 }}>
+              <div style={{ height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: COLORS.textInvisible, opacity: 0.5 }}>
                 <Layout size={40} style={{ marginBottom: '10px' }} />
                 <p style={{ fontWeight: '500', fontSize: FS, fontFamily: FONT }}>Select a folder with MP3 files</p>
               </div>
@@ -191,6 +190,14 @@ function AppContent() {
           tagDefaults={ctx.tagEnabled}
           onTagDefaultsChange={(defaults) => ctx.dispatch({ type: 'SET_TAG_ENABLED', payload: defaults })}
           onClose={() => ctx.dispatch({ type: 'SET_SHOW_SETTINGS', payload: false })}
+        />
+      )}
+      {ctx.resultModal && (
+        <ResultModal
+          success={ctx.resultModal.success}
+          message={ctx.resultModal.message}
+          details={ctx.resultModal.details}
+          onClose={() => ctx.dispatch({ type: 'SET_RESULT_MODAL', payload: null })}
         />
       )}
     </div>

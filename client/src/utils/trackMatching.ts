@@ -61,6 +61,14 @@ export function matchTracks(
       const s = similarity(r.remote.name, comparisonName);
       if (s > bestSim) { bestSim = s; bestIdx = i; }
     }
+    // Also check if remote name is a prefix/substring of local name (e.g. "Track" matches "Track (Cover)")
+    if (bestIdx >= 0 && bestSim < 50) {
+      const remoteLower = r.remote.name.toLowerCase().replace(/[^a-z0-9]/g, '');
+      const localLower = (matchByFilename ? localParsed[bestIdx].fileName : localParsed[bestIdx].name).toLowerCase().replace(/[^a-z0-9]/g, '');
+      if (remoteLower && localLower.startsWith(remoteLower)) {
+        bestSim = Math.max(bestSim, 80);
+      }
+    }
     if (bestIdx >= 0 && bestSim >= 50) {
       usedLocal.add(bestIdx);
       r.local = localParsed[bestIdx];

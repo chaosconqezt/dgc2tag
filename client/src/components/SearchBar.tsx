@@ -54,7 +54,7 @@ export function SearchBar({
           flex: '1 1 0', minWidth: 0, boxSizing: 'border-box',
           background: COLORS.inputBg, border: `1px solid ${COLORS.textInvisible}`,
           borderRadius: '6px', padding: '6px 10px', color: COLORS.text,
-          fontSize: FS, outline: 'none', fontFamily: FONT,
+          fontSize: FS, fontFamily: FONT,
         }}
       />
 
@@ -81,7 +81,7 @@ export function SearchBar({
           flex: '1 1 0', minWidth: 0, boxSizing: 'border-box',
           background: COLORS.inputBg, border: `1px solid ${COLORS.textInvisible}`,
           borderRadius: '6px', padding: '6px 10px', color: COLORS.text,
-          fontSize: FS, outline: 'none', fontFamily: FONT,
+          fontSize: FS, fontFamily: FONT,
         }}
       />
 

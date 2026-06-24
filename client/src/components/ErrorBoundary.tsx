@@ -1,5 +1,5 @@
 import React, { Component, ErrorInfo, ReactNode } from 'react';
-import { FONT, FS } from './styles';
+import { FONT, FS, COLORS } from './styles';
 
 interface Props {
   children: ReactNode;
@@ -18,11 +18,11 @@ const FALLBACK_CONTENT = (
     justifyContent: 'center',
     height: '100%',
     padding: '32px',
-    color: '#a1a1aa',
+    color: COLORS.textMuted,
     fontFamily: FONT,
   }}>
     <div style={{ fontSize: '48px', marginBottom: '16px' }}>⚠️</div>
-    <h2 style={{ margin: '0 0 8px', color: '#f4f4f5', fontSize: FS, fontWeight: '600', fontFamily: FONT }}>
+    <h2 style={{ margin: '0 0 8px', color: COLORS.text, fontSize: FS, fontWeight: '600', fontFamily: FONT }}>
       Что-то пошло не так
     </h2>
     <p style={{ margin: '0 0 20px', textAlign: 'center', maxWidth: '400px', lineHeight: '1.5' }}>

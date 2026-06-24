@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import type { AlbumTags, SearchResult } from '../types';
 import { similarity } from '../utils';
-import { FONT, FS, COLORS, CHECKBOX, CELL_STYLE, INPUT_STYLE, PERCENT_STYLE, HEADER_STYLE, PANEL_STYLE, GRID_STYLE, ROW_STYLE } from './styles';
+import { FONT, FS, COLORS, CHECKBOX, CELL_STYLE, INPUT_STYLE, PERCENT_STYLE, PANEL_STYLE, GRID_STYLE, ROW_STYLE } from './styles';
 
 interface TagComparisonProps {
   selectedResult: SearchResult | null;
@@ -175,7 +175,7 @@ export function TagComparison({
           const readonly = 'readonly' in f && (f as { readonly?: boolean }).readonly === true;
 
           return (
-            <div key={f.key} style={ROW_STYLE(enabled)}>
+            <div key={f.key} style={{ ...ROW_STYLE(enabled), borderRadius: '4px', transition: 'background-color 0.1s' }} onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = COLORS.inputBg)} onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}>
               <div style={GRID_STYLE}>
                 <input
                   type="checkbox"
@@ -214,7 +214,7 @@ export function TagComparison({
         })}
 
         {/* IDs row: DGC + Deezer side by side */}
-        <div style={ROW_STYLE(true)}>
+        <div style={{ ...ROW_STYLE(true), borderRadius: '4px', transition: 'background-color 0.1s' }} onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = COLORS.inputBg)} onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}>
           <div style={{ display: 'grid', gridTemplateColumns: '11px 1fr 40px 1fr', gap: '4px', alignItems: 'center' }}>
             <input type="checkbox" checked disabled readOnly style={{ ...CHECKBOX, justifySelf: 'center', opacity: 0.3 }} />
             <div style={{ ...CELL_STYLE, display: 'flex', gap: '4px' }}>

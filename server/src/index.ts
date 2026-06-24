@@ -188,16 +188,76 @@ app.post('/api/tags/update', async (req, res) => {
         if (!absolutePath.startsWith(path.resolve(cfg.musicRoot))) {
             return res.status(403).json({ error: 'Access denied' });
         }
+
+        // Read current tags BEFORE writing
+        const filesBefore = await fsPromises.readdir(absolutePath);
+        const mp3Before = filesBefore.filter((f: string) => f.toLowerCase().endsWith('.mp3'));
+        const oldTags: Record<string, Record<string, string>> = {};
+        for (const file of mp3Before) {
+            const filePath = path.join(absolutePath, file);
+            try {
+                const ft = NodeID3.read(filePath) as any;
+                oldTags[file] = {
+                    artist: ft.artist || '',
+                    albumArtist: ft.performerInfo || '',
+                    album: ft.album || '',
+                    title: ft.title || '',
+                    year: ft.year || '',
+                    genre: ft.genre || '',
+                    label: ft.publisher || '',
+                };
+            } catch {}
+        }
+
         await writeTags({ folderPath: absolutePath, tags, trackArtists, trackNames }, cfg.musicRoot);
 
+        // Read tags AFTER writing to build diff
+        const filesAfter = await fsPromises.readdir(absolutePath);
+        const mp3After = filesAfter.filter((f: string) => f.toLowerCase().endsWith('.mp3'));
+        const tagChanges: string[] = [];
+        for (const file of mp3After) {
+            const filePath = path.join(absolutePath, file);
+            try {
+                const ft = NodeID3.read(filePath) as any;
+                const old = oldTags[file] || {};
+                const changes: string[] = [];
+                const fieldMap: [string, string, string][] = [
+                    ['artist', 'Artist', ft.artist],
+                    ['albumArtist', 'Album Artist', ft.performerInfo],
+                    ['album', 'Album', ft.album],
+                    ['title', 'Title', ft.title],
+                    ['year', 'Year', ft.year],
+                    ['genre', 'Genre', ft.genre],
+                    ['label', 'Label', ft.publisher],
+                ];
+                for (const [key, label, newVal] of fieldMap) {
+                    const oldVal = old[key] || '';
+                    const nv = newVal || '';
+                    if (oldVal !== nv && (nv || oldVal)) {
+                        changes.push(`${label}: ${oldVal ? `"${oldVal}"` : '—'} → ${nv ? `"${nv}"` : '—'}`);
+                    }
+                }
+                // Check custom fields
+                const udf = (ft.userDefinedText || []) as { description: string; value: string }[];
+                const customFields = ['Country', 'RELEASETYPE', 'DGC_POST_ID', 'DEEZER_ID'];
+                for (const desc of customFields) {
+                    const found = udf.find((u) => u.description === desc);
+                    const nv = found?.value || '';
+                    const ov = '' ; // custom fields not tracked before write
+                    if (nv) changes.push(`${desc}: "${nv}"`);
+                }
+                if (changes.length > 0) {
+                    tagChanges.push(`${file}:\n  ${changes.join('\n  ')}`);
+                }
+            } catch {}
+        }
+
         let moved: string[] | undefined;
-        let renamed: string[] | undefined;
+        let renamed: { from: string; to: string }[] | undefined;
         if (moveFiles) {
-            // Capture original filenames AND read album metadata BEFORE rename
             const origFiles = await fsPromises.readdir(absolutePath);
             const origMp3 = origFiles.filter((f: string) => f.toLowerCase().endsWith('.mp3'));
             
-            // Read album metadata from first file BEFORE it gets renamed/rewritten
             let albumArtistForMove: string | undefined;
             let yearForMove: string | undefined;
             let albumForMove: string | undefined;
@@ -210,11 +270,9 @@ app.post('/api/tags/update', async (req, res) => {
                 } catch {}
             }
             
-            // MOVE always includes rename — rename in-place first, then move folder
             const renameResult = await renameFilesInPlace(absolutePath, tags.artist, trackArtists, trackNames, cfg.musicRoot);
             renamed = renameResult.renamed;
             logger.info(`[updateTags] pre-rename: ${JSON.stringify(renameResult)}`);
-            // Pass metadata directly — no need to re-read files after rename
             const result = await moveProcessedFiles(
                 absolutePath, getOutputRoot(cfg), cfg.musicRoot, tags,
                 albumArtistForMove,
@@ -227,7 +285,7 @@ app.post('/api/tags/update', async (req, res) => {
             renamed = result.renamed;
             logger.info(`[updateTags] rename: ${JSON.stringify(result)}`);
         }
-        res.json({ success: true, moved, renamed });
+        res.json({ success: true, moved, renamed, tagChanges });
     } catch (error) {
         logger.error(`POST /api/tags/update error:`, error);
         res.status(500).json({ error: (error as Error).message });

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import type { AlbumTags, SearchResult } from '../types';
 import { matchTracks } from '../utils';
-import { FONT, FS, COLORS, CHECKBOX, INPUT_STYLE, simColor, HEADER_STYLE, PANEL_STYLE } from './styles';
+import { FONT, FS, COLORS, CHECKBOX, INPUT_STYLE, simColor, PANEL_STYLE } from './styles';
 
 interface TrackMatcherProps {
   albumDetails: SearchResult | null;
@@ -92,7 +92,6 @@ function TrackArtistField({
             padding: 0,
             width: '100%',
             minWidth: '30px',
-            outline: 'none',
           }}
         />
       ) : (
@@ -170,7 +169,12 @@ function MatchRow({
       gap: '4px',
       marginBottom: '2px',
       opacity: nameEnabled ? 1 : 0.95,
-    }}>
+      borderRadius: '3px',
+      padding: '1px 0',
+    }}
+    onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = COLORS.inputBg)}
+    onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+    >
       {/* checkbox column */}
       <div style={{ width: '11px', flexShrink: 0 }}>
         <input
@@ -178,7 +182,7 @@ function MatchRow({
           checked={nameEnabled}
           onChange={(e) => onPerTrackNameToggle(m.remote.num, e.target.checked)}
           title={nameEnabled ? 'Writing this track name — click to skip' : 'Skipping this track name — click to include'}
-          style={{ ...CHECKBOX, cursor: 'pointer', accentColor: '#ef4444' }}
+          style={{ ...CHECKBOX, cursor: 'pointer' }}
         />
       </div>
 
@@ -250,7 +254,6 @@ function MatchRow({
             border: isNameEdited ? `1px solid ${COLORS.greenBorder}` : `1px solid ${COLORS.borderLight}`,
             padding: '3px 6px',
             borderRadius: '3px',
-            outline: 'none',
           }}
         />
       </div>
@@ -523,7 +526,7 @@ export function TrackMatcher({
         {exactCount > 0 && <span style={{ color: COLORS.green }}>{exactCount} exact</span>}
         {closeCount > 0 && <span style={{ color: COLORS.yellow }}>{closeCount} close</span>}
         {missingCount > 0 && <span style={{ color: COLORS.red }}>{missingCount} missing</span>}
-        {extraCount > 0 && <span style={{ color: '#eab308' }}>{extraCount} extra</span>}
+        {extraCount > 0 && <span style={{ color: COLORS.yellow }}>{extraCount} extra</span>}
         <span style={{ color: COLORS.textInvisible }}>·</span>
         <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
           <label style={{ display: 'flex', alignItems: 'center', gap: '3px', cursor: 'pointer' }}>
