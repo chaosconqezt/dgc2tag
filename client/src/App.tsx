@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState, useRef, useCallback } from 'react';
 import ErrorBoundary from './components/ErrorBoundary';
 import { AppProvider, useAppContext } from './hooks/useAppContext';
 import * as api from './api';
@@ -8,6 +8,7 @@ import { parseCompilationTracklist } from './utils';
 import { WebfetchOverlay } from './components/WebfetchOverlay';
 import { SettingsModal } from './components/SettingsModal';
 import { ResultModal } from './components/ResultModal';
+import { ProgressOverlay } from './components/ProgressOverlay';
 import { LibraryTree } from './components/LibraryTree';
 import { SearchBar } from './components/SearchBar';
 import { SearchResults } from './components/SearchResults';
@@ -18,6 +19,73 @@ import { Footer } from './components/Footer';
 
 function AppContent() {
   const ctx = useAppContext();
+  const [sidebarWidth, setSidebarWidth] = useState(() => {
+    const saved = localStorage.getItem('dgc-sidebar-width');
+    return saved ? Number(saved) : 320;
+  });
+  const [treeHeightPx, setTreeHeightPx] = useState(() => {
+    const saved = localStorage.getItem('dgc-tree-height');
+    return saved ? Number(saved) : 300;
+  });
+  const isResizing = useRef(false);
+  const isResizingTree = useRef(false);
+
+  const saveWidth = useCallback((w: number) => { setSidebarWidth(w); localStorage.setItem('dgc-sidebar-width', String(w)); }, []);
+  const saveTreeHeight = useCallback((h: number) => { setTreeHeightPx(h); localStorage.setItem('dgc-tree-height', String(h)); }, []);
+
+  const onResizeStart = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    isResizing.current = true;
+    const startX = e.clientX;
+    const startWidth = sidebarWidth;
+
+    const onMouseMove = (ev: MouseEvent) => {
+      if (!isResizing.current) return;
+      const delta = ev.clientX - startX;
+      const newWidth = Math.min(Math.max(startWidth + delta, 200), 600);
+      saveWidth(newWidth);
+    };
+
+    const onMouseUp = () => {
+      isResizing.current = false;
+      document.removeEventListener('mousemove', onMouseMove);
+      document.removeEventListener('mouseup', onMouseUp);
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+    };
+
+    document.body.style.cursor = 'col-resize';
+    document.body.style.userSelect = 'none';
+    document.addEventListener('mousemove', onMouseMove);
+    document.addEventListener('mouseup', onMouseUp);
+  }, [sidebarWidth]);
+
+  const onResizeTreeStart = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    isResizingTree.current = true;
+    const startY = e.clientY;
+    const startH = treeHeightPx;
+
+    const onMouseMove = (ev: MouseEvent) => {
+      if (!isResizingTree.current) return;
+      const delta = ev.clientY - startY;
+      const newH = Math.min(Math.max(startH + delta, 80), 800);
+      saveTreeHeight(newH);
+    };
+
+    const onMouseUp = () => {
+      isResizingTree.current = false;
+      document.removeEventListener('mousemove', onMouseMove);
+      document.removeEventListener('mouseup', onMouseUp);
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+    };
+
+    document.body.style.cursor = 'row-resize';
+    document.body.style.userSelect = 'none';
+    document.addEventListener('mousemove', onMouseMove);
+    document.addEventListener('mouseup', onMouseUp);
+  }, [treeHeightPx]);
 
   // Initialize on mount
   useEffect(() => {
@@ -34,9 +102,9 @@ function AppContent() {
   return (
     <div className="dashboard" style={{ display: 'flex', height: '100vh', backgroundColor: COLORS.bg, color: COLORS.text, fontFamily: FONT }}>
 
-      {/* Sidebar: Library Tree */}
-      <div className="sidebar" style={{ display: 'flex', flexDirection: 'column', borderRight: `1px solid ${COLORS.border}` }}>
-        <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', backgroundColor: COLORS.inputBgAlt, overflow: 'hidden' }}>
+      {/* Sidebar: Library Tree + Search Results */}
+      <div className="sidebar" style={{ display: 'flex', flexDirection: 'column', width: sidebarWidth, flexShrink: 0 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', backgroundColor: COLORS.inputBgAlt, overflow: 'hidden', height: '100%' }}>
           <div style={{ padding: '10px 12px', borderBottom: `1px solid ${COLORS.border}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexShrink: 0 }}>
             <h2 style={{ fontSize: FS, fontWeight: '600', margin: 0, letterSpacing: '0.3px', fontFamily: FONT, color: COLORS.text }}>
               DGC TAGGER
@@ -53,15 +121,65 @@ function AppContent() {
               </button>
             </div>
           </div>
-          <LibraryTree
-            tree={ctx.tree}
-            selectedFolder={ctx.selectedFolder}
-            expandedNodes={ctx.expandedNodes}
-            onToggleNode={ctx.toggleNode}
-            onSelectFolder={ctx.handleFolderSelect}
+          <div style={{ height: treeHeightPx, flexShrink: 0 }}>
+            <LibraryTree
+              tree={ctx.tree}
+              selectedFolder={ctx.selectedFolder}
+              expandedNodes={ctx.expandedNodes}
+              onToggleNode={ctx.toggleNode}
+              onSelectFolder={ctx.handleFolderSelect}
+            />
+          </div>
+
+          {/* Resize handle: tree ↔ matches */}
+          <div
+            onMouseDown={onResizeTreeStart}
+            style={{
+              height: '4px',
+              cursor: 'row-resize',
+              flexShrink: 0,
+              transition: 'background-color 0.15s',
+            }}
+            onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = COLORS.red; }}
+            onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; }}
           />
+
+          {/* Search Results — vertical list */}
+          <div style={{ flex: 1, overflowY: 'auto', borderTop: `1px solid ${COLORS.border}` }}>
+            <SearchResults
+              results={ctx.searchResults}
+              deezerResults={ctx.deezerResults}
+              mbrainzResults={ctx.mbrainzResults}
+              bandcampResults={ctx.bandcampResults}
+              dgcLoading={ctx.dgcLoading}
+              deezerLoading={ctx.deezerLoading}
+              mbrainzLoading={ctx.mbrainzLoading}
+              bandcampLoading={ctx.bandcampLoading}
+              searchTimeMs={ctx.searchTimeMs}
+              selectedResult={ctx.selectedResult}
+              onSelectResult={ctx.handleSelectResult}
+              onSelectDeezer={ctx.handleSelectDeezer}
+              selectedDeezerId={ctx.selectedDeezer?.albumId ?? null}
+              selectedMbrainzId={ctx.selectedMbrainz?.releaseId ?? null}
+              onSelectMbrainz={ctx.handleSelectMbrainz}
+            />
+          </div>
         </div>
       </div>
+
+      {/* Resize handle */}
+      <div
+        onMouseDown={onResizeStart}
+        style={{
+          width: '4px',
+          cursor: 'col-resize',
+          backgroundColor: 'transparent',
+          flexShrink: 0,
+          transition: 'background-color 0.15s',
+        }}
+        onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = COLORS.red; }}
+        onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; }}
+      />
 
       {/* Main Content Area */}
       <div className="main-content" style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0, overflow: 'hidden' }}>
@@ -83,23 +201,6 @@ function AppContent() {
               onArtistEnabledChange={(v) => ctx.dispatch({ type: 'SET_SEARCH_ARTIST_ENABLED', payload: v })}
               onAlbumEnabledChange={(v) => ctx.dispatch({ type: 'SET_SEARCH_ALBUM_ENABLED', payload: v })}
               onSearch={() => ctx.handleSearch()}
-            />
-
-            {/* Matches: DGC + Deezer horizontal */}
-            <SearchResults
-              results={ctx.searchResults}
-              deezerResults={ctx.deezerResults}
-              mbrainzResults={ctx.mbrainzResults}
-              dgcLoading={ctx.dgcLoading}
-              deezerLoading={ctx.deezerLoading}
-              mbrainzLoading={ctx.mbrainzLoading}
-              searchTimeMs={ctx.searchTimeMs}
-              selectedResult={ctx.selectedResult}
-              onSelectResult={ctx.handleSelectResult}
-              onSelectDeezer={ctx.handleSelectDeezer}
-              selectedDeezerId={ctx.selectedDeezer?.albumId ?? null}
-              selectedMbrainzId={ctx.selectedMbrainz?.releaseId ?? null}
-              onSelectMbrainz={ctx.handleSelectMbrainz}
             />
 
             {/* Apply buttons */}
@@ -193,6 +294,8 @@ function AppContent() {
           clearingCache={ctx.clearingCache}
           tagDefaults={ctx.tagEnabled}
           onTagDefaultsChange={(defaults) => ctx.dispatch({ type: 'SET_TAG_ENABLED', payload: defaults })}
+          enabledSources={ctx.enabledSources}
+          onEnabledSourcesChange={(sources) => ctx.dispatch({ type: 'SET_ENABLED_SOURCES', payload: sources })}
           onClose={() => ctx.dispatch({ type: 'SET_SHOW_SETTINGS', payload: false })}
         />
       )}
@@ -202,6 +305,19 @@ function AppContent() {
           message={ctx.resultModal.message}
           details={ctx.resultModal.details}
           onClose={() => ctx.dispatch({ type: 'SET_RESULT_MODAL', payload: null })}
+        />
+      )}
+      {ctx.progress?.active && (
+        <ProgressOverlay
+          phase={ctx.progress.phase}
+          current={ctx.progress.current}
+          total={ctx.progress.total}
+          log={ctx.progress.log}
+          done={ctx.progress.done}
+          success={ctx.progress.success}
+          message={ctx.progress.message}
+          details={ctx.progress.details}
+          onClose={() => ctx.dispatch({ type: 'SET_PROGRESS', payload: null })}
         />
       )}
     </div>

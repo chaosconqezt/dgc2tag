@@ -23,10 +23,7 @@ export function ResultCard({
   albumName,
   artist,
   year,
-  country,
   label,
-  genres,
-  releaseType,
   trackCount,
   url,
   accentColor,
@@ -42,229 +39,111 @@ export function ResultCard({
     setPreview({ x: rect.left + rect.width / 2, y: rect.top });
   };
 
+  const meta1 = [artist, year].filter(Boolean).join(' · ');
+
   return (
     <div
       onClick={onClick}
       style={{
         display: 'flex',
         gap: '8px',
-        padding: '6px',
+        padding: '5px',
         border: `1px solid ${selected ? accentColor : COLORS.borderLight}`,
         borderRadius: '6px',
         cursor: 'pointer',
-        transition: 'all 0.15s',
-        backgroundColor: selected ? `${accentColor}10` : COLORS.bg,
-        minWidth: 0,
-        flexShrink: 0,
-        position: 'relative',
+        transition: 'border-color 0.15s, background-color 0.15s',
+        backgroundColor: selected ? `${accentColor}15` : 'transparent',
+        width: '100%',
+        boxSizing: 'border-box',
       }}
     >
-      {/* Cover image */}
-      {coverUrl ? (
-        <div
-          ref={imgRef}
-          onMouseEnter={handleEnter}
-          onMouseLeave={() => setPreview(null)}
-          style={{
-            width: '60px',
-            height: '60px',
-            borderRadius: '4px',
-            overflow: 'hidden',
-            backgroundColor: '#000',
-            border: `1px solid ${COLORS.border}`,
-            flexShrink: 0,
-            position: 'relative',
-          }}
-        >
-          <img
-            src={coverUrl}
-            alt=""
-            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-          />
-          {/* Existing release‑type badge (kept for compatibility) */}
-          {releaseType && (
-            <div
-              style={{
-                position: 'absolute',
-                bottom: '1px',
-                left: '1px',
-                background: 'rgba(0,0,0,0.8)',
-                color: accentColor,
-                fontSize: '10px',
-                padding: '0 2px',
-                borderRadius: '2px',
-                fontWeight: '600',
-                textTransform: 'uppercase',
-                fontFamily: FONT,
-              }}
-            >
-              {releaseType}
-            </div>
-          )}
-        </div>
-      ) : (
-        <div
-          style={{
-            width: '60px',
-            height: '60px',
-            borderRadius: '4px',
-            backgroundColor: '#000',
-            border: `1px solid ${COLORS.border}`,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            flexShrink: 0,
-          }}
-        >
-          <Disc3 size={20} color={COLORS.textInvisible} />
-        </div>
-      )}
-
-      {/* Text column */}
-      <div style={{ minWidth: 0, display: 'flex', flexDirection: 'column', gap: '1px', flex: 1 }}>
-        {/* Artist */}
-        <div
-          style={{
-            fontWeight: '600',
-            fontSize: FS,
-            color: accentColor,
-            whiteSpace: 'nowrap',
-            overflow: 'hidden',
-            textOverflow: 'ellipsis',
-            fontFamily: FONT,
-          }}
-        >
-          {artist}
-        </div>
-
-        {/* Album title */}
-        <div
-          style={{
-            fontWeight: '500',
-            fontSize: FS,
-            color: COLORS.text,
-            whiteSpace: 'nowrap',
-            overflow: 'hidden',
-            textOverflow: 'ellipsis',
-            fontFamily: FONT,
-          }}
-        >
-          {albumName}
-        </div>
-
-        {/* Year / Release type line (small, muted) */}
-        {(year || releaseType) && (
-          <div
-            style={{
-              fontSize: FS,
-              color: COLORS.textFaint, // analogue of --text-muted
-              fontFamily: FONT,
-              display: 'flex',
-              alignItems: 'center',
-              gap: '2px',
-            }}
-          >
-            {year && <span>{year}</span>}
-            {year && releaseType && <span>·</span>}
-            {releaseType && <span>{releaseType}</span>}
-          </div>
-        )}
-
-        {/* Country / Label line (unchanged, but without year/trackCount) */}
-        <div
-          style={{
-            fontSize: FS,
-            color: COLORS.textFaint,
-            display: 'flex',
-            gap: '4px',
-            fontFamily: FONT,
-          }}
-        >
-          {country && <span>{country}</span>}
-          {label && (
-            <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-              {label}
-            </span>
-          )}
-        </div>
-
-        {/* Genres as pill‑chips */}
-        {genres && genres.length > 0 && (
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', marginTop: '2px' }}>
-            {genres.slice(0, 2).map((g, i) => (
-              <span
-                key={i}
-                style={{
-                  backgroundColor: 'var(--genre-bg, #374151)', // fallback dark‑gray
-                  color: 'var(--genre-text, #fff)',
-                  fontSize: '10px',
-                  padding: '2px 6px',
-                  borderRadius: '12px',
-                  whiteSpace: 'nowrap',
-                }}
-              >
-                {g}
-              </span>
-            ))}
-            {genres.length > 2 && (
-              <span
-                style={{
-                  backgroundColor: 'var(--genre-bg, #374151)',
-                  color: 'var(--genre-text, #fff)',
-                  fontSize: '10px',
-                  padding: '2px 6px',
-                  borderRadius: '12px',
-                  whiteSpace: 'nowrap',
-                }}
-              >
-                +{genres.length - 2}
-              </span>
-            )}
-          </div>
+      {/* Cover */}
+      <div
+        ref={imgRef}
+        onMouseEnter={handleEnter}
+        onMouseLeave={() => setPreview(null)}
+        style={{
+          width: '40px',
+          height: '40px',
+          borderRadius: '4px',
+          overflow: 'hidden',
+          backgroundColor: '#1a1a1a',
+          border: `1px solid ${COLORS.border}`,
+          flexShrink: 0,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
+      >
+        {coverUrl ? (
+          <img src={coverUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+        ) : (
+          <Disc3 size={16} color={COLORS.textInvisible} />
         )}
       </div>
 
-      {/* External link (top‑right) */}
-      <a
-        href={url}
-        target="_blank"
-        onClick={(e) => e.stopPropagation()}
-        onMouseEnter={(e) => (e.currentTarget.style.color = COLORS.text)}
-        onMouseLeave={(e) => (e.currentTarget.style.color = COLORS.textInvisible)}
-        style={{
-          position: 'absolute',
-          bottom: '4px',
-          right: '4px',
-          color: COLORS.textInvisible,
-          transition: 'color 0.15s',
-          display: 'flex',
-          title: 'Open on DGC',
-        }}
-      >
-        <ExternalLink size={12} />
-      </a>
-
-      {/* Track‑count badge (bottom‑right, inside the card) */}
-      {trackCount != null && (
-        <div
-          style={{
-            position: 'absolute',
-            bottom: '4px',
-            right: '28px', // space for the external link icon
-            display: 'flex',
-            alignItems: 'center',
-            gap: '2px',
-            fontSize: FS,
-            color: COLORS.textFaint,
-            fontFamily: FONT,
-          }}
-        >
-          <Music2 size={12} color={COLORS.textFaint} />
-          <span>{trackCount}</span>
+      {/* Info — 2 lines */}
+      <div style={{ minWidth: 0, flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: '1px', overflow: 'hidden' }}>
+        {/* Line 1: Artist · Year · Label · link */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '4px', minWidth: 0 }}>
+          <span
+            style={{
+              fontWeight: '600',
+              fontSize: FS,
+              color: accentColor,
+              whiteSpace: 'nowrap',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              fontFamily: FONT,
+              flex: 1,
+              minWidth: 0,
+            }}
+          >
+            {meta1 || '—'}
+          </span>
+          <a
+            href={url}
+            target="_blank"
+            onClick={(e) => e.stopPropagation()}
+            onMouseEnter={(e) => (e.currentTarget.style.color = COLORS.text)}
+            onMouseLeave={(e) => (e.currentTarget.style.color = COLORS.textInvisible)}
+            style={{ color: COLORS.textInvisible, flexShrink: 0, display: 'flex', transition: 'color 0.15s' }}
+          >
+            <ExternalLink size={11} />
+          </a>
         </div>
-      )}
 
-      {/* Preview popup (hover over cover) */}
+        {/* Line 2: Album · Label · track count */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', minWidth: 0 }}>
+          <span
+            style={{
+              fontSize: FS,
+              color: COLORS.textMuted,
+              whiteSpace: 'nowrap',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              fontFamily: FONT,
+              flex: 1,
+              minWidth: 0,
+            }}
+          >
+            {albumName}
+          </span>
+          {label && (
+            <span style={{ fontSize: FS, color: COLORS.textFaint, fontFamily: FONT, whiteSpace: 'nowrap', flexShrink: 0 }}>
+              {label}
+            </span>
+          )}
+          {trackCount != null && (
+            <span style={{ display: 'flex', alignItems: 'center', gap: '2px', fontSize: FS, color: COLORS.textFaint, fontFamily: FONT, flexShrink: 0 }}>
+              <Music2 size={10} />
+              {trackCount}
+            </span>
+          )}
+        </div>
+      </div>
+
+      {/* Preview popup */}
       {preview && coverUrl && (
         <img
           src={coverUrl}

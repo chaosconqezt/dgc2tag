@@ -9,6 +9,25 @@ interface LibraryTreeProps {
   onSelectFolder: (path: string) => void;
 }
 
+function countDirs(node: FileNode): number {
+  let count = 0;
+  for (const child of node.children || []) {
+    if (child.type === 'directory') {
+      count += 1 + countDirs(child);
+    }
+  }
+  return count;
+}
+
+function countAudioFiles(node: FileNode): number {
+  let count = 0;
+  for (const child of node.children || []) {
+    if (child.type === 'file') count++;
+    else count += countAudioFiles(child);
+  }
+  return count;
+}
+
 export function LibraryTree({ tree, selectedFolder, expandedNodes, onToggleNode, onSelectFolder }: LibraryTreeProps) {
   const ARROW_W = 6;
   const INDENT = 5;
@@ -21,11 +40,14 @@ export function LibraryTree({ tree, selectedFolder, expandedNodes, onToggleNode,
       const children = node.children || [];
       const hasKids = children.length > 0;
       const indent = depth * INDENT;
+      const isSelected = selectedFolder === node.path;
+      const dirCount = isDir ? countDirs(node) : 0;
+      const audioCount = isDir && isSelected && node.hasAudioFiles ? countAudioFiles(node) : 0;
 
       const item = (
         <div key={node.path}>
           <div
-            className={`tree-item ${selectedFolder === node.path ? 'selected' : ''}`}
+            className={`tree-item ${isSelected ? 'selected' : ''}`}
             style={{
               display: 'flex',
               alignItems: 'center',
@@ -34,14 +56,14 @@ export function LibraryTree({ tree, selectedFolder, expandedNodes, onToggleNode,
               paddingTop: '1px',
               paddingBottom: '1px',
               cursor: 'pointer',
-              backgroundColor: selectedFolder === node.path ? `${COLORS.red}20` : 'transparent',
+              backgroundColor: isSelected ? `${COLORS.red}20` : 'transparent',
               borderRadius: '3px',
-              color: selectedFolder === node.path ? COLORS.red : COLORS.text,
-              border: selectedFolder === node.path ? `1px solid ${COLORS.red}40` : '1px solid transparent',
+              color: isSelected ? COLORS.red : COLORS.text,
+              border: isSelected ? `1px solid ${COLORS.red}40` : '1px solid transparent',
               marginBottom: '0px',
             }}
-            onMouseEnter={(e) => { if (selectedFolder !== node.path) e.currentTarget.style.backgroundColor = COLORS.inputBg; }}
-            onMouseLeave={(e) => { if (selectedFolder !== node.path) e.currentTarget.style.backgroundColor = 'transparent'; }}
+            onMouseEnter={(e) => { if (!isSelected) e.currentTarget.style.backgroundColor = COLORS.inputBg; }}
+            onMouseLeave={(e) => { if (!isSelected) e.currentTarget.style.backgroundColor = 'transparent'; }}
             title={node.name}
             onClick={() => {
               if (isDir) {
@@ -80,9 +102,24 @@ export function LibraryTree({ tree, selectedFolder, expandedNodes, onToggleNode,
               overflow: 'hidden',
               textOverflow: 'ellipsis',
               fontWeight: isDir ? '600' : '400',
+              flex: 1,
+              minWidth: 0,
             }}>
               {node.name}
             </span>
+            {/* Badge: dir count or audio count */}
+            {isDir && (dirCount > 0 || audioCount > 0) && (
+              <span style={{
+                fontSize: '10px',
+                color: audioCount > 0 ? COLORS.green : COLORS.textFaint,
+                fontFamily: 'monospace',
+                flexShrink: 0,
+                marginLeft: '4px',
+                opacity: audioCount > 0 ? 1 : 0.6,
+              }}>
+                {audioCount > 0 ? audioCount : dirCount}
+              </span>
+            )}
           </div>
           {isExpanded && hasKids && (
             <div style={{ borderLeft: `1px solid ${COLORS.border}`, marginLeft: (indent + 4) + 'px' }}>
@@ -98,7 +135,7 @@ export function LibraryTree({ tree, selectedFolder, expandedNodes, onToggleNode,
 
   const safeTree = Array.isArray(tree) ? tree : [];
   return (
-    <div style={{ flex: 1, overflowY: 'auto', padding: '8px' }}>
+    <div style={{ height: '100%', overflowY: 'auto', padding: '8px' }}>
       {safeTree.length > 0
         ? renderTree(safeTree, 0)
         : <div style={{ padding: '20px', color: COLORS.textInvisible, textAlign: 'center', fontSize: FS, fontFamily: FONT }}>Loading library...</div>

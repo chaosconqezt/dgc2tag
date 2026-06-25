@@ -10,6 +10,7 @@ export interface AppState {
   searchResults: SearchResult[];
   deezerResults: DeezerSearchResult[];
   mbrainzResults: MusicBrainzSearchResult[];
+  bandcampResults: SearchResult[];
   selectedMbrainz: MusicBrainzSearchResult | null;
   selectedResult: SearchResult | null;
   selectedDeezer: DeezerSearchResult | null;
@@ -21,6 +22,8 @@ export interface AppState {
   dgcLoading: boolean;
   deezerLoading: boolean;
   mbrainzLoading: boolean;
+  bandcampLoading: boolean;
+  progress: { active: boolean; phase: string; current: number; total: number; log: string[]; done: boolean; success: boolean; message: string; details?: string[] } | null;
   searchTimeMs: number | null;
   loading: boolean;
   webfetchUrl: string | null;
@@ -33,6 +36,7 @@ export interface AppState {
   configOutputMode: 'subfolder' | 'absolute';
   configSaving: boolean;
   clearingCache: boolean;
+  enabledSources: Record<string, boolean>;
   tagEnabled: Record<string, boolean>;
   editedSiteValues: Record<string, string>;
   editedTrackNames: Record<string, string>;
@@ -65,6 +69,9 @@ export type Action =
   | { type: 'SET_MBRAINZ_RESULTS'; payload: MusicBrainzSearchResult[] }
   | { type: 'SET_MBRAINZ_LOADING'; payload: boolean }
   | { type: 'SET_SELECTED_MBRAINZ'; payload: MusicBrainzSearchResult | null }
+  | { type: 'SET_BANDCAMP_RESULTS'; payload: SearchResult[] }
+  | { type: 'SET_BANDCAMP_LOADING'; payload: boolean }
+  | { type: 'SET_PROGRESS'; payload: { active: boolean; phase: string; current: number; total: number; log: string[]; done: boolean; success: boolean; message: string; details?: string[] } | null }
   | { type: 'SET_SEARCH_TIME'; payload: number | null }
   | { type: 'TOGGLE_NODE'; payload: string }
   | { type: 'COLLAPSE_ALL' }
@@ -87,6 +94,7 @@ export type Action =
   | { type: 'SET_CONFIG_OUTPUT_MODE'; payload: 'subfolder' | 'absolute' }
   | { type: 'SET_CONFIG_SAVING'; payload: boolean }
   | { type: 'SET_CLEARING_CACHE'; payload: boolean }
+  | { type: 'SET_ENABLED_SOURCES'; payload: Record<string, boolean> }
   | { type: 'SET_STRIP_REMOTE_PARENS'; payload: boolean }
   | { type: 'SET_COMPILATION'; payload: boolean }
   | { type: 'SET_SERVER_PARSED_TRACKS'; payload: { num: string; artist: string; name: string; duration?: number }[] | null }
@@ -100,6 +108,7 @@ export const initialState: AppState = {
   searchResults: [],
   deezerResults: [],
   mbrainzResults: [],
+  bandcampResults: [],
   selectedMbrainz: null,
   selectedResult: null,
   selectedDeezer: null,
@@ -111,6 +120,8 @@ export const initialState: AppState = {
   dgcLoading: false,
   deezerLoading: false,
   mbrainzLoading: false,
+  bandcampLoading: false,
+  progress: null,
   searchTimeMs: null,
   loading: false,
   webfetchUrl: null,
@@ -123,6 +134,7 @@ export const initialState: AppState = {
   configOutputMode: 'subfolder',
   configSaving: false,
   clearingCache: false,
+  enabledSources: { dgc: true, deezer: true, mbrainz: true, bandcamp: true },
   tagEnabled: { ...DEFAULT_TAG_DEFAULTS },
   editedSiteValues: {},
   editedTrackNames: {},
@@ -156,6 +168,9 @@ export function appReducer(state: AppState, action: Action): AppState {
     case 'SET_MBRAINZ_RESULTS': return { ...state, mbrainzResults: action.payload };
     case 'SET_MBRAINZ_LOADING': return { ...state, mbrainzLoading: action.payload };
     case 'SET_SELECTED_MBRAINZ': return { ...state, selectedMbrainz: action.payload };
+    case 'SET_BANDCAMP_RESULTS': return { ...state, bandcampResults: action.payload };
+    case 'SET_BANDCAMP_LOADING': return { ...state, bandcampLoading: action.payload };
+    case 'SET_PROGRESS': return { ...state, progress: action.payload };
     case 'SET_SEARCH_TIME': return { ...state, searchTimeMs: action.payload };
     case 'TOGGLE_NODE': {
       const next = new Set(state.expandedNodes);
@@ -204,6 +219,7 @@ export function appReducer(state: AppState, action: Action): AppState {
     case 'SET_CONFIG_OUTPUT_MODE': return { ...state, configOutputMode: action.payload };
     case 'SET_CONFIG_SAVING': return { ...state, configSaving: action.payload };
     case 'SET_CLEARING_CACHE': return { ...state, clearingCache: action.payload };
+    case 'SET_ENABLED_SOURCES': return { ...state, enabledSources: action.payload };
     case 'SET_STRIP_REMOTE_PARENS': return { ...state, stripRemoteParentheses: action.payload };
     case 'SET_COMPILATION': return { ...state, compilation: action.payload };
     case 'SET_SERVER_PARSED_TRACKS': return { ...state, serverParsedTracks: action.payload };

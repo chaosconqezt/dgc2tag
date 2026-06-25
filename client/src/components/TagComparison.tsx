@@ -262,7 +262,7 @@ export function TagComparison({
           outputTags={(() => {
             const tags: Record<string, string> = {};
             // These tags are in the main TAGS panel — don't duplicate
-            const skip = new Set(['country', 'label', 'releasetype', 'genre']);
+            const skip = new Set(['country', 'label', 'releasetype', 'genre', 'DGC_POST_ID', 'DEEZER_ID']);
             if (localTags?.extraTags) {
               for (const [k, v] of Object.entries(localTags.extraTags)) {
                 if (!skip.has(k)) tags[k] = v;
@@ -273,10 +273,6 @@ export function TagComparison({
                 if (!skip.has(k) && !tags[k]) tags[k] = v;
               }
             }
-            if (localTags?.postId) tags['DGC_POST_ID'] = String(localTags.postId);
-            if (localTags?.deezerId) tags['DEEZER_ID'] = String(localTags.deezerId);
-            if (selectedResult?.postId && selectedResult.postId > 0 && !tags['DGC_POST_ID']) tags['DGC_POST_ID'] = String(selectedResult.postId);
-            if (selectedResult?.postId && selectedResult.postId < 0 && !tags['DEEZER_ID']) tags['DEEZER_ID'] = String(Math.abs(selectedResult.postId));
             return tags;
           })()}
           onOutputChange={() => {}}

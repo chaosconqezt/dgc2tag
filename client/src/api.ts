@@ -77,8 +77,8 @@ export async function fetchConfig(): Promise<{ musicRoot: string; port: number; 
   return res.data;
 }
 
-export async function saveConfig(musicRoot: string, tagDefaults?: Record<string, boolean>, outputFolder?: string, outputMode?: 'subfolder' | 'absolute'): Promise<void> {
-  await api.post('/config', { musicRoot, tagDefaults, outputFolder, outputMode });
+export async function saveConfig(musicRoot: string, tagDefaults?: Record<string, boolean>, outputFolder?: string, outputMode?: 'subfolder' | 'absolute', enabledSources?: Record<string, boolean>): Promise<void> {
+  await api.post('/config', { musicRoot, tagDefaults, outputFolder, outputMode, enabledSources });
 }
 
 export async function fetchLibrary(): Promise<FileNode[]> {
@@ -116,16 +116,59 @@ export async function fetchAlbumDetails(postId: number): Promise<SearchResult> {
   return res.data;
 }
 
-export async function updateTags(payload: {
-  folderPath: string;
-  tags: AlbumTags;
-  trackArtists?: Record<string, string>;
-  trackNames?: Record<string, string>;
-  moveFiles: boolean;
-  renameFiles?: boolean;
-}): Promise<{ success: boolean; moved?: string[]; renamed?: { from: string; to: string }[]; tagChanges?: string[] }> {
-  const res = await api.post('/tags/update', payload);
-  return res.data;
+export interface ProgressEvent {
+  event: 'start' | 'phase' | 'file' | 'log' | 'done' | 'error';
+  data: any;
+}
+
+export async function updateTags(
+  payload: {
+    folderPath: string;
+    tags: AlbumTags;
+    trackArtists?: Record<string, string>;
+    trackNames?: Record<string, string>;
+    moveFiles: boolean;
+    renameFiles?: boolean;
+  },
+  onProgress: (event: ProgressEvent) => void,
+): Promise<void> {
+  const res = await fetch(`${API_BASE}/tags/update`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ error: 'Request failed' }));
+    onProgress({ event: 'error', data: err });
+    return;
+  }
+
+  const reader = res.body!.getReader();
+  const decoder = new TextDecoder();
+  let buffer = '';
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    buffer += decoder.decode(value, { stream: true });
+
+    const lines = buffer.split('\n');
+    buffer = lines.pop() || '';
+
+    let eventType = '';
+    for (const line of lines) {
+      if (line.startsWith('event: ')) {
+        eventType = line.slice(7).trim();
+      } else if (line.startsWith('data: ') && eventType) {
+        try {
+          const data = JSON.parse(line.slice(6));
+          onProgress({ event: eventType as ProgressEvent['event'], data });
+        } catch {}
+        eventType = '';
+      }
+    }
+  }
 }
 
 export async function webfetchPage(url: string): Promise<{ content: string }> {
@@ -180,7 +223,7 @@ export interface MusicBrainzSearchResult {
   status: string | null;
   country: string | null;
   trackCount: number;
-  tracks: { num: string; name: string; duration?: number; recordingId?: string }[];
+  tracks: { num: string; name: string; artist: string; duration?: number; recordingId?: string }[];
   url: string;
   tags: string[];
   extraTags: Record<string, string>;
@@ -193,5 +236,10 @@ export async function searchAlbumsMusicBrainz(artist?: string, album?: string): 
 
 export async function fetchMusicBrainzRelease(releaseId: string): Promise<MusicBrainzSearchResult> {
   const res = await api.get(`/mbrainz/${releaseId}`);
+  return res.data;
+}
+
+export async function searchAlbumsBandcamp(artist?: string, album?: string): Promise<SearchResult[]> {
+  const res = await api.post('/search-bandcamp', { artist, album });
   return res.data;
 }

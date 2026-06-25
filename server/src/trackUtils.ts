@@ -4,7 +4,9 @@ import path from 'path';
 import type { Id3Tags } from './types.js';
 
 export function isInsideMusicRoot(targetPath: string, musicRoot: string): boolean {
-    return path.resolve(targetPath).startsWith(path.resolve(musicRoot));
+    const resolved = path.resolve(targetPath).toLowerCase();
+    const root = path.resolve(musicRoot).toLowerCase();
+    return resolved.startsWith(root);
 }
 
 export function assertInsideMusicRoot(targetPath: string, musicRoot: string): void {

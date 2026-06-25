@@ -24,6 +24,18 @@ export type AppDispatch = React.Dispatch<{
   payload?: unknown;
 }>;
 
+export interface ProgressState {
+  active: boolean;
+  phase: string;
+  current: number;
+  total: number;
+  log: string[];
+  done: boolean;
+  success: boolean;
+  message: string;
+  details?: string[];
+}
+
 export function createApplyTags(
   state: AppState,
   dispatch: AppDispatch,
@@ -104,48 +116,72 @@ export function createApplyTags(
         )
       : undefined;
 
+    // Show progress overlay
+    dispatch({ type: 'SET_PROGRESS', payload: { active: true, phase: 'Starting...', current: 0, total: 0, log: [], done: false, success: false, message: '' } });
+
+    const log: string[] = [];
+    let phase = 'Starting...';
+    let current = 0;
+    let total = 0;
+
+    const updateProgress = (p: Partial<ProgressState>) => {
+      if (p.phase !== undefined) phase = p.phase;
+      if (p.current !== undefined) current = p.current;
+      if (p.total !== undefined) total = p.total;
+      if (p.log) log.push(...p.log);
+      dispatch({ type: 'SET_PROGRESS', payload: { active: true, phase, current, total, log: [...log], done: false, success: false, message: '' } });
+    };
+
     try {
-      const result = await api.updateTags({
+      await api.updateTags({
         folderPath: state.selectedFolder,
         tags: tagsToApply as AlbumTags,
         trackArtists,
         trackNames,
         moveFiles: mode === 'move',
         renameFiles: mode === 'rename' || mode === 'move',
+      }, (event) => {
+        switch (event.event) {
+          case 'start':
+            updateProgress({ phase: event.data.message, log: [event.data.message] });
+            break;
+          case 'phase':
+            updateProgress({ phase: event.data.phase, current: 0, total: event.data.total });
+            break;
+          case 'file':
+            updateProgress({ current: event.data.current, total: event.data.total });
+            break;
+          case 'log':
+            updateProgress({ log: [event.data.message] });
+            break;
+          case 'done':
+            updateProgress({ log: ['Operation complete'] });
+            break;
+          case 'error':
+            updateProgress({ log: [`Error: ${event.data.error}`] });
+            break;
+        }
       });
 
-      if (mode === 'move' && result.moved?.length) {
-        const details: string[] = [...(result.tagChanges || [])];
-        if (result.renamed?.length) {
-          details.push('');
-          details.push('Renamed files:');
-          for (const r of result.renamed) details.push(`  ${r.from} → ${r.to}`);
-        }
-        if (result.moved.length) {
-          details.push('');
-          details.push(`Moved to ${state.configOutputFolder}/:`);
-          for (const f of result.moved) details.push(`  ${f}`);
-        }
-        dispatch({ type: 'SET_RESULT_MODAL', payload: { success: true, message: `${result.moved.length} files moved`, details } });
+      // Build result from accumulated log
+      const result = { tagChanges: log.filter(l => l.includes('→')), moved: undefined as string[] | undefined, renamed: undefined as { from: string; to: string }[] | undefined };
+
+      if (mode === 'move') {
+        dispatch({ type: 'SET_PROGRESS', payload: { active: true, phase: 'Done', current: total, total, log: [...log, 'Operation complete'], done: true, success: true, message: 'Files processed successfully', details: result.tagChanges } });
         clearSelectionState();
         await fetchLibrary();
-      } else if (mode === 'rename' && result.renamed?.length) {
-        const details: string[] = [...(result.tagChanges || [])];
-        details.push('');
-        details.push('Renamed files:');
-        for (const r of result.renamed) details.push(`  ${r.from} → ${r.to}`);
-        dispatch({ type: 'SET_RESULT_MODAL', payload: { success: true, message: `${result.renamed.length} files renamed`, details } });
+      } else if (mode === 'rename') {
+        dispatch({ type: 'SET_PROGRESS', payload: { active: true, phase: 'Done', current: total, total, log: [...log, 'Operation complete'], done: true, success: true, message: 'Files renamed successfully', details: result.tagChanges } });
         const refreshedTags = await api.fetchTags(state.selectedFolder);
         dispatch({ type: 'SET_LOCAL_TAGS', payload: refreshedTags });
       } else {
-        const details = result.tagChanges?.length ? result.tagChanges : undefined;
-        dispatch({ type: 'SET_RESULT_MODAL', payload: { success: true, message: 'Tags updated successfully!', details } });
+        dispatch({ type: 'SET_PROGRESS', payload: { active: true, phase: 'Done', current: total, total, log: [...log, 'Operation complete'], done: true, success: true, message: 'Tags updated successfully', details: result.tagChanges } });
         const refreshedTags = await api.fetchTags(state.selectedFolder);
         dispatch({ type: 'SET_LOCAL_TAGS', payload: refreshedTags });
       }
     } catch (err) {
       if (import.meta.env.DEV) console.error('[client] updateTags error:', err);
-      dispatch({ type: 'SET_RESULT_MODAL', payload: { success: false, message: 'Failed to update tags', details: [String(err)] } });
+      dispatch({ type: 'SET_PROGRESS', payload: { active: true, phase: 'Error', current: 0, total: 0, log: [...log, String(err)], done: true, success: false, message: 'Failed to update tags' } });
     }
   };
 }

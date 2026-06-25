@@ -23,6 +23,7 @@ export interface Config {
     writeTrackArtists: boolean;
     outputFolder: string;
     outputMode: 'subfolder' | 'absolute';
+    enabledSources: Record<string, boolean>;
 }
 
 const CONFIG_PATH = path.join(__dirname, '../config.json');
@@ -43,6 +44,7 @@ export async function loadConfig(): Promise<Config> {
             writeTrackArtists: typeof parsed.writeTrackArtists === 'boolean' ? parsed.writeTrackArtists : DEFAULTS.writeTrackArtists,
             outputFolder: typeof parsed.outputFolder === 'string' ? parsed.outputFolder : DEFAULTS.outputFolder,
             outputMode: parsed.outputMode === 'absolute' ? 'absolute' : 'subfolder',
+            enabledSources: { dgc: true, deezer: true, mbrainz: true, bandcamp: true, ...(parsed.enabledSources || {}) },
         };
     } catch {
         return { ...DEFAULTS };
@@ -54,11 +56,12 @@ export async function saveConfig(config: Config): Promise<void> {
 }
 
 const DEFAULTS: Config = {
-    musicRoot: process.env.MUSIC_ROOT || 'c:\\vibecode\\dgc2tag\\test_muz',
-    port: parseInt(process.env.SERVER_PORT || '3001', 10),
+    musicRoot: process.env.MUSIC_ROOT || path.join(process.cwd(), 'music'),
+    port: parseInt(process.env.PORT || '3000', 10),
     tagDefaults: DEFAULT_TAG_DEFAULTS,
     writeTrackNames: true,
     writeTrackArtists: false,
-    outputFolder: 'dgc',
+    outputFolder: 'tag',
     outputMode: 'subfolder',
+    enabledSources: { dgc: true, deezer: true, mbrainz: true, bandcamp: true },
 };

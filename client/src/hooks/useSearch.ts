@@ -17,6 +17,7 @@ export interface SearchState {
   selectedResult: SearchResult | null;
   selectedDeezer: DeezerSearchResult | null;
   tagEnabled: Record<string, boolean>;
+  enabledSources: Record<string, boolean>;
 }
 
 export function createSearchActions(
@@ -46,53 +47,68 @@ export function createSearchActions(
       if (searchInProgressRef.current) return;
       searchInProgressRef.current = true;
 
-      const a = artistEnabled !== undefined ? artistEnabled : state.searchArtistEnabled;
-      const b = albumEnabled !== undefined ? albumEnabled : state.searchAlbumEnabled;
-      const dgcQuery = [a ? (artist || state.searchArtist) : '', b ? (album || state.searchAlbum) : ''].filter(Boolean).join(' ');
+      const a = artistEnabled ?? state.searchArtistEnabled;
+      const b = albumEnabled ?? state.searchAlbumEnabled;
+      const usedArtist = artist ?? state.searchArtist;
+      const usedAlbum = album ?? state.searchAlbum;
+      const dgcQuery = [a ? usedArtist : '', b ? usedAlbum : ''].filter(Boolean).join(' ');
       if (!dgcQuery) return;
 
       if (import.meta.env.DEV) console.log(`[client] search DGC: "${dgcQuery}"`);
       dispatch({ type: 'SET_DGC_LOADING', payload: true });
       dispatch({ type: 'SET_DEEZER_LOADING', payload: true });
       dispatch({ type: 'SET_MBRAINZ_LOADING', payload: true });
+      dispatch({ type: 'SET_BANDCAMP_LOADING', payload: true });
       dispatch({ type: 'SET_SEARCH_RESULTS', payload: [] });
       dispatch({ type: 'SET_DEEZER_RESULTS', payload: [] });
       dispatch({ type: 'SET_MBRAINZ_RESULTS', payload: [] });
+      dispatch({ type: 'SET_BANDCAMP_RESULTS', payload: [] });
       dispatch({ type: 'SET_SEARCH_TIME', payload: null });
 
       const start = Date.now();
-      const dzArtist = a ? (artist || state.searchArtist) : undefined;
-      const dzAlbum = b ? (album || state.searchAlbum) : undefined;
+      const dzArtist = a ? usedArtist : undefined;
+      const dzAlbum = b ? usedAlbum : undefined;
+      const es = state.enabledSources;
+      let totalSources = 0;
+      let done = 0;
+      const checkDone = () => { if (++done >= totalSources) { dispatch({ type: 'SET_SEARCH_TIME', payload: Date.now() - start }); searchInProgressRef.current = false; } };
 
-      api.searchAlbums(dgcQuery)
-        .then(data => {
-          if (import.meta.env.DEV) console.log(`[client] DGC results: ${data.length}`);
-          dispatch({ type: 'SET_SEARCH_RESULTS', payload: data });
-        })
-        .catch(err => {
-          if (import.meta.env.DEV) console.error('[client] DGC search error:', err);
-        })
-        .finally(() => dispatch({ type: 'SET_DGC_LOADING', payload: false }));
+      if (es.dgc !== false) {
+        totalSources++;
+        api.searchAlbums(dgcQuery)
+          .then(data => { dispatch({ type: 'SET_SEARCH_RESULTS', payload: data }); })
+          .catch(() => {})
+          .finally(() => { dispatch({ type: 'SET_DGC_LOADING', payload: false }); checkDone(); });
+      } else { dispatch({ type: 'SET_DGC_LOADING', payload: false }); }
 
-      api.searchAlbumsDeezer(dzArtist, dzAlbum)
-        .then(data => {
-          if (import.meta.env.DEV) console.log(`[client] Deezer results: ${data.length}`);
-          dispatch({ type: 'SET_DEEZER_RESULTS', payload: data });
-        })
-        .catch(() => {})
-        .finally(() => dispatch({ type: 'SET_DEEZER_LOADING', payload: false }));
+      if (es.deezer !== false) {
+        totalSources++;
+        api.searchAlbumsDeezer(dzArtist, dzAlbum)
+          .then(data => { dispatch({ type: 'SET_DEEZER_RESULTS', payload: data }); })
+          .catch(() => {})
+          .finally(() => { dispatch({ type: 'SET_DEEZER_LOADING', payload: false }); checkDone(); });
+      } else { dispatch({ type: 'SET_DEEZER_LOADING', payload: false }); }
 
-      api.searchAlbumsMusicBrainz(dzArtist, dzAlbum)
-        .then(data => {
-          if (import.meta.env.DEV) console.log(`[client] MusicBrainz results: ${data.length}`);
-          dispatch({ type: 'SET_MBRAINZ_RESULTS', payload: data });
-        })
-        .catch(() => {})
-        .finally(() => {
-          dispatch({ type: 'SET_MBRAINZ_LOADING', payload: false });
-          dispatch({ type: 'SET_SEARCH_TIME', payload: Date.now() - start });
-          searchInProgressRef.current = false;
-        });
+      if (es.mbrainz !== false) {
+        totalSources++;
+        api.searchAlbumsMusicBrainz(dzArtist, dzAlbum)
+          .then(data => { dispatch({ type: 'SET_MBRAINZ_RESULTS', payload: data }); })
+          .catch(() => {})
+          .finally(() => { dispatch({ type: 'SET_MBRAINZ_LOADING', payload: false }); checkDone(); });
+      } else { dispatch({ type: 'SET_MBRAINZ_LOADING', payload: false }); }
+
+      if (es.bandcamp !== false) {
+        totalSources++;
+        api.searchAlbumsBandcamp(dzArtist, dzAlbum)
+          .then(data => { dispatch({ type: 'SET_BANDCAMP_RESULTS', payload: data }); })
+          .catch(() => {})
+          .finally(() => { dispatch({ type: 'SET_BANDCAMP_LOADING', payload: false }); checkDone(); });
+      } else { dispatch({ type: 'SET_BANDCAMP_LOADING', payload: false }); }
+
+      if (totalSources === 0) {
+        dispatch({ type: 'SET_SEARCH_TIME', payload: Date.now() - start });
+        searchInProgressRef.current = false;
+      }
     },
 
     loadAlbumDetails,
@@ -172,7 +188,7 @@ export function createSearchActions(
         const fullRelease = await api.fetchMusicBrainzRelease(mb.releaseId);
         const parsedTracks = fullRelease.tracks.map(t => ({
           num: t.num,
-          artist: fullRelease.artist,
+          artist: t.artist || fullRelease.artist,
           name: t.name,
           duration: t.duration,
         }));

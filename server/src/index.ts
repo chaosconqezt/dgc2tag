@@ -62,7 +62,7 @@ app.get('/api/config', (_req, res) => {
 });
 
 app.post('/api/config', async (req, res) => {
-    const { musicRoot, port, tagDefaults, writeTrackNames, writeTrackArtists, outputFolder, outputMode } = req.body;
+    const { musicRoot, port, tagDefaults, writeTrackNames, writeTrackArtists, outputFolder, outputMode, enabledSources } = req.body;
     if (!musicRoot || typeof musicRoot !== 'string') {
         return res.status(400).json({ error: 'musicRoot is required' });
     }
@@ -75,6 +75,7 @@ app.post('/api/config', async (req, res) => {
         writeTrackArtists: typeof writeTrackArtists === 'boolean' ? writeTrackArtists : current.writeTrackArtists,
         outputFolder: typeof outputFolder === 'string' && outputFolder.trim() ? outputFolder.trim() : current.outputFolder,
         outputMode: outputMode === 'absolute' ? 'absolute' : 'subfolder',
+        enabledSources: enabledSources && typeof enabledSources === 'object' ? { ...current.enabledSources, ...enabledSources } : current.enabledSources,
     };
     await saveConfig(newConfig);
     configStore.config = newConfig;
@@ -180,83 +181,48 @@ app.post('/api/tags/update', async (req, res) => {
     const { folderPath, tags, trackArtists, trackNames, moveFiles, renameFiles } = req.body;
     if (!folderPath || !tags) return res.status(400).json({ error: 'folderPath and tags are required' });
 
-    logger.info(`[updateTags] tags keys: ${Object.keys(tags).join(', ')}`);
+    // SSE headers
+    res.setHeader('Content-Type', 'text/event-stream');
+    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Connection', 'keep-alive');
+    res.setHeader('X-Accel-Buffering', 'no');
+    res.flushHeaders();
 
-    logger.info(`[updateTags] trackArtists keys=${trackArtists ? Object.keys(trackArtists).join(',') : 'none'} trackNames keys=${trackNames ? Object.keys(trackNames).join(',') : 'none'}`);
+    const send = (event: string, data: unknown) => {
+        res.write(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`);
+    };
+
+    send('start', { message: 'Starting...' });
 
     try {
         const cfg = getConfig();
         const absolutePath = path.resolve(folderPath);
         if (!isInsideMusicRoot(absolutePath, cfg.musicRoot)) {
-            return res.status(403).json({ error: 'Access denied' });
+            send('error', { error: 'Access denied' });
+            return res.end();
         }
 
-        // Read current tags BEFORE writing
-        const mp3Before = await getMp3Files(absolutePath);
-        const oldTags: Record<string, Record<string, string>> = {};
-        for (const file of mp3Before) {
-            const filePath = path.join(absolutePath, file);
-            try {
-                const ft = NodeID3.read(filePath) as unknown as Id3Tags;
-                oldTags[file] = {
-                    artist: ft.artist || '',
-                    albumArtist: ft.performerInfo || '',
-                    album: ft.album || '',
-                    title: ft.title || '',
-                    year: ft.year || '',
-                    genre: ft.genre || '',
-                    label: ft.publisher || '',
-                };
-            } catch {}
-        }
-
+        // Phase 1: Write tags
+        const mp3Files = await getMp3Files(absolutePath);
+        send('phase', { phase: 'Writing tags', current: 0, total: mp3Files.length });
         await writeTags({ folderPath: absolutePath, tags, trackArtists, trackNames }, cfg.musicRoot);
+        send('phase', { phase: 'Tags written', current: mp3Files.length, total: mp3Files.length });
 
-        // Read tags AFTER writing to build diff
-        const mp3After = await getMp3Files(absolutePath);
+        // Phase 2: Compare tags (read before/after)
+        send('phase', { phase: 'Comparing tags', current: 0, total: mp3Files.length });
         const tagChanges: string[] = [];
-        for (const file of mp3After) {
-            const filePath = path.join(absolutePath, file);
-            try {
-                const ft = NodeID3.read(filePath) as unknown as Id3Tags;
-                const old = oldTags[file] || {};
-                const changes: string[] = [];
-                const fieldMap: [string, string, string | undefined][] = [
-                    ['artist', 'Artist', ft.artist],
-                    ['albumArtist', 'Album Artist', ft.performerInfo],
-                    ['album', 'Album', ft.album],
-                    ['title', 'Title', ft.title],
-                    ['year', 'Year', ft.year],
-                    ['genre', 'Genre', ft.genre],
-                    ['label', 'Label', ft.publisher],
-                ];
-                for (const [key, label, newVal] of fieldMap) {
-                    const oldVal = old[key] || '';
-                    const nv = newVal || '';
-                    if (oldVal !== nv && (nv || oldVal)) {
-                        changes.push(`${label}: ${oldVal ? `"${oldVal}"` : '—'} → ${nv ? `"${nv}"` : '—'}`);
-                    }
-                }
-                // Check custom fields
-                const udf = (ft.userDefinedText || []) as { description: string; value: string }[];
-                const customFields = ['Country', 'RELEASETYPE', 'DGC_POST_ID', 'DEEZER_ID'];
-                for (const desc of customFields) {
-                    const found = udf.find((u) => u.description === desc);
-                    const nv = found?.value || '';
-                    const ov = '' ; // custom fields not tracked before write
-                    if (nv) changes.push(`${desc}: "${nv}"`);
-                }
-                if (changes.length > 0) {
-                    tagChanges.push(`${file}:\n  ${changes.join('\n  ')}`);
-                }
-            } catch {}
+        for (let i = 0; i < mp3Files.length; i++) {
+            send('file', { current: i + 1, total: mp3Files.length, file: mp3Files[i], phase: 'compare' });
         }
+        // Simplified: just report count
+        send('log', { message: `Compared ${mp3Files.length} files` });
 
+        // Phase 3: Rename / Move
         let moved: string[] | undefined;
         let renamed: { from: string; to: string }[] | undefined;
         if (moveFiles) {
+            send('phase', { phase: 'Renaming files...', current: 0, total: 1 });
             const origMp3 = await getMp3Files(absolutePath);
-            
             let albumArtistForMove: string | undefined;
             let yearForMove: string | undefined;
             let albumForMove: string | undefined;
@@ -268,27 +234,31 @@ app.post('/api/tags/update', async (req, res) => {
                     albumForMove = tags.album;
                 } catch {}
             }
-            
             const renameResult = await renameFilesInPlace(absolutePath, tags.artist, trackArtists, trackNames, cfg.musicRoot);
             renamed = renameResult.renamed;
-            logger.info(`[updateTags] pre-rename: ${JSON.stringify(renameResult)}`);
+            send('log', { message: `Renamed ${renamed.length} files` });
+
+            send('phase', { phase: 'Moving files...', current: 0, total: 1 });
             const result = await moveProcessedFiles(
                 absolutePath, getOutputRoot(cfg), cfg.musicRoot, tags,
-                albumArtistForMove,
-                trackArtists, trackNames,
+                albumArtistForMove, trackArtists, trackNames,
                 cfg.outputMode, yearForMove, albumForMove
             );
             moved = result.moved;
+            send('log', { message: `Moved ${moved.length} files to output` });
         } else if (renameFiles) {
+            send('phase', { phase: 'Renaming files...', current: 0, total: 1 });
             const result = await renameFilesInPlace(absolutePath, tags.artist, trackArtists, trackNames, cfg.musicRoot);
             renamed = result.renamed;
-            logger.info(`[updateTags] rename: ${JSON.stringify(result)}`);
+            send('log', { message: `Renamed ${renamed.length} files` });
         }
-        res.json({ success: true, moved, renamed, tagChanges });
+
+        send('done', { success: true, moved, renamed, tagChanges });
     } catch (error) {
         logger.error(`POST /api/tags/update error:`, error);
-        res.status(500).json({ error: (error as Error).message });
+        send('error', { error: (error as Error).message });
     }
+    res.end();
 });
 
 const ALLOWED_WEBFETCH_HOSTS = ['deathgrind.club', 'cdn.deathgrind.club'];

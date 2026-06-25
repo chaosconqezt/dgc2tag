@@ -21,7 +21,7 @@ export interface MusicBrainzResult {
   status: string | null;
   country: string | null;
   trackCount: number;
-  tracks: { num: string; name: string; duration?: number; recordingId?: string }[];
+  tracks: { num: string; name: string; artist: string; duration?: number; recordingId?: string }[];
   url: string;
   tags: string[];
   extraTags: Record<string, string>;
@@ -218,6 +218,7 @@ export async function getMusicBrainzRelease(releaseId: string): Promise<MusicBra
     const tracks = (data.media?.[0]?.tracks || []).map((t: any, i: number) => ({
       num: String(t.position || i + 1),
       name: t.title,
+      artist: t['artist-credit']?.map((a: any) => a.name).join(' / ') || artistName,
       duration: t.length ? Math.round(t.length / 1000) : undefined,
       recordingId: t.recording?.id || undefined,
     }));

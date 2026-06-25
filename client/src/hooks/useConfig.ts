@@ -12,6 +12,7 @@ export interface ConfigState {
   configOutputFolder: string;
   configOutputMode: 'subfolder' | 'absolute';
   tagEnabled: Record<string, boolean>;
+  enabledSources: Record<string, boolean>;
 }
 
 export function createConfigActions(
@@ -30,6 +31,9 @@ export function createConfigActions(
           dispatch({ type: 'SET_TAG_ENABLED', payload: { ...DEFAULT_TAG_DEFAULTS, ...data.tagDefaults } });
         }
         dispatch({ type: 'SET_WRITE_TRACK_NAMES', payload: data.writeTrackNames ?? true });
+        if (data.enabledSources) {
+          dispatch({ type: 'SET_ENABLED_SOURCES', payload: data.enabledSources });
+        }
       } catch (err) {
         if (import.meta.env.DEV) console.error('Failed to fetch config', err);
       }
@@ -43,6 +47,7 @@ export function createConfigActions(
           state.tagEnabled,
           state.configOutputFolder,
           state.configOutputMode,
+          state.enabledSources,
         );
         dispatch({ type: 'SET_SHOW_SETTINGS', payload: false });
         await fetchLibrary();

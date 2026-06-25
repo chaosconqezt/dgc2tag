@@ -15,6 +15,8 @@ interface SettingsModalProps {
   clearingCache: boolean;
   tagDefaults: Record<string, boolean>;
   onTagDefaultsChange: (defaults: Record<string, boolean>) => void;
+  enabledSources: Record<string, boolean>;
+  onEnabledSourcesChange: (sources: Record<string, boolean>) => void;
   onClose: () => void;
 }
 
@@ -29,7 +31,14 @@ const TAG_FIELDS = [
   { key: 'releaseType', label: 'Release Type' },
 ];
 
-export function SettingsModal({ musicRoot, outputFolder, outputMode, saving, onMusicRootChange, onOutputFolderChange, onOutputModeChange, onSave, onClearCache, clearingCache, tagDefaults, onTagDefaultsChange, onClose }: SettingsModalProps) {
+const SOURCE_FIELDS = [
+  { id: 'dgc', label: 'DGC', color: '#ef4444' },
+  { id: 'deezer', label: 'Deezer', color: '#4ade80' },
+  { id: 'mbrainz', label: 'MusicBrainz', color: '#f97316' },
+  { id: 'bandcamp', label: 'Bandcamp', color: '#629aa9' },
+];
+
+export function SettingsModal({ musicRoot, outputFolder, outputMode, saving, onMusicRootChange, onOutputFolderChange, onOutputModeChange, onSave, onClearCache, clearingCache, tagDefaults, onTagDefaultsChange, enabledSources, onEnabledSourcesChange, onClose }: SettingsModalProps) {
   useEffect(() => {
     const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
     window.addEventListener('keydown', handler);
@@ -38,6 +47,10 @@ export function SettingsModal({ musicRoot, outputFolder, outputMode, saving, onM
 
   const toggleTag = (key: string) => {
     onTagDefaultsChange({ ...tagDefaults, [key]: !tagDefaults[key] });
+  };
+
+  const toggleSource = (id: string) => {
+    onEnabledSourcesChange({ ...enabledSources, [id]: !enabledSources[id] });
   };
 
   const labelStyle = { display: 'block' as const, fontSize: FS, color: COLORS.textDim, fontWeight: '700' as const, textTransform: 'uppercase' as const, letterSpacing: '0.5px', marginBottom: '6px', fontFamily: FONT };
@@ -99,6 +112,19 @@ export function SettingsModal({ musicRoot, outputFolder, outputMode, saving, onM
               ))}
             </div>
             <div style={hintStyle}>These defaults are remembered between albums</div>
+          </div>
+
+          <div>
+            <label style={labelStyle}>Search Sources</label>
+            <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
+              {SOURCE_FIELDS.map(s => (
+                <label key={s.id} style={{ display: 'flex', alignItems: 'center', gap: '4px', cursor: 'pointer', fontSize: FS, color: enabledSources[s.id] !== false ? s.color : COLORS.textFaint, fontFamily: FONT, padding: '4px 8px', borderRadius: '4px', backgroundColor: enabledSources[s.id] !== false ? `${s.color}15` : 'transparent', border: `1px solid ${enabledSources[s.id] !== false ? `${s.color}40` : COLORS.textInvisible}`, transition: 'all 0.15s' }}>
+                  <input type="checkbox" checked={enabledSources[s.id] !== false} onChange={() => toggleSource(s.id)} style={{ accentColor: s.color, width: '12px', height: '12px', cursor: 'pointer' }} />
+                  {s.label}
+                </label>
+              ))}
+            </div>
+            <div style={hintStyle}>Disabled sources won't be searched</div>
           </div>
 
           <button onClick={onSave} disabled={saving} style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', height: '32px', fontSize: FS, background: COLORS.red, color: '#fff', border: 'none', borderRadius: '6px', cursor: saving ? 'wait' : 'pointer', fontFamily: FONT }}>

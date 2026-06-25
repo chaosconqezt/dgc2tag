@@ -202,7 +202,7 @@ let page: any = null;
 let managedBrowser = false;
 let browserLaunchPromise: Promise<any> | null = null;
 
-async function ensureBrowser() {
+export async function ensureBrowser() {
     if (browser && page) {
         try {
             await page.bringToFront();
@@ -227,7 +227,7 @@ async function ensureBrowser() {
         logger.info('launching browser...');
         try {
             const launched = await (puppeteer as any).launch({
-                headless: false,
+                headless: process.env.NODE_ENV === 'production' || process.env.HEADLESS === 'true',
                 defaultViewport: null,
                 pipe: false,
                 userDataDir: './user_data',
@@ -265,10 +265,13 @@ async function ensureBrowser() {
     })();
 
     try {
-        browser = await browserLaunchPromise;
+        const launched = await browserLaunchPromise;
+        if (launched) browser = launched;
     } finally {
         browserLaunchPromise = null;
     }
+
+    if (!browser) throw new Error('Browser disconnected during launch');
 
     const pages = await browser.pages();
     page = pages[0] || await browser.newPage();
@@ -409,7 +412,7 @@ export async function getAlbumDetails(postId: number): Promise<SearchResult | nu
         const isCompilation = bandNames.length === 1 && (bandNames[0] === 'va' || bandNames[0] === 'various artists');
         result.compilation = isCompilation;
         let currentSectionArtist: string | null = null;
-        let lastKnownBandIndex = -1;  // track index where currentSectionArtist was set
+        let lastKnownBandIndex = -1;
         const lines = data.post.tracklist.split('\n');
         const parsedTracks: { num: string; artist: string; name: string }[] = [];
 

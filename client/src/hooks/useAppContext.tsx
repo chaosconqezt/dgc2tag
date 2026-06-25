@@ -43,11 +43,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   const { handleSearch, loadAlbumDetails, handleSelectResult, handleSelectDeezer, handleSelectMbrainz } = useMemo(
     () => createSearchActions(
-      { searchArtist: state.searchArtist, searchAlbum: state.searchAlbum, searchArtistEnabled: state.searchArtistEnabled, searchAlbumEnabled: state.searchAlbumEnabled, selectedResult: state.selectedResult, selectedDeezer: state.selectedDeezer, tagEnabled: state.tagEnabled },
+      { searchArtist: state.searchArtist, searchAlbum: state.searchAlbum, searchArtistEnabled: state.searchArtistEnabled, searchAlbumEnabled: state.searchAlbumEnabled, selectedResult: state.selectedResult, selectedDeezer: state.selectedDeezer, tagEnabled: state.tagEnabled, enabledSources: state.enabledSources },
       dispatch, clearSelectionState,
       { searchInProgress: searchInProgressRef, loadAlbumDetailsId: loadAlbumDetailsIdRef },
     ),
-    [state.searchArtist, state.searchAlbum, state.searchArtistEnabled, state.searchAlbumEnabled, state.selectedResult, state.selectedDeezer, state.tagEnabled, dispatch, clearSelectionState],
+    [state.searchArtist, state.searchAlbum, state.searchArtistEnabled, state.searchAlbumEnabled, state.selectedResult, state.selectedDeezer, state.tagEnabled, state.enabledSources, dispatch, clearSelectionState],
   );
 
   const { fetchLibrary, toggleNode, collapseAll, dirHasAudioFiles, handleFolderSelect } = useMemo(
@@ -56,7 +56,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   );
 
   const { fetchConfig, saveConfig, clearCache } = createConfigActions(
-    { configMusicRoot: state.configMusicRoot, configOutputFolder: state.configOutputFolder, configOutputMode: state.configOutputMode, tagEnabled: state.tagEnabled },
+    { configMusicRoot: state.configMusicRoot, configOutputFolder: state.configOutputFolder, configOutputMode: state.configOutputMode, tagEnabled: state.tagEnabled, enabledSources: state.enabledSources },
     dispatch, fetchLibrary,
   );
 

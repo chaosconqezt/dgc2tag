@@ -46,7 +46,7 @@ async function writeSingleTag(
     const resolvedArtist = Array.isArray(tags.artist) ? tags.artist[0] : tags.artist;
     const resolvedAlbumArtist = Array.isArray(tags.albumArtist) ? tags.albumArtist[0] : tags.albumArtist;
 
-    const updatedTags: any = {
+    const updatedTags = {
         ...currentTags,
         artist: perTrackArtist || resolvedArtist || currentTags.artist,
         performerInfo: resolvedAlbumArtist || currentTags.performerInfo,
@@ -86,19 +86,19 @@ async function writeSingleTag(
     } else {
         fileBuffer = await fs.readFile(filePath);
     }
-    const updatedBuffer = NodeID3.write(updatedTags, fileBuffer);
+    const updatedBuffer = NodeID3.write(updatedTags as any, fileBuffer);
     if (updatedBuffer && updatedBuffer.length > 0) {
         await fs.writeFile(filePath, updatedBuffer);
     }
 }
 
 function writeUserDefinedText(
-    current: any[],
+    current: { description?: string; value?: string }[],
     fields: Record<string, string | undefined>,
-): any[] {
+): { description?: string; value?: string }[] {
     const result = [...current];
     const findIdx = (desc: string) =>
-        result.findIndex((t: any) => t.description?.toLowerCase() === desc.toLowerCase());
+        result.findIndex((t) => t.description?.toLowerCase() === desc.toLowerCase());
 
     for (const [desc, value] of Object.entries(fields)) {
         const idx = findIdx(desc);
@@ -261,7 +261,7 @@ async function cleanEmptyFolders(dir: string, stopAt: string): Promise<void> {
     try {
         const entries = await fs.readdir(dir);
         if (entries.length === 0) {
-            await fs.rmdir(dir);
+            await fs.rm(dir);
             logger.debug(`removed empty folder: ${dir}`);
             await cleanEmptyFolders(path.dirname(dir), stopAt);
         }
