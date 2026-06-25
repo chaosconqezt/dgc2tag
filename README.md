@@ -1,6 +1,6 @@
 # DGC Tagger
 
-Desktop app for batch-tagging MP3 files from [Deathgrind Club](https://deathgrind.club), [Deezer](https://deezer.com), and [MusicBrainz](https://musicbrainz.org).
+Desktop app for batch-tagging MP3 files from [Deathgrind Club](https://deathgrind.club), [Deezer](https://deezer.com), [MusicBrainz](https://musicbrainz.org), and [Bandcamp](https://bandcamp.com).
 
 ## Quick Start
 
@@ -25,9 +25,9 @@ npm run dev
 - **Track matching** — prefix/contains matching for files like "Track (Cover)"
 - **Tag preservation** — IDs preserved across source switches
 - **Extra Tags panel** — Current (in file) vs New (to be written)
-- **Result modal** — detailed tag change report instead of alert()
+- **Progress overlay** — real-time SSE progress during file operations (write/rename/move)
 - **Puppeteer integration** — persistent browser, Cloudflare bypass
-- **Resizable sidebar** — drag borders to resize library tree / matches / main panel
+- **Resizable panels** — drag borders to resize library tree / matches / main panel (positions saved to localStorage)
 - **Source toggles** — enable/disable search sources in Settings
 - **Tree badges** — nested dir count; audio file count on selected folder
 
@@ -39,48 +39,52 @@ npm run dev
 - **Plugin sources** — `server/src/sources/` with `SearchSource` interface
 - **Unified SearchResult** — all sources normalize to common type
 - **Data-driven tags** — `writeUserDefinedText(current, Record<string, string | undefined>)`
+- **SSE progress** — `/api/tags/update` streams progress events during file operations
 - **npm workspaces** — hoisted to root
 
 ## Configuration
 
 - `server/config.default.json` — defaults (in git)
 - `server/config.json` — user settings (in .gitignore)
+- `enabledSources` — which search sources are active (persisted)
 
 ## Project Structure
 
 ```
 server/src/
-├── index.ts          — Express API routes + Vite middleware
+├── index.ts          — Express API routes + Vite middleware + SSE progress
 ├── sources/          — plugin architecture
 │   ├── types.ts      — SearchSource interface
 │   ├── index.ts      — registry sources[] + getSource(id)
 │   ├── dgc.ts        — wrapper over scraper.ts
 │   ├── deezer.ts     — wrapper over deezer.ts
-│   └── musicbrainz.ts — wrapper over musicbrainz.ts
+│   ├── musicbrainz.ts — wrapper over musicbrainz.ts
+│   └── bandcamp.ts   — wrapper over bandcamp.ts
 ├── scraper.ts        — puppeteer + stealth, DGC API
+├── bandcamp.ts       — Bandcamp search + JSON-LD album parser
 ├── deezer.ts         — Deezer API (axios)
 ├── musicbrainz.ts    — MusicBrainz API + FIELD_MAP
 ├── tagWriter.ts      — ID3 writing (data-driven writeUserDefinedText)
 ├── tagger.ts         — ID3 reading + music-metadata for duration
 ├── scanner.ts        — filesystem traversal (lazy + recursive)
-├── config.ts         — config.json load/save
+├── config.ts         — config.json load/save + enabledSources
 ├── cache.ts          — file cache for bands/releases
 ├── logger.ts         — leveled logger (debug/info/warn/error)
 └── trackUtils.ts     — track number extraction, getMp3Files, path validation
 
 client/src/
 ├── main.tsx
-├── App.tsx           — layout + resizable panels
-├── api.ts            — axios + interceptors
+├── App.tsx           — layout + resizable panels + localStorage persistence
+├── api.ts            — axios + interceptors + SSE progress reader
 ├── types.ts          — SearchResult, AlbumTags, MatchResult, etc.
 ├── sourceConfigs.ts  — [{ id, label, color }]
 ├── hooks/
-│   ├── useAppContext.tsx — reducer + composition (87 lines)
+│   ├── useAppContext.tsx — reducer + composition (90 lines)
 │   ├── appReducer.ts     — state, actions, reducer
-│   ├── useSearch.ts      — search + select handlers
+│   ├── useSearch.ts      — search + select handlers (4 sources)
 │   ├── useLibrary.ts     — library + folder select
-│   ├── useConfig.ts      — config + cache
-│   ├── useTagActions.ts  — applyTags
+│   ├── useConfig.ts      — config + cache + enabledSources
+│   ├── useTagActions.ts  — applyTags with SSE progress
 │   └── useWebfetch.ts    — webfetch overlay
 ├── utils/
 │   ├── index.ts          — stripParentheses, generateParsedTracks
@@ -89,19 +93,21 @@ client/src/
 └── components/
     ├── styles.ts             — COLORS, FONT, FS, simColor
     ├── ResultCard.tsx        — 2-line card (cover + artist/year/album/label)
-    ├── SearchResults.tsx     — vertical list of source results
+    ├── SearchResults.tsx     — vertical list of 4 source results
     ├── DgcResults.tsx
     ├── DeezerResults.tsx
     ├── MusicBrainzResults.tsx
+    ├── BandcampResults.tsx
     ├── TagComparison.tsx     — file vs catalog tags + Extra Tags
     ├── TrackMatcher.tsx      — track matching panel
-    ├── MatchRow.tsx          — single track row
+    ├── MatchRow.tsx          — single track row (grouped props)
     ├── SingleArtistTracks.tsx
     ├── MultiArtistTracks.tsx
     ├── TrackArtistField.tsx  — inline artist edit
     ├── ApplyPanel.tsx        — WRITE & MOVE / RENAME / WRITE / CANCEL
+    ├── ProgressOverlay.tsx   — SSE progress bar + file log
     ├── ResultModal.tsx
-    ├── SettingsModal.tsx
+    ├── SettingsModal.tsx     — sources toggles + tag defaults
     ├── WebfetchOverlay.tsx
     ├── LibraryTree.tsx       — tree with dir count badges
     ├── SearchBar.tsx
@@ -131,6 +137,12 @@ import { mySource } from './my-source.js';
 export const sources = [..., mySource];
 ```
 
+3. Add to `client/src/sourceConfigs.ts`:
+
+```typescript
+{ id: 'mysource', label: 'MY SOURCE', color: '#aabbcc' },
+```
+
 Routes auto-generated: `POST /api/search-mysource`, `GET /api/mysource/:id`
 
 ### Current Sources
@@ -147,7 +159,7 @@ Routes auto-generated: `POST /api/search-mysource`, `GET /api/mysource/:id`
 | Method | Path | Description |
 |--------|------|-------------|
 | GET | `/api/config` | Get config |
-| POST | `/api/config` | Save config |
+| POST | `/api/config` | Save config (incl. `enabledSources`) |
 | POST | `/api/config/write-track-names` | Toggle track name writing |
 | POST | `/api/config/write-track-artists` | Toggle track artist writing |
 | GET | `/api/library` | Library tree |
@@ -157,11 +169,22 @@ Routes auto-generated: `POST /api/search-mysource`, `GET /api/mysource/:id`
 | POST | `/api/search-{sourceId}` | Auto-generated source search |
 | GET | `/api/{sourceId}/:id` | Auto-generated source details |
 | GET | `/api/post/:id` | DGC post details |
-| POST | `/api/tags/update` | Write tags + diff + rename/move |
+| POST | `/api/tags/update` | **SSE** — write tags with real-time progress |
 | POST | `/api/cache/clear` | Clear cache |
 | GET | `/api/webfetch?url=` | SSRF-protected page fetch |
 | POST | `/api/parse-genres` | Parse genres from HTML |
 | GET | `/api/browser/status` | Puppeteer browser status |
+
+### SSE Progress Events (`/api/tags/update`)
+
+| Event | Data | When |
+|-------|------|------|
+| `start` | `{ message }` | Operation begins |
+| `phase` | `{ phase, current, total }` | Phase change (write/compare/rename/move) |
+| `file` | `{ current, total, file, phase }` | Per-file progress |
+| `log` | `{ message }` | Status message |
+| `done` | `{ success, moved, renamed, tagChanges }` | Operation complete |
+| `error` | `{ error }` | Operation failed |
 
 ## Tagging Pipeline
 
@@ -174,7 +197,7 @@ Routes auto-generated: `POST /api/search-mysource`, `GET /api/mysource/:id`
     ▼
 [4] ApplyPanel.tsx — WRITE & MOVE / RENAME / WRITE / CANCEL
     ▼
-[5] ResultModal.tsx — result: tags old→new, renamed files
+[5] ProgressOverlay.tsx — SSE progress bar + file log
     ▼
 [6] tagWriter.ts — write (writeUserDefinedText data-driven)
 ```
@@ -182,16 +205,19 @@ Routes auto-generated: `POST /api/search-mysource`, `GET /api/mysource/:id`
 ## Security
 
 - SSRF: `/api/webfetch` — allowlist `deathgrind.club`, `cdn.deathgrind.club`
-- Path traversal: `assertInsideMusicRoot()` on all file operations
+- Path traversal: `assertInsideMusicRoot()` on all file operations (case-insensitive on Windows)
 - AbortController cleanup — no memory leaks
+- Headless mode configurable (`NODE_ENV=production` or `HEADLESS=true`)
 
 ## Notes
 
-- **Puppeteer** — persistent browser, `userDataDir` in `user_data/`
+- **Puppeteer** — persistent browser, `userDataDir` in `user_data/`, shared by DGC + Bandcamp
 - **Cloudflare** — manual challenge on first run
 - **Taxonomy** — genre/type from DGC JS, 7d TTL cache
-- **MusicBrainz** — rate limit 1 req/sec, User-Agent required
+- **MusicBrainz** — rate limit 1 req/sec, User-Agent required, per-track artist credits
+- **Bandcamp** — search via Puppeteer (JS challenge), album details via JSON-LD
 - **music-metadata** — used for accurate track duration detection
+- **Panel positions** — sidebar width + tree height saved to localStorage
 
 ## Open TODOs
 
