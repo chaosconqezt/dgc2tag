@@ -80,51 +80,56 @@ export function TrackMatcher({
   return (
     <div style={PANEL_STYLE}>
       <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px', fontSize: FS, fontFamily: FONT, color: COLORS.textDim, flexWrap: 'wrap' }}>
-        <label style={{ display: 'flex', alignItems: 'center', gap: '3px', cursor: 'pointer' }}>
-          <input type="checkbox" checked={writeTrackNames} onChange={(e) => handleTitlesToggle(e.target.checked)} style={CHECKBOX} />
-          write track titles
-        </label>
-        <span style={{ color: COLORS.textInvisible }}>·</span>
-        <label style={{ display: 'flex', alignItems: 'center', gap: '3px', cursor: 'pointer', opacity: hasAnyTags ? 1 : 0.3 }}>
-          <input type="checkbox" checked={showFilenamePreviews} onChange={(e) => setShowFilenamePreviews(e.target.checked)} disabled={!hasAnyTags} style={CHECKBOX} />
-          filenames
-        </label>
-        <span style={{ color: COLORS.textInvisible }}>·</span>
-        <span>
-          <span style={{ color: countMatch ? COLORS.green : COLORS.yellow, fontWeight: '600' }}>{localCount}</span>
-          <span> / </span>
-          <span style={{ color: countMatch ? COLORS.green : COLORS.yellow, fontWeight: '600' }}>{remoteCount}</span>
-          <span> tracks</span>
-        </span>
-        {exactCount > 0 && <span style={{ color: COLORS.green }}>{exactCount} exact</span>}
-        {closeCount > 0 && <span style={{ color: COLORS.yellow }}>{closeCount} close</span>}
-        {missingCount > 0 && <span style={{ color: COLORS.red }}>{missingCount} missing</span>}
-        {extraCount > 0 && <span style={{ color: COLORS.yellow }}>{extraCount} extra</span>}
-        <span style={{ color: COLORS.textInvisible }}>·</span>
-        <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
           <label style={{ display: 'flex', alignItems: 'center', gap: '3px', cursor: 'pointer' }}>
-            <input type="radio" name="filenameMode" checked={filenameMode === 'id3'} onChange={() => setFilenameMode('id3')} style={CHECKBOX} />
-            ID3
+            <input type="checkbox" checked={writeTrackNames} onChange={(e) => handleTitlesToggle(e.target.checked)} style={CHECKBOX} />
+            write track titles
           </label>
-          <label style={{ display: 'flex', alignItems: 'center', gap: '3px', cursor: 'pointer' }}>
-            <input type="radio" name="filenameMode" checked={filenameMode === 'filename'} onChange={() => setFilenameMode('filename')} style={CHECKBOX} />
-            filename
+          <span style={{ color: COLORS.textInvisible }}>·</span>
+          <label style={{ display: 'flex', alignItems: 'center', gap: '3px', cursor: 'pointer', opacity: hasAnyTags ? 1 : 0.3 }}>
+            <input type="checkbox" checked={showFilenamePreviews} onChange={(e) => setShowFilenamePreviews(e.target.checked)} disabled={!hasAnyTags} style={CHECKBOX} />
+            filenames
           </label>
-        </span>
-        <span style={{ color: COLORS.textInvisible }}>·</span>
-        <label style={{ display: 'flex', alignItems: 'center', gap: '3px', cursor: 'pointer' }}>
-          <input type="checkbox" checked={compilation} onChange={(e) => onCompilationChange(e.target.checked)} style={CHECKBOX} />
-          compilation
-        </label>
-        {hasMultiArtist && (
-          <>
-            <span style={{ color: COLORS.textInvisible }}>·</span>
+          <span style={{ color: COLORS.textInvisible }}>·</span>
+          <span>
+            <span style={{ color: countMatch ? COLORS.green : COLORS.yellow, fontWeight: '600' }}>{localCount}</span>
+            <span> / </span>
+            <span style={{ color: countMatch ? COLORS.green : COLORS.yellow, fontWeight: '600' }}>{remoteCount}</span>
+            <span> tracks</span>
+          </span>
+          {exactCount > 0 && <span style={{ color: COLORS.green }}>{exactCount} exact</span>}
+          {closeCount > 0 && <span style={{ color: COLORS.yellow }}>{closeCount} close</span>}
+          {missingCount > 0 && <span style={{ color: COLORS.red }}>{missingCount} missing</span>}
+          {extraCount > 0 && <span style={{ color: COLORS.yellow }}>{extraCount} extra</span>}
+          <span style={{ color: COLORS.textInvisible }}>·</span>
+          <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
             <label style={{ display: 'flex', alignItems: 'center', gap: '3px', cursor: 'pointer' }}>
-              <input type="checkbox" checked={writeTrackArtists} onChange={(e) => handleArtistsToggle(e.target.checked)} style={CHECKBOX} />
-              artists
+              <input type="radio" name="filenameMode" checked={filenameMode === 'id3'} onChange={() => setFilenameMode('id3')} style={CHECKBOX} />
+              ID3
             </label>
-          </>
-        )}
+            <label style={{ display: 'flex', alignItems: 'center', gap: '3px', cursor: 'pointer' }}>
+              <input type="radio" name="filenameMode" checked={filenameMode === 'filename'} onChange={() => setFilenameMode('filename')} style={CHECKBOX} />
+              filename
+            </label>
+          </span>
+          <span style={{ color: COLORS.textInvisible }}>·</span>
+          <label style={{ display: 'flex', alignItems: 'center', gap: '3px', cursor: 'pointer' }}>
+            <input type="checkbox" checked={compilation} onChange={(e) => onCompilationChange(e.target.checked)} style={CHECKBOX} />
+            compilation
+          </label>
+          {hasMultiArtist && (
+            <>
+              <span style={{ color: COLORS.textInvisible }}>·</span>
+              <label style={{ display: 'flex', alignItems: 'center', gap: '3px', cursor: 'pointer' }}>
+                <input type="checkbox" checked={writeTrackArtists} onChange={(e) => handleArtistsToggle(e.target.checked)} style={CHECKBOX} />
+                artists
+              </label>
+            </>
+          )}
+          {localTags.bitrateInfo && (
+            <span style={{ marginLeft: 'auto', color: COLORS.textFaint }}>
+              {localTags.bitrateInfo}
+            </span>
+          )}
       </div>
 
       {hasMultiArtist ? (

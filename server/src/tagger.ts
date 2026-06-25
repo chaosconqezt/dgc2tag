@@ -27,6 +27,8 @@ export async function getTags(folderPath: string): Promise<AlbumTags> {
     const trackNums: Record<string, string> = {}; // filePath → trackNum
     const trackArtistsSet = new Set<string>();
     const albumArtistsSet = new Set<string>();
+    const bitrates: number[] = [];
+    const bitratesVbr: boolean[] = [];
 
     for (const file of mp3Files) {
         const filePath = path.join(folderPath, file);
@@ -54,10 +56,19 @@ export async function getTags(folderPath: string): Promise<AlbumTags> {
         let durationSec: number | undefined = undefined;
 
         // 1. Try music-metadata for accurate duration
+        let metadataBitrate: number | undefined;
+        let metadataVbr = false;
         try {
             const metadata = await mm.parseFile(filePath);
             if (metadata.format?.duration !== null && typeof metadata.format.duration === 'number') {
                 durationSec = Math.round(metadata.format.duration);
+            }
+            if (metadata.format?.bitrate) {
+                metadataBitrate = Math.round(metadata.format.bitrate / 1000);
+            }
+            const profile = (metadata.format as any)?.codecProfile || '';
+            if (profile.includes('V') || profile.toLowerCase().includes('vbr')) {
+                metadataVbr = true;
             }
         } catch (err) {
             // fallback to ID3/bitrate methods
@@ -94,6 +105,14 @@ export async function getTags(folderPath: string): Promise<AlbumTags> {
         if (durationSec < 0) durationSec = 0;
 
         trackDurations[filePath] = durationSec;
+
+        // Collect bitrate info
+        const tagBitrate = tags.bitrate ? Number(tags.bitrate) : undefined;
+        const finalBitrate = metadataBitrate || (tagBitrate && !isNaN(tagBitrate) ? tagBitrate : undefined);
+        if (finalBitrate && finalBitrate > 0) {
+            bitrates.push(finalBitrate);
+            bitratesVbr.push(metadataVbr || (tagBitrate === undefined && !metadataBitrate));
+        }
     }
 
     if (Object.keys(trackDurations).length === 0) {
@@ -205,6 +224,23 @@ export async function getTags(folderPath: string): Promise<AlbumTags> {
         }
     }
 
+    // Compute bitrate info summary
+    let bitrateInfo: string | undefined;
+    if (bitrates.length > 0) {
+        const unique = [...new Set(bitrates)].sort((a, b) => a - b);
+        const hasVbr = bitratesVbr.some(v => v);
+        if (unique.length === 1) {
+            bitrateInfo = hasVbr ? `VBR ${unique[0]} kbps` : `CBR ${unique[0]} kbps`;
+        } else if (unique.length <= 3) {
+            const label = hasVbr ? 'VBR' : 'CBR';
+            bitrateInfo = `${label} ${unique.join(', ')} kbps`;
+        } else {
+            const min = unique[0]!;
+            const max = unique[unique.length - 1]!;
+            bitrateInfo = hasVbr ? `VBR ${min}-${max} kbps` : `CBR ${min}-${max} kbps`;
+        }
+    }
+
     result.trackCount = filePaths.length;
     result.files = filePaths;
     result.trackTitles = trackTitles;
@@ -215,5 +251,6 @@ export async function getTags(folderPath: string): Promise<AlbumTags> {
     result.artists = [...trackArtistsSet];
     result.albumArtists = [...albumArtistsSet];
     if (Object.keys(extraTags).length > 0) result.extraTags = extraTags;
+    if (bitrateInfo) result.bitrateInfo = bitrateInfo;
     return result;
 }

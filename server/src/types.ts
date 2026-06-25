@@ -17,6 +17,7 @@ export interface AlbumTags {
     artists?: string[];
     albumArtists?: string[];
     extraTags?: Record<string, string>;
+    bitrateInfo?: string;
 }
 
 export interface Id3Tags {
