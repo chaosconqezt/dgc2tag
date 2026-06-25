@@ -4,6 +4,7 @@ import { matchTracks, generateParsedTracks } from '../utils';
 import { FONT, FS, COLORS, CHECKBOX, PANEL_STYLE } from './styles';
 import { SingleArtistTracks } from './SingleArtistTracks';
 import { MultiArtistTracks } from './MultiArtistTracks';
+import type { TrackDisplayConfig } from './MatchRow';
 
 interface TrackMatcherProps {
   albumDetails: SearchResult | null;
@@ -74,6 +75,8 @@ export function TrackMatcher({
     remoteTracks.forEach(t => onTrackArtistsEnabledChange(t.num, enabled));
   };
 
+  const display: TrackDisplayConfig = { filenameMode, showFilenamePreviews };
+
   return (
     <div style={PANEL_STYLE}>
       <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px', fontSize: FS, fontFamily: FONT, color: COLORS.textDim, flexWrap: 'wrap' }}>
@@ -128,7 +131,7 @@ export function TrackMatcher({
         <MultiArtistTracks
           matched={matched} localTags={localTags} writeTrackNames={writeTrackNames} writeTrackArtists={writeTrackArtists}
           trackNameEnabled={trackNameEnabled} trackArtistsEnabled={trackArtistsEnabled} editedTrackNames={editedTrackNames} editedTrackArtists={editedTrackArtists}
-          stripRemoteParentheses={stripRemoteParentheses} showFilenamePreviews={showFilenamePreviews} filenameMode={filenameMode}
+          stripRemoteParentheses={stripRemoteParentheses} display={display}
           onWriteTrackNamesChange={onWriteTrackNamesChange} onWriteTrackArtistsChange={onWriteTrackArtistsChange}
           onTrackNameEnabledChange={onTrackNameEnabledChange} onTrackArtistsEnabledChange={onTrackArtistsEnabledChange}
           onEditedTrackNameChange={onEditedTrackNameChange} onEditedTrackArtistChange={onEditedTrackArtistChange}
@@ -137,7 +140,7 @@ export function TrackMatcher({
         <SingleArtistTracks
           matched={matched} localTags={localTags} writeTrackNames={writeTrackNames}
           trackNameEnabled={trackNameEnabled} editedTrackNames={editedTrackNames}
-          showFilenamePreviews={showFilenamePreviews} filenameMode={filenameMode}
+          display={display}
           onTrackNameEnabledChange={onTrackNameEnabledChange} onEditedTrackNameChange={onEditedTrackNameChange}
         />
       )}

@@ -1,7 +1,7 @@
 import type { AlbumTags } from '../types';
 import { matchTracks } from '../utils';
 import { simColor } from './styles';
-import { MatchRow } from './MatchRow';
+import { MatchRow, type TrackDisplayConfig, type TrackCallbacks } from './MatchRow';
 
 export function SingleArtistTracks({
   matched,
@@ -9,8 +9,7 @@ export function SingleArtistTracks({
   writeTrackNames,
   trackNameEnabled,
   editedTrackNames,
-  showFilenamePreviews,
-  filenameMode,
+  display,
   onTrackNameEnabledChange,
   onEditedTrackNameChange,
 }: {
@@ -19,34 +18,35 @@ export function SingleArtistTracks({
   writeTrackNames: boolean;
   trackNameEnabled: Record<string, boolean>;
   editedTrackNames: Record<string, string>;
-  showFilenamePreviews: boolean;
-  filenameMode: 'id3' | 'filename';
+  display: TrackDisplayConfig;
   onTrackNameEnabledChange: (num: string, enabled: boolean) => void;
   onEditedTrackNameChange: (num: string, value: string) => void;
 }) {
+  const callbacks: TrackCallbacks = {
+    onPerTrackNameToggle: (num, enabled) => onTrackNameEnabledChange(num, enabled),
+    onEditedTrackNameChange,
+  };
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1px' }}>
       {matched.map((m) => {
         const nameEnabled = writeTrackNames && (trackNameEnabled[m.remote.num] !== false);
-        const isUnmatched = !m.local;
         const displayName = editedTrackNames[m.remote.num] ?? m.remote.name;
-        const isNameEdited = m.remote.name !== displayName;
-        const sc = simColor(m.sim);
 
         return (
           <MatchRow
             key={m.remote.num}
             m={m}
             localTags={localTags}
-            filenameMode={filenameMode}
-            showFilenamePreviews={showFilenamePreviews}
-            nameEnabled={nameEnabled}
-            isNameEdited={isNameEdited}
-            isUnmatched={isUnmatched}
-            displayName={displayName}
-            sc={sc}
-            onPerTrackNameToggle={(num, enabled) => onTrackNameEnabledChange(num, enabled)}
-            onEditedTrackNameChange={onEditedTrackNameChange}
+            display={display}
+            track={{
+              nameEnabled,
+              isNameEdited: m.remote.name !== displayName,
+              isUnmatched: !m.local,
+              displayName,
+              sc: simColor(m.sim),
+            }}
+            callbacks={callbacks}
           />
         );
       })}

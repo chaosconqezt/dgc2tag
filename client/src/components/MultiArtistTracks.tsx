@@ -1,7 +1,7 @@
 import type { AlbumTags } from '../types';
 import { matchTracks, stripParentheses } from '../utils';
 import { FONT, FS, COLORS, simColor } from './styles';
-import { MatchRow } from './MatchRow';
+import { MatchRow, type TrackDisplayConfig, type TrackCallbacks } from './MatchRow';
 import { TrackArtistField } from './TrackArtistField';
 
 export function MultiArtistTracks({
@@ -14,8 +14,7 @@ export function MultiArtistTracks({
   editedTrackNames,
   editedTrackArtists,
   stripRemoteParentheses,
-  showFilenamePreviews,
-  filenameMode,
+  display,
   onWriteTrackNamesChange,
   onTrackNameEnabledChange,
   onTrackArtistsEnabledChange,
@@ -31,8 +30,7 @@ export function MultiArtistTracks({
   editedTrackNames: Record<string, string>;
   editedTrackArtists: Record<string, string>;
   stripRemoteParentheses: boolean;
-  showFilenamePreviews: boolean;
-  filenameMode: 'id3' | 'filename';
+  display: TrackDisplayConfig;
   onWriteTrackNamesChange: (enabled: boolean) => void;
   onTrackNameEnabledChange: (num: string, enabled: boolean) => void;
   onTrackArtistsEnabledChange: (num: string, enabled: boolean) => void;
@@ -44,35 +42,36 @@ export function MultiArtistTracks({
       {matched.map((m) => {
         const nameEnabled = writeTrackNames && (trackNameEnabled[m.remote.num] !== false);
         const artistEnabled = writeTrackArtists && (trackArtistsEnabled[m.remote.num] === true);
-        const isUnmatched = !m.local;
         const displayName = editedTrackNames[m.remote.num] ?? m.remote.name;
-        const isNameEdited = m.remote.name !== displayName;
         const rawArtist = editedTrackArtists[m.remote.num] ?? m.remote.artist;
         const displayArtist = stripRemoteParentheses ? stripParentheses(rawArtist) : rawArtist;
-        const sc = simColor(m.sim);
+
+        const callbacks: TrackCallbacks = {
+          onPerTrackNameToggle: (num, enabled) => {
+            onTrackNameEnabledChange(num, enabled);
+            if (enabled && !writeTrackNames) onWriteTrackNamesChange(true);
+          },
+          onEditedTrackNameChange,
+        };
 
         return (
           <div key={m.remote.num} style={{ opacity: nameEnabled ? 1 : 0.95 }}>
             <MatchRow
               m={m}
               localTags={localTags}
-              filenameMode={filenameMode}
-              showFilenamePreviews={showFilenamePreviews}
-              nameEnabled={nameEnabled}
-              isNameEdited={isNameEdited}
-              isUnmatched={isUnmatched}
-              displayName={displayName}
-              sc={sc}
-              onPerTrackNameToggle={(num, enabled) => {
-                onTrackNameEnabledChange(num, enabled);
-                if (enabled && !writeTrackNames) onWriteTrackNamesChange(true);
+              display={display}
+              track={{
+                nameEnabled,
+                isNameEdited: m.remote.name !== displayName,
+                isUnmatched: !m.local,
+                displayName,
+                sc: simColor(m.sim),
               }}
-              onEditedTrackNameChange={onEditedTrackNameChange}
+              callbacks={callbacks}
             />
 
             <div style={{ display: 'flex', alignItems: 'center', gap: '4px', paddingLeft: '11px', marginTop: '-1px' }}>
               <span style={{ width: '11px', flexShrink: 0 }} />
-
               <div style={{ flex: 1, textAlign: 'left', minWidth: 0 }}>
                 {m.local ? (
                   <div title={localTags.trackArtists?.[m.local.file] || ''} style={{
@@ -86,11 +85,9 @@ export function MultiArtistTracks({
                   <span style={{ fontSize: FS, color: COLORS.textInvisible }}>&nbsp;</span>
                 )}
               </div>
-
               <span style={{ width: '36px', flexShrink: 0 }} />
               <span style={{ width: '40px', flexShrink: 0 }} />
               <span style={{ width: '36px', flexShrink: 0 }} />
-
               <div style={{ flex: 1, paddingLeft: '4px', minWidth: 0 }}>
                 <TrackArtistField
                   value={displayArtist}

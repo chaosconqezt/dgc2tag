@@ -9,31 +9,41 @@ function formatDuration(seconds?: number): string {
   return `${m}:${String(s).padStart(2, '0')}`;
 }
 
-export function MatchRow({
-  m,
-  localTags,
-  filenameMode,
-  showFilenamePreviews,
-  nameEnabled,
-  isNameEdited,
-  isUnmatched,
-  displayName,
-  sc,
-  onPerTrackNameToggle,
-  onEditedTrackNameChange,
-}: {
-  m: ReturnType<typeof matchTracks>[number];
-  localTags: AlbumTags;
+export interface TrackDisplayConfig {
   filenameMode: 'id3' | 'filename';
   showFilenamePreviews: boolean;
+}
+
+export interface TrackState {
   nameEnabled: boolean;
   isNameEdited: boolean;
   isUnmatched: boolean;
   displayName: string;
   sc: string;
+}
+
+export interface TrackCallbacks {
   onPerTrackNameToggle: (num: string, enabled: boolean) => void;
   onEditedTrackNameChange: (num: string, value: string) => void;
+}
+
+export function MatchRow({
+  m,
+  localTags,
+  display,
+  track,
+  callbacks,
+}: {
+  m: ReturnType<typeof matchTracks>[number];
+  localTags: AlbumTags;
+  display: TrackDisplayConfig;
+  track: TrackState;
+  callbacks: TrackCallbacks;
 }) {
+  const { filenameMode, showFilenamePreviews } = display;
+  const { nameEnabled, isNameEdited, isUnmatched, displayName, sc } = track;
+  const { onPerTrackNameToggle, onEditedTrackNameChange } = callbacks;
+
   const localLabel = m.local
     ? filenameMode === 'filename' ? m.local.file : m.local.name
     : '';
