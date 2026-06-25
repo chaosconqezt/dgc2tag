@@ -57,34 +57,34 @@ Fix: обернуть каждый readTags() в try/catch, логировать
 
 ### Low
 
-#### 10. console.log вместо logger в scraper.ts (server/src/scraper.ts:191,200,219,234)
-Четыре вызова console.log вместо logger.
+#### 10. console.log вместо logger в scraper.ts (server/src/scraper.ts:218,228,247,251,259,279)
+Шесть вызовов console.log вместо logger в функции ensureBrowser().
 
 Fix: заменить на logger.info().
 
-#### 11. ❌ abortControllerRef не используется (client/src/hooks/useAppContext.tsx:244)
+#### 11. ❌ abortControllerRef не используется (client/src/hooks/useAppContext.tsx:264)
 Объявлен но нигде не читается/пишется.
 
 Fix: удалить.
 
-#### 12. ❌ fs.rmdir deprecated (server/src/tagWriter.ts:311)
+#### 12. ❌ fs.rmdir deprecated (server/src/tagWriter.ts:313)
 fs.rmdir() deprecated с Node.js 16. Использовать fs.rm().
 
 Fix: заменить на fs.rm(dir).
 
-#### 13. headless: false (server/src/scraper.ts:202)
+#### 13. headless: false (server/src/scraper.ts:229)
 Не работает без дисплея (CI/Docker).
 
 Fix: сделать конфигурируемым, default true в production.
 
-#### 14. any типы в tagWriter.ts (server/src/tagWriter.ts:80,116,121)
+#### 14. any типы в tagWriter.ts (server/src/tagWriter.ts:71,118-120)
 updatedTags: any, writeUserDefinedText parameters: any[].
 
 Fix: определить корректные типы или использовать NodeID3.Tags.
 
 #### 15. ❌ config.json vs config.ts DEFAULTS расхождение
-config.json: musicRoot=c:\vibecode\dgc2tag\music, port=3000, outputFolder=c:\vibecode\dgc2tag\music_processed, outputMode=absolute
-config.ts DEFAULTS: musicRoot=test_muz, port=3001, outputFolder=dgc, outputMode=subfolder
+config.json: musicRoot=`m:\soulsync`, port=3000, outputFolder=`tag`, outputMode=subfolder
+config.ts DEFAULTS: musicRoot=`c:\vibecode\dgc2tag\test_muz`, port=3001, outputFolder=`dgc`, outputMode=subfolder
 
 Fix: привести config.ts DEFAULTS к реальным значениям из config.json.
 
@@ -93,17 +93,17 @@ Fix: привести config.ts DEFAULTS к реальным значениям 
 ## Поддержка форматов
 
 ### Расширение поддержки аудиоформатов
-СкANNER (`scanner.ts:21`) уже определяет `.mp3`, `.flac`, `.m4a`, `.ogg`, `.wav`, `.wma`, `.aac`. Но tag reading/writing работает ТОЛЬКО с MP3.
+Сканнер (`scanner.ts:21`) уже определяет `.mp3`, `.flac`, `.m4a`, `.ogg`, `.wav`, `.wma`, `.aac`. Но tag reading/writing работает ТОЛЬКО с MP3.
 
 **Что нужно:**
-- `tagger.ts:53` — `.endsWith('.mp3')` → поддержать FLAC, M4A, OGG, AAC
-- `tagWriter.ts:45,153` — аналогично
-- `index.ts:198` — аналогично
+- `tagger.ts:54` — `.endsWith('.mp3')` → поддержать FLAC, M4A, OGG, AAC
+- `tagWriter.ts:45,157` — аналогично
+- `index.ts:196,218,261` — аналогично
 - Нужна библиотека для чтения/записи тегов в других форматах:
   - FLAC: `flac-metadata` или `metaflac`
   - M4A/AAC: `mp4box` или `atomic-parsley`
   - OGG: `ogg-metadata`
-  - Или: `music-metadata` (универсальная, поддерживает все форматы)
+  - Или: `music-metadata` (универсальная, поддерживает все форматы) — уже установлена в проекте!
 - UI: показывать формат в TagComparison (MP3/FLAC/M4A)
 
 **Приоритет:** Средний — MP3 основной формат для DGC, но FLAC популярен среди коллекционеров.
@@ -116,7 +116,7 @@ Fix: привести config.ts DEFAULTS к реальным значениям 
 Код использует `path.resolve()` и `path.join()` — Node.js поддерживает UNC на Windows. Но есть проблемы:
 
 **Потенциальные баги:**
-1. **Path traversal check** (`index.ts:122,141,188`):
+1. **Path traversal check** (`index.ts:122,141,190`):
    ```ts
    if (!absolutePath.startsWith(path.resolve(cfg.musicRoot)))
    ```
@@ -128,7 +128,7 @@ Fix: привести config.ts DEFAULTS к реальным значениям 
    - Может не работать с сетевыми путями (зависит от монтирования)
    - **Fix:** catch и fallback на исходный путь (уже есть)
 
-3. **fs.rename() в tagWriter.ts:200**:
+3. **fs.rename() в tagWriter.ts:202**:
    - Не работает через сеть (cross-device rename)
    - **Fix:** fallback на copy+delete (уже есть в moveProcessedFiles)
 
@@ -139,7 +139,7 @@ Fix: привести config.ts DEFAULTS к реальным значениям 
    - hardcoded Windows путь в DEFAULTS
    - **Fix:** использовать относительные пути или env variables
 
-5. **Символы в именах файлов** (`tagWriter.ts:301`):
+5. **Символы в именах файлов** (`tagWriter.ts:304`):
    ```ts
    name.replace(/[<>:"/\\|?*]/g, '_')
    ```
@@ -149,19 +149,11 @@ Fix: привести config.ts DEFAULTS к реальным значениям 
 **Рекомендации:**
 - Добавить тест с UNC путями в config
 - Документировать поддержку сетевых путей
-- Добавить warning в UI приUNC путях (медленные операции)
+- Добавить warning в UI при UNC путях (медленные операции)
 
 ---
 
 ## Новые источники данных
-
-### MusicBrainz — поиск альбомов
-Добавить MusicBrainz как третий источник поиска (после DGC и Deezer).
-- Сервер: `server/src/musicbrainz.ts` — API клиент (`musicbrainz.org/ws/2/release/?query=...&fmt=json`)
-- Rate limit: 1 req/sec, требуется User-Agent
-- Клиент: `MusicBrainzSearchResult` тип, `searchAlbumsMusicbrainz()` функция
-- UI: `MusicBrainzResults.tsx` — синий цвет (#60a5fa)
-- Интеграция: параллельный запрос в `handleSearch()` вместе с DGC и Deezer
 
 ### Spotify — поиск альбомов
 Добавить Spotify как источник поиска.
@@ -210,3 +202,16 @@ TAG COMPARISON и TRACKS показываются при выборе папки
 
 ### ✅ ID строка в TagComparison (2024-06-22)
 Строка ID разделена пополам: DGC ID + Deezer ID из локальных тегов.
+
+### ✅ MusicBrainz как третий источник поиска
+Полная интеграция MusicBrainz API:
+- Сервер: `musicbrainz.ts` — search + getRelease с rate limiting (1 req/sec)
+- Сервер: `sources/musicbrainz.ts` — обёртка SearchSource
+- Клиент: `MusicBrainzResults.tsx` — UI результатов (оранжевый #f97316)
+- Клиент: `useAppContext.tsx` — handleSelectMbrainz с фоновой загрузкой details
+- Сервер: `tagWriter.ts` — запись MusicBrainz тегов (MusicBrainz Album Id, Artist Id, Release Group Id, CATALOGNUMBER, DISCID, originalyear)
+- FIELD_MAP — динамическое извлечение всех полей MB API в extraTags
+- Клиент: `types.ts` — musicbrainzReleaseId, musicbrainzArtistId, catalogNumber, discId, originalYear в SearchResult
+
+### ✅ Lazy load дерева библиотеки
+Дерево загружается рекурсивно с ограничением глубины, дети директорий подгружаются по требованию через `/api/library/children`.

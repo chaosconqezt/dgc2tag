@@ -1,0 +1,192 @@
+import type { SearchResult, DeezerSearchResult } from '../types';
+import type { MusicBrainzSearchResult } from '../api';
+import * as api from '../api';
+
+export type AppDispatch = React.Dispatch<{ type: string; payload?: unknown }>;
+
+export interface SearchRefs {
+  searchInProgress: React.MutableRefObject<boolean>;
+  loadAlbumDetailsId: React.MutableRefObject<number | null>;
+}
+
+export interface SearchState {
+  searchArtist: string;
+  searchAlbum: string;
+  searchArtistEnabled: boolean;
+  searchAlbumEnabled: boolean;
+  selectedResult: SearchResult | null;
+  selectedDeezer: DeezerSearchResult | null;
+  tagEnabled: Record<string, boolean>;
+}
+
+export function createSearchActions(
+  state: SearchState,
+  dispatch: AppDispatch,
+  clearSelectionState: () => void,
+  refs: SearchRefs,
+) {
+  const { searchInProgress: searchInProgressRef, loadAlbumDetailsId: loadAlbumDetailsIdRef } = refs;
+
+  const loadAlbumDetails = async (postId: number) => {
+    loadAlbumDetailsIdRef.current = postId;
+    if (import.meta.env.DEV) console.log(`[client] loading album details: ${postId}`);
+    try {
+      const data = await api.fetchAlbumDetails(postId);
+      if (loadAlbumDetailsIdRef.current !== postId) return;
+      dispatch({ type: 'SET_ALBUM_DETAILS', payload: data });
+    } catch (err) {
+      if (loadAlbumDetailsIdRef.current !== postId) return;
+      if (import.meta.env.DEV) console.error('[client] album details error:', err);
+      dispatch({ type: 'SET_ALBUM_DETAILS', payload: null });
+    }
+  };
+
+  return {
+    handleSearch: async (artist?: string, album?: string, artistEnabled?: boolean, albumEnabled?: boolean) => {
+      if (searchInProgressRef.current) return;
+      searchInProgressRef.current = true;
+
+      const a = artistEnabled !== undefined ? artistEnabled : state.searchArtistEnabled;
+      const b = albumEnabled !== undefined ? albumEnabled : state.searchAlbumEnabled;
+      const dgcQuery = [a ? (artist || state.searchArtist) : '', b ? (album || state.searchAlbum) : ''].filter(Boolean).join(' ');
+      if (!dgcQuery) return;
+
+      if (import.meta.env.DEV) console.log(`[client] search DGC: "${dgcQuery}"`);
+      dispatch({ type: 'SET_DGC_LOADING', payload: true });
+      dispatch({ type: 'SET_DEEZER_LOADING', payload: true });
+      dispatch({ type: 'SET_MBRAINZ_LOADING', payload: true });
+      dispatch({ type: 'SET_SEARCH_RESULTS', payload: [] });
+      dispatch({ type: 'SET_DEEZER_RESULTS', payload: [] });
+      dispatch({ type: 'SET_MBRAINZ_RESULTS', payload: [] });
+      dispatch({ type: 'SET_SEARCH_TIME', payload: null });
+
+      const start = Date.now();
+      const dzArtist = a ? (artist || state.searchArtist) : undefined;
+      const dzAlbum = b ? (album || state.searchAlbum) : undefined;
+
+      api.searchAlbums(dgcQuery)
+        .then(data => {
+          if (import.meta.env.DEV) console.log(`[client] DGC results: ${data.length}`);
+          dispatch({ type: 'SET_SEARCH_RESULTS', payload: data });
+        })
+        .catch(err => {
+          if (import.meta.env.DEV) console.error('[client] DGC search error:', err);
+        })
+        .finally(() => dispatch({ type: 'SET_DGC_LOADING', payload: false }));
+
+      api.searchAlbumsDeezer(dzArtist, dzAlbum)
+        .then(data => {
+          if (import.meta.env.DEV) console.log(`[client] Deezer results: ${data.length}`);
+          dispatch({ type: 'SET_DEEZER_RESULTS', payload: data });
+        })
+        .catch(() => {})
+        .finally(() => dispatch({ type: 'SET_DEEZER_LOADING', payload: false }));
+
+      api.searchAlbumsMusicBrainz(dzArtist, dzAlbum)
+        .then(data => {
+          if (import.meta.env.DEV) console.log(`[client] MusicBrainz results: ${data.length}`);
+          dispatch({ type: 'SET_MBRAINZ_RESULTS', payload: data });
+        })
+        .catch(() => {})
+        .finally(() => {
+          dispatch({ type: 'SET_MBRAINZ_LOADING', payload: false });
+          dispatch({ type: 'SET_SEARCH_TIME', payload: Date.now() - start });
+          searchInProgressRef.current = false;
+        });
+    },
+
+    loadAlbumDetails,
+
+    handleSelectResult: (res: SearchResult) => {
+      if (state.selectedResult?.postId === res.postId) return;
+      clearSelectionState();
+      dispatch({ type: 'SET_SELECTED_RESULT', payload: res });
+      dispatch({ type: 'SET_ALBUM_DETAILS', payload: null });
+      loadAlbumDetails(res.postId);
+    },
+
+    handleSelectDeezer: (dz: DeezerSearchResult) => {
+      if (state.selectedDeezer?.albumId === dz.albumId) return;
+      clearSelectionState();
+      dispatch({ type: 'SET_SELECTED_DEEZER', payload: dz });
+
+      const parsedTracks = dz.tracks.map(t => ({
+        num: t.num,
+        artist: t.artist || dz.artist,
+        name: t.name,
+        duration: t.duration,
+      }));
+
+      const syntheticResult: SearchResult = {
+        postId: -dz.albumId,
+        albumName: dz.albumName,
+        artist: dz.artist,
+        albumArtist: dz.artist,
+        coverUrl: dz.coverUrl,
+        country: null,
+        year: dz.year,
+        label: dz.label,
+        genres: [],
+        releaseType: dz.releaseType,
+        compilation: dz.compilation,
+        url: dz.url,
+        parsedTracks,
+      };
+
+      dispatch({ type: 'SET_SELECTED_RESULT', payload: syntheticResult });
+      dispatch({ type: 'SET_ALBUM_DETAILS', payload: syntheticResult });
+      dispatch({ type: 'SET_TAG_ENABLED', payload: { ...state.tagEnabled, artist: true, album: true, year: true, label: true, postId: false } });
+    },
+
+    handleSelectMbrainz: async (mb: MusicBrainzSearchResult) => {
+      clearSelectionState();
+
+      const baseResult: SearchResult = {
+        postId: 0,
+        albumName: mb.title,
+        artist: mb.artist,
+        albumArtist: mb.artist,
+        coverUrl: null,
+        country: mb.country,
+        year: mb.year,
+        label: mb.label,
+        genres: [],
+        releaseType: mb.releaseType,
+        url: mb.url,
+        parsedTracks: [],
+        musicbrainzReleaseId: mb.releaseId,
+        musicbrainzArtistId: mb.artistId,
+        musicbrainzReleaseGroupId: mb.releaseGroupId,
+        catalogNumber: mb.catalogNumber,
+        discId: mb.discId,
+        originalYear: mb.originalYear,
+        extraTags: mb.extraTags || {},
+      };
+
+      dispatch({ type: 'SET_SELECTED_RESULT', payload: baseResult });
+      dispatch({ type: 'SET_SELECTED_MBRAINZ', payload: mb });
+      dispatch({ type: 'SET_ALBUM_DETAILS', payload: baseResult });
+      dispatch({ type: 'SET_TAG_ENABLED', payload: { ...state.tagEnabled, artist: true, album: true, year: true, label: true, postId: false } });
+
+      try {
+        const fullRelease = await api.fetchMusicBrainzRelease(mb.releaseId);
+        const parsedTracks = fullRelease.tracks.map(t => ({
+          num: t.num,
+          artist: fullRelease.artist,
+          name: t.name,
+          duration: t.duration,
+        }));
+
+        const fullResult: SearchResult = {
+          ...baseResult,
+          parsedTracks,
+          musicbrainzReleaseTrackIds: fullRelease.tracks.map(t => t.recordingId).filter(Boolean) as string[],
+        };
+
+        dispatch({ type: 'SET_ALBUM_DETAILS', payload: fullResult });
+      } catch (err) {
+        if (import.meta.env.DEV) console.error('[client] mbrainz release error:', err);
+      }
+    },
+  };
+}

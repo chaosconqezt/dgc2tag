@@ -2,55 +2,18 @@ import NodeID3 from 'node-id3';
 import fs from 'fs/promises';
 import path from 'path';
 import { logger } from './logger.js';
-import type { AlbumTags } from './types.js';
+import type { AlbumTags, Id3Tags } from './types.js';
+import { extractTrackNumber, getMp3Files } from './trackUtils.js';
+import * as mm from 'music-metadata';
 
 export type { AlbumTags } from './types.js';
-
-// Type for NodeID3.read() result — matches the actual runtime shape
-interface Id3Tags {
-    artist?: string;
-    album?: string;
-    albumArtist?: string;
-    genre?: string;
-    year?: string;
-    track?: number;
-    title?: string;
-    length?: number | string;
-    bitrate?: number;
-    audioFormat?: string;
-    notes?: string;
-    publisher?: string; // TIT3/PUB
-    performerInfo?: string; // TPE2
-    userDefinedText?: { key: string; value: string; description?: string }[];
-    recordingTime?: string;
-    [key: string]: unknown;
-}
 
 function readTags(filePath: string): Id3Tags {
     return NodeID3.read(filePath) as unknown as Id3Tags;
 }
 
-function extractTrackNum(tags: Id3Tags): string {
-    let trackNum = '00';
-    if (tags.track) {
-        const t = String(tags.track);
-        const slashIdx = t.indexOf('/');
-        const numStr = slashIdx > 0 ? t.slice(0, slashIdx) : t;
-        const m = numStr.match(/^(\d+)/);
-        if (m?.[1]) trackNum = m[1];
-    }
-    if ((trackNum === '00' || !trackNum) && tags.trackNumber) {
-        const tn = String(tags.trackNumber);
-        const slashIdx = tn.indexOf('/');
-        const extracted = slashIdx > 0 ? tn.slice(0, slashIdx) : tn;
-        if (/^\d+$/.test(extracted)) trackNum = extracted;
-    }
-    return trackNum;
-}
-
 export async function getTags(folderPath: string): Promise<AlbumTags> {
-    const files = await fs.readdir(folderPath);
-    const mp3Files = files.filter(f => f.toLowerCase().endsWith('.mp3'));
+    const mp3Files = await getMp3Files(folderPath);
 
     if (mp3Files.length === 0) {
         throw new Error('No MP3 files found in this folder');
@@ -67,13 +30,16 @@ export async function getTags(folderPath: string): Promise<AlbumTags> {
 
     for (const file of mp3Files) {
         const filePath = path.join(folderPath, file);
-        const tags = readTags(filePath);
-
-        let trackNum = extractTrackNum(tags);
-        if (!trackNum) {
-            const numMatch = file.match(/^(\d{1,3})/);
-            trackNum = numMatch?.[1] || '';
+        let tags: Id3Tags;
+        try {
+            tags = readTags(filePath);
+        } catch (err) {
+            logger.warn(`skipping corrupt file ${file}: ${(err as Error).message}`);
+            continue;
         }
+        const stat = await fs.stat(filePath);
+
+        const trackNum = extractTrackNumber(file, tags) || '00';
 
         filePaths.push(filePath);
         trackNums[filePath] = trackNum;
@@ -83,15 +49,69 @@ export async function getTags(folderPath: string): Promise<AlbumTags> {
             trackArtistsSet.add(tags.artist as string);
         }
         if (tags.performerInfo) albumArtistsSet.add(tags.performerInfo as string);
-        if (tags.length) trackDurations[filePath] = Math.round(Number(tags.length) / 1000);
+
+        // ----- duration detection -----
+        let durationSec: number | undefined = undefined;
+
+        // 1. Try music-metadata for accurate duration
+        try {
+            const metadata = await mm.parseFile(filePath);
+            if (metadata.format?.duration !== null && typeof metadata.format.duration === 'number') {
+                durationSec = Math.round(metadata.format.duration);
+            }
+        } catch (err) {
+            // fallback to ID3/bitrate methods
+            // logger.debug(`music-metadata failed for ${filePath}: ${err}`);
+        }
+
+        // 2. Try TLEN (milliseconds) from ID3
+        if (durationSec === undefined && tags.TLEN !== undefined) {
+            const ms = Number(tags.TLEN);
+            if (!isNaN(ms)) {
+                durationSec = Math.round(ms / 1000);
+            }
+        }
+        // 3. Try length field (could be seconds or milliseconds)
+        if (durationSec === undefined && tags.length !== undefined) {
+            const len = Number(tags.length);
+            if (!isNaN(len)) {
+                // Heuristic: if value > 1000 assume milliseconds
+                durationSec = len > 1000 ? Math.round(len / 1000) : Math.round(len);
+            }
+        }
+        // 4. Fallback to bitrate from tags
+        if (durationSec === undefined && tags.bitrate !== undefined) {
+            const bitrate = Number(tags.bitrate);
+            if (!isNaN(bitrate) && bitrate > 0) {
+                durationSec = Math.round((stat.size * 8) / (bitrate * 1000));
+            }
+        }
+        // 5. Fallback: assume constant bitrate 128 kbps
+        if (durationSec === undefined) {
+            durationSec = Math.round((stat.size * 8) / (128 * 1000)); // 128 kbps
+        }
+        // Ensure non‑negative
+        if (durationSec < 0) durationSec = 0;
+
+        trackDurations[filePath] = durationSec;
     }
 
     if (Object.keys(trackDurations).length === 0) {
         logger.warn(`no trackDurations found for ${folderPath} — MP3 files may lack TLEN frame`);
     }
 
+    if (filePaths.length === 0) {
+        throw new Error('No readable MP3 files found in this folder');
+    }
+
     // Album-level info from first file
-    const firstTags = readTags(filePaths[0]!);
+    let firstTags: Id3Tags;
+    try {
+        firstTags = readTags(filePaths[0]!);
+    } catch (err) {
+        logger.warn(`failed to read album tags from ${path.basename(filePaths[0]!)}: ${(err as Error).message}`);
+        firstTags = {} as Id3Tags;
+    }
     const rawYear = firstTags.year || firstTags.recordingTime || null;
     let year: string | null = null;
     if (rawYear) {
@@ -144,7 +164,12 @@ export async function getTags(folderPath: string): Promise<AlbumTags> {
 
     for (const file of mp3Files) {
         const filePath = path.join(folderPath, file);
-        const tags = readTags(filePath);
+        let tags: Id3Tags;
+        try {
+            tags = readTags(filePath);
+        } catch {
+            continue;
+        }
 
         if (tags.userDefinedText) {
             for (const frame of tags.userDefinedText) {

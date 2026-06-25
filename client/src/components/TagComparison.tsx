@@ -79,19 +79,9 @@ export function TagComparison({
   onTagEnabledChange,
   onEditedSiteValuesChange,
 }: TagComparisonProps) {
-  if (!selectedResult && !localTags) {
-    return (
-      <div style={{ height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: COLORS.textInvisible, opacity: 0.5 }}>
-        <div style={{ fontSize: '40px', marginBottom: '10px' }}>&#9776;</div>
-        <p style={{ fontWeight: '500', fontSize: FS, fontFamily: FONT }}>Select a folder with MP3 files</p>
-      </div>
-    );
-  }
-
   const isDeezer = selectedResult ? selectedResult.postId < 0 : false;
   const deezerId = isDeezer && selectedResult ? Math.abs(selectedResult.postId) : null;
 
-  // When no search result, local tags become the source for the site column
   const rawArtist = selectedResult
     ? (stripRemoteParentheses ? selectedResult.artist.replace(/\s*\([^)]*\)/g, '').replace(/\s+/g, ' ').trim() : selectedResult.artist)
     : (localTags?.artists?.[0] || localTags?.artist || '');
@@ -99,7 +89,7 @@ export function TagComparison({
     ? (stripRemoteParentheses ? selectedResult.albumArtist.replace(/\s*\([^)]*\)/g, '').replace(/\s+/g, ' ').trim() : selectedResult.albumArtist)
     : (localTags?.albumArtist || localTags?.artist || '');
 
-  const fields = [
+  const fields = useMemo(() => [
     { key: 'artist', label: 'Artist', file: localTags?.artists && localTags.artists.length > 0 ? localTags.artists : null, site: rawArtist },
     { key: 'albumArtist', label: 'Album Artist', file: localTags?.albumArtist || localTags?.artist, site: rawAlbumArtist },
     { key: 'album', label: 'Album', file: localTags?.album, site: selectedResult?.albumName ?? localTags?.album ?? '' },
@@ -108,14 +98,8 @@ export function TagComparison({
     { key: 'country', label: 'Country', file: localTags?.country, site: selectedResult?.country ?? localTags?.country ?? '' },
     { key: 'label', label: 'Label', file: localTags?.label, site: selectedResult?.label ?? localTags?.label ?? '' },
     { key: 'releaseType', label: 'Type', file: localTags?.releaseType, site: selectedResult?.releaseType ?? localTags?.releaseType ?? '' },
-  ];
+  ], [selectedResult, localTags, rawArtist, rawAlbumArtist]);
 
-  const dgcPostId = localTags?.postId != null ? String(localTags.postId) : null;
-  const dzDeezerId = localTags?.deezerId != null ? String(localTags.deezerId) : null;
-  const siteDgcId = selectedResult && !isDeezer && selectedResult.postId > 0 ? String(selectedResult.postId) : null;
-  const siteDeezerId = deezerId != null ? String(deezerId) : null;
-
-  // Memoize similarity computation for all fields
   const fieldSims = useMemo(() => {
     const sims: Record<string, number> = {};
     for (const f of fields) {
@@ -135,6 +119,20 @@ export function TagComparison({
     }
     return sims;
   }, [fields]);
+
+  if (!selectedResult && !localTags) {
+    return (
+      <div style={{ height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: COLORS.textInvisible, opacity: 0.5 }}>
+        <div style={{ fontSize: '40px', marginBottom: '10px' }}>&#9776;</div>
+        <p style={{ fontWeight: '500', fontSize: FS, fontFamily: FONT }}>Select a folder with MP3 files</p>
+      </div>
+    );
+  }
+
+  const dgcPostId = localTags?.postId != null ? String(localTags.postId) : null;
+  const dzDeezerId = localTags?.deezerId != null ? String(localTags.deezerId) : null;
+  const siteDgcId = selectedResult && !isDeezer && selectedResult.postId > 0 ? String(selectedResult.postId) : null;
+  const siteDeezerId = deezerId != null ? String(deezerId) : null;
 
   const renderLocalValue = (file: string[] | string | null | undefined, key: string) => {
     if (key === 'artist' && Array.isArray(file)) {

@@ -1,42 +1,37 @@
 import NodeID3 from 'node-id3';
+import fs from 'fs/promises';
 import path from 'path';
+import type { Id3Tags } from './types.js';
 
-interface Id3Tags {
-    track?: number;
-    trackNumber?: string | number;
-    [key: string]: unknown;
+export function isInsideMusicRoot(targetPath: string, musicRoot: string): boolean {
+    return path.resolve(targetPath).startsWith(path.resolve(musicRoot));
 }
 
-/**
- * Извлекает track номер из файла (ReadID3 тег или из имени файла)
- * Возвращает отстутствующий trackNum -> undefined
- */
-export function extractTrackNumber(file: string, tags?: any): string | undefined {
-    let trackNum: string | undefined;
+export function assertInsideMusicRoot(targetPath: string, musicRoot: string): void {
+    if (!isInsideMusicRoot(targetPath, musicRoot)) {
+        throw new Error('Access denied: path is outside music root');
+    }
+}
 
-    // Если теги предоставлены, использовать их
+export async function getMp3Files(dir: string): Promise<string[]> {
+    const files = await fs.readdir(dir);
+    return files.filter(f => f.toLowerCase().endsWith('.mp3'));
+}
+
+export function extractTrackNumber(file: string, tags?: Id3Tags | Record<string, unknown>): string | undefined {
     const t = tags || {};
 
     if (t.track) {
-        const match = String(t.track).match(/^(\d+)/);
-        if (match) trackNum = match[1];
+        const raw = String(t.track);
+        const numStr = raw.includes('/') ? raw.split('/')[0]! : raw;
+        const match = numStr.match(/^(\d+)/);
+        if (match) return match[1];
     }
-    if (!trackNum && t.trackNumber) {
-        trackNum = String(t.trackNumber);
+    if (t.trackNumber) {
+        const raw = String(t.trackNumber);
+        const numStr = raw.includes('/') ? raw.split('/')[0]! : raw;
+        if (/^\d+$/.test(numStr)) return numStr;
     }
-    // Если тегов нет, они должны вычитаться из имени файла
-    if (!trackNum) {
-        const numMatch = file.match(/^(\d{1,3})/);
-        trackNum = numMatch?.[1];
-    }
-    return trackNum;
-}
-
-export function getTrackNumberWithId3(filePath: string): string | undefined {
-    try {
-        const tags = NodeID3.read(filePath) as unknown as Id3Tags;
-        return extractTrackNumber(path.basename(filePath), tags);
-    } catch {
-        return undefined;
-    }
+    const numMatch = file.match(/^(\d{1,3})/);
+    return numMatch?.[1];
 }

@@ -2,26 +2,10 @@ import NodeID3 from 'node-id3';
 import fs from 'fs/promises';
 import path from 'path';
 import { logger } from './logger.js';
-import type { AlbumTags } from './types.js';
+import type { AlbumTags, Id3Tags } from './types.js';
+import { extractTrackNumber, getMp3Files, assertInsideMusicRoot } from './trackUtils.js';
 
 export type { AlbumTags } from './types.js';
-
-interface Id3Tags {
-    artist?: string;
-    album?: string;
-    albumArtist?: string;
-    genre?: string;
-    year?: string;
-    track?: number;
-    title?: string;
-    length?: number;
-    bitrate?: number;
-    audioFormat?: string;
-    notes?: string;
-    publisher?: string;
-    performerInfo?: string;
-    [key: string]: unknown;
-}
 
 export interface WriteOptions {
     folderPath: string;
@@ -35,14 +19,8 @@ export interface WriteOptions {
 
 export async function writeTags(options: WriteOptions, musicRoot?: string): Promise<void> {
     const { folderPath, tags, trackArtists, trackNames } = options;
-    if (musicRoot) {
-        const resolved = path.resolve(folderPath);
-        if (!resolved.startsWith(path.resolve(musicRoot))) {
-            throw new Error('folderPath must be inside musicRoot');
-        }
-    }
-    const files = await fs.readdir(folderPath);
-    const mp3Files = files.filter(f => f.toLowerCase().endsWith('.mp3'));
+    if (musicRoot) assertInsideMusicRoot(folderPath, musicRoot);
+    const mp3Files = await getMp3Files(folderPath);
 
     for (const file of mp3Files) {
         const filePath = path.join(folderPath, file);
@@ -147,42 +125,15 @@ export async function renameFilesInPlace(
     trackNames?: Record<string, string>,
     musicRoot?: string,
 ): Promise<{ renamed: { from: string; to: string }[] }> {
-    if (musicRoot) {
-        const resolved = path.resolve(folderPath);
-        if (!resolved.startsWith(path.resolve(musicRoot))) {
-            throw new Error('folderPath must be inside musicRoot');
-        }
-    }
-    const files = await fs.readdir(folderPath);
-    const mp3Files = files.filter(f => f.toLowerCase().endsWith('.mp3'));
+    if (musicRoot) assertInsideMusicRoot(folderPath, musicRoot);
+    const mp3Files = await getMp3Files(folderPath);
     const renamed: { from: string; to: string }[] = [];
 
     for (const file of mp3Files) {
         const filePath = path.join(folderPath, file);
         const tags = NodeID3.read(filePath) as unknown as Id3Tags;
 
-        // Extract track number from ID3 or filename
-        let trackNum = '00';
-        if (tags.track) {
-            const t = String(tags.track);
-            const slashIdx = t.indexOf('/');
-            const numStr = slashIdx > 0 ? t.slice(0, slashIdx) : t;
-            const m = numStr.match(/^(\d+)/);
-            if (m?.[1]) trackNum = m[1];
-        }
-        if (!trackNum || trackNum === '00') {
-            if (tags.trackNumber) {
-                const tn = String(tags.trackNumber);
-                const slashIdx = tn.indexOf('/');
-                const extracted = slashIdx > 0 ? tn.slice(0, slashIdx) : tn;
-                if (/^\d+$/.test(extracted)) trackNum = extracted;
-            }
-        }
-        if (!trackNum || trackNum === '00') {
-            const numMatch = file.match(/^(\d{1,3})/);
-            if (numMatch?.[1]) trackNum = numMatch[1];
-        }
-        const trackNumPadded = (trackNum ?? '00').padStart(2, '0');
+        const trackNumPadded = (extractTrackNumber(file, tags) || '00').padStart(2, '0');
         const ext = path.extname(file);
 
         // Key by FULL PATH — stable identifier
@@ -263,7 +214,7 @@ export async function moveProcessedFiles(
     await fs.mkdir(artistDir, { recursive: true });
 
     if (path.resolve(sourceFolder) === path.resolve(destDir!)) {
-        const count = (await fs.readdir(sourceFolder)).filter((f: string) => f.toLowerCase().endsWith('.mp3')).length;
+        const count = (await getMp3Files(sourceFolder)).length;
         return { moved: Array(count).fill(0).map((_, i) => `file_${i + 1}`) };
     }
 
@@ -296,7 +247,7 @@ export async function moveProcessedFiles(
         }
     }
 
-    const count = (await fs.readdir(destDir!)).filter((f: string) => f.toLowerCase().endsWith('.mp3')).length;
+    const count = (await getMp3Files(destDir!)).length;
     return { moved: Array(count).fill(0).map((_, i) => `file_${i + 1}`) };
 }
 

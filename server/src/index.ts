@@ -2,17 +2,17 @@ import express from 'express';
 import cors from 'cors';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import fs, { readdirSync } from 'fs';
-import fsPromises from 'fs/promises';
 import { createServer as createViteServer } from 'vite';
 
 const __dirname = fileURLToPath(new URL('.', import.meta.url));
 import { getLibraryTree, getDirectoryChildren } from './scanner.js';
 import { getTags, type AlbumTags } from './tagger.js';
 import NodeID3 from 'node-id3';
+import type { Id3Tags } from './types.js';
 import { writeTags, moveProcessedFiles, renameFilesInPlace } from './tagWriter.js';
+import { getMp3Files, isInsideMusicRoot } from './trackUtils.js';
 import { searchAlbums, getAlbumDetails, fetchPageContent, parseGenresFromPage, getBrowserStatus, ensureTaxonomy } from './scraper.js';
-import { loadConfig, saveConfig, type Config, type TagDefaults } from './config.js';
+import { loadConfig, saveConfig, type Config } from './config.js';
 import { clearCache } from './cache.js';
 import { sources } from './sources/index.js';
 import { logger } from './logger.js';
@@ -119,7 +119,7 @@ app.get('/api/library/children', async (req, res) => {
     try {
         const cfg = getConfig();
         const absolutePath = path.resolve(dirPath);
-        if (!absolutePath.startsWith(path.resolve(cfg.musicRoot))) {
+        if (!isInsideMusicRoot(absolutePath, cfg.musicRoot)) {
             return res.status(403).json({ error: 'Access denied' });
         }
         const children = await getDirectoryChildren(absolutePath);
@@ -138,7 +138,7 @@ app.get('/api/tags', async (req, res) => {
     try {
         const cfg = getConfig();
         const absolutePath = path.resolve(folderPath);
-        if (!absolutePath.startsWith(path.resolve(cfg.musicRoot))) {
+        if (!isInsideMusicRoot(absolutePath, cfg.musicRoot)) {
             return res.status(403).json({ error: 'Access denied' });
         }
         const tags = await getTags(absolutePath);
@@ -187,18 +187,17 @@ app.post('/api/tags/update', async (req, res) => {
     try {
         const cfg = getConfig();
         const absolutePath = path.resolve(folderPath);
-        if (!absolutePath.startsWith(path.resolve(cfg.musicRoot))) {
+        if (!isInsideMusicRoot(absolutePath, cfg.musicRoot)) {
             return res.status(403).json({ error: 'Access denied' });
         }
 
         // Read current tags BEFORE writing
-        const filesBefore = await fsPromises.readdir(absolutePath);
-        const mp3Before = filesBefore.filter((f: string) => f.toLowerCase().endsWith('.mp3'));
+        const mp3Before = await getMp3Files(absolutePath);
         const oldTags: Record<string, Record<string, string>> = {};
         for (const file of mp3Before) {
             const filePath = path.join(absolutePath, file);
             try {
-                const ft = NodeID3.read(filePath) as any;
+                const ft = NodeID3.read(filePath) as unknown as Id3Tags;
                 oldTags[file] = {
                     artist: ft.artist || '',
                     albumArtist: ft.performerInfo || '',
@@ -214,16 +213,15 @@ app.post('/api/tags/update', async (req, res) => {
         await writeTags({ folderPath: absolutePath, tags, trackArtists, trackNames }, cfg.musicRoot);
 
         // Read tags AFTER writing to build diff
-        const filesAfter = await fsPromises.readdir(absolutePath);
-        const mp3After = filesAfter.filter((f: string) => f.toLowerCase().endsWith('.mp3'));
+        const mp3After = await getMp3Files(absolutePath);
         const tagChanges: string[] = [];
         for (const file of mp3After) {
             const filePath = path.join(absolutePath, file);
             try {
-                const ft = NodeID3.read(filePath) as any;
+                const ft = NodeID3.read(filePath) as unknown as Id3Tags;
                 const old = oldTags[file] || {};
                 const changes: string[] = [];
-                const fieldMap: [string, string, string][] = [
+                const fieldMap: [string, string, string | undefined][] = [
                     ['artist', 'Artist', ft.artist],
                     ['albumArtist', 'Album Artist', ft.performerInfo],
                     ['album', 'Album', ft.album],
@@ -257,8 +255,7 @@ app.post('/api/tags/update', async (req, res) => {
         let moved: string[] | undefined;
         let renamed: { from: string; to: string }[] | undefined;
         if (moveFiles) {
-            const origFiles = await fsPromises.readdir(absolutePath);
-            const origMp3 = origFiles.filter((f: string) => f.toLowerCase().endsWith('.mp3'));
+            const origMp3 = await getMp3Files(absolutePath);
             
             let albumArtistForMove: string | undefined;
             let yearForMove: string | undefined;
@@ -267,7 +264,7 @@ app.post('/api/tags/update', async (req, res) => {
                 try {
                     const ft = NodeID3.read(path.join(absolutePath, origMp3[0]));
                     albumArtistForMove = tags.albumArtist || tags.artist;
-                    yearForMove = tags.year || (ft as any)?.year;
+                    yearForMove = tags.year || (ft as unknown as Id3Tags)?.year;
                     albumForMove = tags.album;
                 } catch {}
             }

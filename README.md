@@ -14,6 +14,7 @@ Desktop application for batch-tagging MP3 files from [Deathgrind Club](https://d
 - **Extra Tags panel** — Current (in file) vs New (to be written)
 - **Result modal** — detailed tag change report instead of alert()
 - **Puppeteer integration** — persistent browser, Cloudflare bypass
+- **Lazy library tree** — directory children loaded on demand
 
 ## Quick Start
 
@@ -40,7 +41,7 @@ export const mySource: SearchSource = {
   id: 'mysource',
   label: 'My Source',
   accentColor: '#aabbcc',
-  async search(artist, album) { return fetchFromApi(artist, album); },
+  async search(artist, album, query) { return fetchFromApi(artist, album); },
   async getDetails(id) { return fetchDetails(id); },  // optional
 };
 ```
@@ -73,8 +74,8 @@ Routes auto-generated: `POST /api/search-mysource`, `GET /api/mysource/:id`
 
 ## Security
 
-- SSRF protection on `/api/webfetch`
-- Path traversal protection
+- SSRF protection on `/api/webfetch` (allowlist: deathgrind.club)
+- Path traversal protection on all file operations
 - AbortController cleanup
 
 ## License

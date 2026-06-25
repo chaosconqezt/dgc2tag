@@ -18,3 +18,25 @@ export interface AlbumTags {
     albumArtists?: string[];
     extraTags?: Record<string, string>;
 }
+
+export interface Id3Tags {
+    artist?: string;
+    album?: string;
+    albumArtist?: string;
+    genre?: string;
+    year?: string;
+    track?: number;
+    trackNumber?: string | number;
+    title?: string;
+    length?: number | string;
+    bitrate?: number;
+    audioFormat?: string;
+    notes?: string;
+    publisher?: string;
+    performerInfo?: string;
+    userDefinedText?: { description?: string; value?: string; key?: string }[];
+    recordingTime?: string;
+    TLEN?: string;
+    _buffer?: unknown;
+    [key: string]: unknown;
+}

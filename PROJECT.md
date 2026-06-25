@@ -10,12 +10,13 @@
 **Конфигурация:**
 - `server/config.default.json` — дефолтные значения (в git)
 - `server/config.json` — пользовательские настройки (в .gitignore)
+- Текущий `config.json`: `musicRoot: "m:\\soulsync"`, `outputFolder: "tag"`, `outputMode: "subfolder"`
 
 ## Запуск
 
 ```bash
 npm run dev          # tsx watch server/src/index.ts — один процесс, Vite middleware, порт из config.json
-npm run build        # сборка клиента (tsc -b && vite build)
+npm run build        # сборка клиента (cd client && npm run build)
 npm start            # production запуск сервера (NODE_ENV=production)
 ```
 
@@ -31,44 +32,50 @@ server/src/
 │   ├── deezer.ts     — обёртка над deezer.ts
 │   └── musicbrainz.ts — обёртка над musicbrainz.ts
 ├── scraper.ts        — puppeteer + stealth, DGC API
-├── deezer.ts         — Deezer API
+├── deezer.ts         — Deezer API (axios)
 ├── musicbrainz.ts    — MusicBrainz API + FIELD_MAP для динамического извлечения тегов
 ├── tagWriter.ts      — запись ID3 (writeUserDefinedText data-driven)
-├── tagger.ts         — чтение ID3 тегов из папки
-├── scanner.ts        — обход файловой системы
+├── tagger.ts         — чтение ID3 тегов из папки + music-metadata для duration
+├── scanner.ts        — обход файловой системы (ленивый + recursive)
 ├── config.ts         — config.json load/save
 ├── cache.ts          — файловый кеш bands/releases
-├── logger.ts         — leveled logger
+├── logger.ts         — leveled logger (debug/info/warn/error)
 └── trackUtils.ts     — извлечение track# из ID3/filename
 
 client/src/
 ├── main.tsx          — точка входа
 ├── App.tsx           — layout + пайплайн данных
 ├── api.ts            — axios + interceptors + generic sourceSearch/sourceGetDetails
-├── types.ts          — SearchResult (source, id), AlbumTags, MatchResult
+├── types.ts          — SearchResult (source, id), AlbumTags, MatchResult, DeezerSearchResult
 ├── sourceConfigs.ts  — конфиги источников [{ id, label, color }]
+├── build.ts          — build info
 ├── index.css         — CSS-переменные :root + focus-visible
 ├── hooks/
 │   └── useAppContext.tsx — useReducer: состояние + бизнес-логика
 ├── utils/
+│   ├── index.ts        — barrel export (parseCompilationTracklist, matchTracks)
 │   ├── similarity.ts    — Levenshtein distance
 │   └── trackMatching.ts — matchTracks() с prefix/contains
 └── components/
     ├── styles.ts          — COLORS через var(--*), FONT, FS
     ├── ResultCard.tsx     — единая карточка с hover preview
-    ├── SearchResults.tsx  — DGC + Deezer + MB (горизонтальный scroll)
+    ├── SearchResults.tsx  — горизонтальный scroll DGC + Deezer + MB
+    ├── DgcResults.tsx     — список результатов DGC
+    ├── DeezerResults.tsx  — список результатов Deezer
+    ├── MusicBrainzResults.tsx — список результатов MusicBrainz
     ├── TagComparison.tsx  — теги file vs site + Extra Tags (Current/New)
     ├── TrackMatcher.tsx   — матчинг + TRACKS
     ├── ApplyPanel.tsx     — WRITE & MOVE / WRITE & RENAME / WRITE / ОТМЕНА
     ├── ResultModal.tsx    — модальное окно результата
     ├── SettingsModal.tsx  — настройки (Escape)
     ├── WebfetchOverlay.tsx — превью DGC (Escape)
-    ├── LibraryTree.tsx    — дерево (hover)
+    ├── LibraryTree.tsx    — дерево (hover, lazy load)
     ├── SearchBar.tsx      — поиск
+    ├── ErrorBoundary.tsx  — React error boundary
     └── Footer.tsx
 
 music/               ← исходная библиотека
-music_processed/     ← результат после MOVE
+music_processed/     ← результат после MOVE (старый режим)
 user_data/           ← puppeteer cookies/session
 ```
 
@@ -86,7 +93,7 @@ export const mySource: SearchSource = {
   label: 'My Source',
   accentColor: '#aabbcc',
 
-  async search(artist, album) {
+  async search(artist, album, query) {
     // вернуть массив любых объектов — клиент конвертирует
     return fetchFromApi(artist, album);
   },
@@ -210,17 +217,24 @@ const FIELD_MAP = {
 |-------|------|----------|
 | GET | `/api/config` | Конфигурация |
 | POST | `/api/config` | Сохранить config |
+| POST | `/api/config/write-track-names` | Вкл/выкл записи имён треков |
+| POST | `/api/config/write-track-artists` | Вкл/выкл записи артистов треков |
 | GET | `/api/library` | Дерево библиотеки |
+| GET | `/api/library/children?dirPath=` | Lazy load детей директории |
 | GET | `/api/tags?folderPath=` | AlbumTags из папки |
-| POST | `/api/search` | Поиск DGC (останется для совместимости) |
+| POST | `/api/search` | Поиск DGC (совместимость) |
 | POST | `/api/search-{sourceId}` | **Авто-генерация** из sources/ |
 | GET | `/api/{sourceId}/:id` | **Авто-генерация** деталей |
-| POST | `/api/tags/update` | Запись тегов + diff |
+| GET | `/api/post/:id` | Детали поста DGC |
+| POST | `/api/tags/update` | Запись тегов + diff + rename/move |
 | POST | `/api/cache/clear` | Очистить кеш |
+| GET | `/api/webfetch?url=` | SSRF-защищённый fetch страниц DGC |
+| POST | `/api/parse-genres` | Парсинг жанров из HTML |
+| GET | `/api/browser/status` | Статус Puppeteer браузера |
 
 ## Безопасность
 
-- SSRF: `/api/webfetch` — allowlist `deathgrind.club`
+- SSRF: `/api/webfetch` — allowlist `deathgrind.club`, `cdn.deathgrind.club`
 - Path traversal: проверка `musicRoot` для всех file ops
 - AbortController cleanup — нет утечек памяти
 
@@ -230,3 +244,4 @@ const FIELD_MAP = {
 - **Cloudflare** — челлендж вручную при первом запуске
 - **Taxonomy** — genre/type из DGC JS, кэш 7d TTL
 - **MusicBrainz** — rate limit 1 req/sec, User-Agent обязателен
+- **music-metadata** — используется для точного определения duration треков

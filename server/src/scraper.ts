@@ -215,7 +215,7 @@ async function ensureBrowser() {
 
     // Если уже запускаем браузер — ждём существующий промис
     if (browserLaunchPromise) {
-        console.log('[scraper] waiting for existing browser launch...');
+        logger.info('waiting for existing browser launch...');
         browser = await browserLaunchPromise;
         const pages = await browser.pages();
         page = pages[0] || await browser.newPage();
@@ -224,7 +224,7 @@ async function ensureBrowser() {
 
     // Запускаем браузер в фоне
     browserLaunchPromise = (async () => {
-        console.log('[scraper] launching browser...');
+        logger.info('launching browser...');
         try {
             const launched = await (puppeteer as any).launch({
                 headless: false,
@@ -244,11 +244,11 @@ async function ensureBrowser() {
             const pages = await browser.pages();
             page = pages[0] || await browser.newPage();
             await page.goto('https://deathgrind.club', { waitUntil: 'domcontentloaded', timeout: 60000 });
-            console.log('[scraper] browser ready — if Cloudflare challenge appears, solve it in the browser window');
+            logger.info('browser ready — if Cloudflare challenge appears, solve it in the browser window');
             return browser;
         } catch (err: any) {
             if (err.message?.includes('already running')) {
-                console.log('[scraper] browser already running, attempting to connect...');
+                logger.info('browser already running, attempting to connect...');
                 const wsEndpoint = await findRunningBrowserWs();
                 if (wsEndpoint) {
                     const connected = await (puppeteer as any).connect({ browserWSEndpoint: wsEndpoint });
@@ -256,7 +256,7 @@ async function ensureBrowser() {
                     managedBrowser = false;
                     const pages = await browser.pages();
                     page = pages[0] || await browser.newPage();
-                    console.log('[scraper] connected to existing browser');
+                    logger.info('connected to existing browser');
                     return browser;
                 }
             }
@@ -275,7 +275,7 @@ async function ensureBrowser() {
 
     // Не убиваем браузер при SIGINT/SIGTERM — оставляем жить
     browser.on('disconnected', () => {
-        console.log('[scraper] browser disconnected');
+        logger.warn('browser disconnected');
         managedBrowser = false;
         browser = null;
         page = null;
