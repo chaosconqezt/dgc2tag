@@ -153,3 +153,64 @@ a:focus-visible {
   outline: 2px solid var(--red);
   outline-offset: 1px;
 }
+
+/* Header buttons hover states */
+.header-btn {
+  color: var(--text-dim);
+  transition: all 0.15s ease-in-out;
+}
+
+.header-btn:hover {
+  color: var(--text) !important;
+  background-color: var(--input-bg) !important;
+}
+
+/* Action panel buttons hover states */
+.action-btn-primary {
+  transition: transform 0.15s;
+}
+
+.action-btn-primary:hover {
+  transform: translateY(-1px);
+}
+
+.action-btn-cancel {
+  background-color: transparent;
+  color: var(--text-dim);
+  border: 1px solid var(--border);
+  transition: all 0.15s;
+}
+
+.action-btn-cancel:hover {
+  transform: translateY(-1px);
+  background-color: var(--text-invisible) !important;
+}
+
+/* Vertical resizer panel */
+.resizer-vertical {
+  width: 10px;
+  margin-left: -3px;
+  margin-right: -3px;
+  z-index: 10;
+  cursor: col-resize;
+  background-color: transparent;
+  flex-shrink: 0;
+  transition: background-color 0.15s;
+  position: relative;
+}
+
+.resizer-vertical::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 3px;
+  width: 4px;
+  background-color: transparent;
+  transition: background-color 0.15s;
+}
+
+.resizer-vertical:hover::after,
+.resizer-vertical:active::after {
+  background-color: var(--red);
+}

@@ -27,7 +27,7 @@ export function DeezerResults({ results, loading, selectedId, onSelect }: Deezer
           trackCount={dz.trackCount}
           url={dz.url}
           urlTitle="Open on Deezer"
-            accentColor={COLORS.green}
+          accentColor={COLORS.green}
           selected={selectedId === dz.albumId}
           onClick={() => onSelect(dz)}
         />

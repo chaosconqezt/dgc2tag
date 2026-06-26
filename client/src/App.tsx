@@ -19,35 +19,35 @@ import { Footer } from './components/Footer';
 
 function AppContent() {
   const ctx = useAppContext();
-  const [sidebarWidth, setSidebarWidth] = useState(() => {
-    const saved = localStorage.getItem('dgc-sidebar-width');
-    return saved ? Number(saved) : 320;
+  const [col1Width, setCol1Width] = useState(() => {
+    const saved = localStorage.getItem('dgc-col1-width');
+    return saved ? Number(saved) : 250;
   });
-  const [treeHeightPx, setTreeHeightPx] = useState(() => {
-    const saved = localStorage.getItem('dgc-tree-height');
-    return saved ? Number(saved) : 300;
+  const [col2Width, setCol2Width] = useState(() => {
+    const saved = localStorage.getItem('dgc-col2-width');
+    return saved ? Number(saved) : 340;
   });
-  const isResizing = useRef(false);
-  const isResizingTree = useRef(false);
+  const isResizingCol1 = useRef(false);
+  const isResizingCol2 = useRef(false);
 
-  const saveWidth = useCallback((w: number) => { setSidebarWidth(w); localStorage.setItem('dgc-sidebar-width', String(w)); }, []);
-  const saveTreeHeight = useCallback((h: number) => { setTreeHeightPx(h); localStorage.setItem('dgc-tree-height', String(h)); }, []);
+  const saveCol1Width = useCallback((w: number) => { setCol1Width(w); localStorage.setItem('dgc-col1-width', String(w)); }, []);
+  const saveCol2Width = useCallback((w: number) => { setCol2Width(w); localStorage.setItem('dgc-col2-width', String(w)); }, []);
 
-  const onResizeStart = useCallback((e: React.MouseEvent) => {
+  const onResizeCol1Start = useCallback((e: React.MouseEvent) => {
     e.preventDefault();
-    isResizing.current = true;
+    isResizingCol1.current = true;
     const startX = e.clientX;
-    const startWidth = sidebarWidth;
+    const startWidth = col1Width;
 
     const onMouseMove = (ev: MouseEvent) => {
-      if (!isResizing.current) return;
+      if (!isResizingCol1.current) return;
       const delta = ev.clientX - startX;
-      const newWidth = Math.min(Math.max(startWidth + delta, 200), 600);
-      saveWidth(newWidth);
+      const newWidth = Math.min(Math.max(startWidth + delta, 150), 600);
+      saveCol1Width(newWidth);
     };
 
     const onMouseUp = () => {
-      isResizing.current = false;
+      isResizingCol1.current = false;
       document.removeEventListener('mousemove', onMouseMove);
       document.removeEventListener('mouseup', onMouseUp);
       document.body.style.cursor = '';
@@ -58,34 +58,34 @@ function AppContent() {
     document.body.style.userSelect = 'none';
     document.addEventListener('mousemove', onMouseMove);
     document.addEventListener('mouseup', onMouseUp);
-  }, [sidebarWidth]);
+  }, [col1Width]);
 
-  const onResizeTreeStart = useCallback((e: React.MouseEvent) => {
+  const onResizeCol2Start = useCallback((e: React.MouseEvent) => {
     e.preventDefault();
-    isResizingTree.current = true;
-    const startY = e.clientY;
-    const startH = treeHeightPx;
+    isResizingCol2.current = true;
+    const startX = e.clientX;
+    const startWidth = col2Width;
 
     const onMouseMove = (ev: MouseEvent) => {
-      if (!isResizingTree.current) return;
-      const delta = ev.clientY - startY;
-      const newH = Math.min(Math.max(startH + delta, 80), 800);
-      saveTreeHeight(newH);
+      if (!isResizingCol2.current) return;
+      const delta = ev.clientX - startX;
+      const newWidth = Math.min(Math.max(startWidth + delta, 200), 800);
+      saveCol2Width(newWidth);
     };
 
     const onMouseUp = () => {
-      isResizingTree.current = false;
+      isResizingCol2.current = false;
       document.removeEventListener('mousemove', onMouseMove);
       document.removeEventListener('mouseup', onMouseUp);
       document.body.style.cursor = '';
       document.body.style.userSelect = '';
     };
 
-    document.body.style.cursor = 'row-resize';
+    document.body.style.cursor = 'col-resize';
     document.body.style.userSelect = 'none';
     document.addEventListener('mousemove', onMouseMove);
     document.addEventListener('mouseup', onMouseUp);
-  }, [treeHeightPx]);
+  }, [col2Width]);
 
   // Initialize on mount
   useEffect(() => {
@@ -102,115 +102,89 @@ function AppContent() {
   return (
     <div className="dashboard" style={{ display: 'flex', height: '100vh', backgroundColor: COLORS.bg, color: COLORS.text, fontFamily: FONT }}>
 
-      {/* Sidebar: Library Tree + Search Results */}
-      <div className="sidebar" style={{ display: 'flex', flexDirection: 'column', width: sidebarWidth, flexShrink: 0 }}>
-        <div style={{ display: 'flex', flexDirection: 'column', backgroundColor: COLORS.inputBgAlt, overflow: 'hidden', height: '100%' }}>
-          <div style={{ padding: '10px 12px', borderBottom: `1px solid ${COLORS.border}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexShrink: 0 }}>
-            <h2 style={{ fontSize: FS, fontWeight: '600', margin: 0, letterSpacing: '0.3px', fontFamily: FONT, color: COLORS.text }}>
-              DGC TAGGER
-            </h2>
-            <div style={{ display: 'flex', gap: '4px' }}>
-              <button onClick={ctx.collapseAll} onMouseEnter={(e) => { e.currentTarget.style.color = COLORS.text; e.currentTarget.style.backgroundColor = COLORS.inputBg; }} onMouseLeave={(e) => { e.currentTarget.style.color = COLORS.textDim; e.currentTarget.style.backgroundColor = 'none'; }} style={{ background: 'none', border: 'none', color: COLORS.textDim, cursor: 'pointer', display: 'flex', fontSize: FS, fontWeight: '700', borderRadius: '4px', padding: '4px' }} title="Collapse all">
-                &#9650;
-              </button>
-              <button onClick={() => ctx.dispatch({ type: 'SET_SHOW_SETTINGS', payload: true })} onMouseEnter={(e) => { e.currentTarget.style.color = COLORS.text; e.currentTarget.style.backgroundColor = COLORS.inputBg; }} onMouseLeave={(e) => { e.currentTarget.style.color = COLORS.textDim; e.currentTarget.style.backgroundColor = 'none'; }} style={{ background: 'none', border: 'none', color: COLORS.textDim, cursor: 'pointer', display: 'flex', borderRadius: '4px', padding: '4px' }}>
-                <Settings size={14} />
-              </button>
-              <button onClick={ctx.fetchLibrary} onMouseEnter={(e) => { e.currentTarget.style.color = COLORS.text; e.currentTarget.style.backgroundColor = COLORS.inputBg; }} onMouseLeave={(e) => { e.currentTarget.style.color = COLORS.textDim; e.currentTarget.style.backgroundColor = 'none'; }} style={{ background: 'none', border: 'none', color: COLORS.textDim, cursor: 'pointer', display: 'flex', borderRadius: '4px', padding: '4px' }}>
-                <RefreshCw size={14} className={ctx.loading ? 'animate-spin' : ''} />
-              </button>
-            </div>
+      {/* Column 1: Library Tree */}
+      <div className="sidebar" style={{ display: 'flex', flexDirection: 'column', width: col1Width, flexShrink: 0, backgroundColor: COLORS.inputBgAlt, overflow: 'hidden' }}>
+        <div style={{ padding: '10px 12px', borderBottom: `1px solid ${COLORS.border}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexShrink: 0 }}>
+          <h2 style={{ fontSize: FS, fontWeight: '600', margin: 0, letterSpacing: '0.3px', fontFamily: FONT, color: COLORS.text }}>
+            DGC TAGGER
+          </h2>
+          <div style={{ display: 'flex', gap: '4px' }}>
+            <button className="header-btn" onClick={ctx.collapseAll} title="Collapse all" style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', fontSize: FS, fontWeight: '700', borderRadius: '4px', padding: '4px' }}>
+              &#9650;
+            </button>
+            <button className="header-btn" onClick={() => ctx.dispatch({ type: 'SET_SHOW_SETTINGS', payload: true })} style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', borderRadius: '4px', padding: '4px' }}>
+              <Settings size={14} />
+            </button>
+            <button className="header-btn" onClick={ctx.fetchLibrary} style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', borderRadius: '4px', padding: '4px' }}>
+              <RefreshCw size={14} className={ctx.loading ? 'animate-spin' : ''} />
+            </button>
           </div>
-          <div style={{ height: treeHeightPx, flexShrink: 0 }}>
-            <LibraryTree
-              tree={ctx.tree}
-              selectedFolder={ctx.selectedFolder}
-              expandedNodes={ctx.expandedNodes}
-              onToggleNode={ctx.toggleNode}
-              onSelectFolder={ctx.handleFolderSelect}
-            />
-          </div>
-
-          {/* Resize handle: tree ↔ matches */}
-          <div
-            onMouseDown={onResizeTreeStart}
-            style={{
-              height: '4px',
-              cursor: 'row-resize',
-              flexShrink: 0,
-              transition: 'background-color 0.15s',
-            }}
-            onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = COLORS.red; }}
-            onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; }}
+        </div>
+        <div style={{ flex: 1, overflowY: 'auto' }}>
+          <LibraryTree
+            tree={ctx.tree}
+            selectedFolder={ctx.selectedFolder}
+            expandedNodes={ctx.expandedNodes}
+            onToggleNode={ctx.toggleNode}
+            onSelectFolder={ctx.handleFolderSelect}
           />
-
-          {/* Search Results — vertical list */}
-          <div style={{ flex: 1, overflowY: 'auto', borderTop: `1px solid ${COLORS.border}` }}>
-            <SearchResults
-              results={ctx.searchResults}
-              deezerResults={ctx.deezerResults}
-              mbrainzResults={ctx.mbrainzResults}
-              bandcampResults={ctx.bandcampResults}
-              dgcLoading={ctx.dgcLoading}
-              deezerLoading={ctx.deezerLoading}
-              mbrainzLoading={ctx.mbrainzLoading}
-              bandcampLoading={ctx.bandcampLoading}
-              searchTimeMs={ctx.searchTimeMs}
-              selectedResult={ctx.selectedResult}
-              onSelectResult={ctx.handleSelectResult}
-              onSelectDeezer={ctx.handleSelectDeezer}
-              selectedDeezerId={ctx.selectedDeezer?.albumId ?? null}
-              selectedMbrainzId={ctx.selectedMbrainz?.releaseId ?? null}
-              onSelectMbrainz={ctx.handleSelectMbrainz}
-            />
-          </div>
         </div>
       </div>
 
-      {/* Resize handle */}
+      {/* Resize handle 1 */}
       <div
-        onMouseDown={onResizeStart}
-        style={{
-          width: '4px',
-          cursor: 'col-resize',
-          backgroundColor: 'transparent',
-          flexShrink: 0,
-          transition: 'background-color 0.15s',
-        }}
-        onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = COLORS.red; }}
-        onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; }}
+        className="resizer-vertical"
+        onMouseDown={onResizeCol1Start}
       />
 
-      {/* Main Content Area */}
-      <div className="main-content" style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0, overflow: 'hidden' }}>
+      {/* Column 2: Search */}
+      <div style={{ display: 'flex', flexDirection: 'column', width: col2Width, flexShrink: 0, backgroundColor: COLORS.inputBgAlt, overflow: 'hidden' }}>
+        <div style={{ padding: '12px 16px', borderBottom: `1px solid ${COLORS.border}`, flexShrink: 0 }}>
+          <SearchBar
+            artist={ctx.searchArtist}
+            album={ctx.searchAlbum}
+            artistEnabled={ctx.searchArtistEnabled}
+            albumEnabled={ctx.searchAlbumEnabled}
+            onArtistChange={(v) => ctx.dispatch({ type: 'SET_SEARCH_ARTIST', payload: v })}
+            onAlbumChange={(v) => ctx.dispatch({ type: 'SET_SEARCH_ALBUM', payload: v })}
+            onArtistEnabledChange={(v) => ctx.dispatch({ type: 'SET_SEARCH_ARTIST_ENABLED', payload: v })}
+            onAlbumEnabledChange={(v) => ctx.dispatch({ type: 'SET_SEARCH_ALBUM_ENABLED', payload: v })}
+            onSearch={() => ctx.handleSearch()}
+          />
+        </div>
+        <div style={{ flex: 1, overflowY: 'auto' }}>
+          <SearchResults
+            results={ctx.searchResults}
+            deezerResults={ctx.deezerResults}
+            mbrainzResults={ctx.mbrainzResults}
+            bandcampResults={ctx.bandcampResults}
+            dgcLoading={ctx.dgcLoading}
+            deezerLoading={ctx.deezerLoading}
+            mbrainzLoading={ctx.mbrainzLoading}
+            bandcampLoading={ctx.bandcampLoading}
+            searchTimeMs={ctx.searchTimeMs}
+            selectedResult={ctx.selectedResult}
+            onSelectResult={ctx.handleSelectResult}
+            onSelectDeezer={ctx.handleSelectDeezer}
+            selectedDeezerId={ctx.selectedDeezer?.albumId ?? null}
+            selectedMbrainzId={ctx.selectedMbrainz?.releaseId ?? null}
+            onSelectMbrainz={ctx.handleSelectMbrainz}
+          />
+        </div>
+      </div>
 
-        {/* Content Split: Comparison Panel */}
-        <div className="bottom-panels" style={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
+      {/* Resize handle 2 */}
+      <div
+        className="resizer-vertical"
+        onMouseDown={onResizeCol2Start}
+      />
 
-          {/* Comparison Panel */}
-          <div className="diff-panel" style={{ flex: 1, padding: '16px 20px', backgroundColor: COLORS.inputBgAlt, overflowY: 'auto', overflowX: 'hidden', minWidth: 0 }}>
-
-            {/* Search bar */}
-            <SearchBar
-              artist={ctx.searchArtist}
-              album={ctx.searchAlbum}
-              artistEnabled={ctx.searchArtistEnabled}
-              albumEnabled={ctx.searchAlbumEnabled}
-              onArtistChange={(v) => ctx.dispatch({ type: 'SET_SEARCH_ARTIST', payload: v })}
-              onAlbumChange={(v) => ctx.dispatch({ type: 'SET_SEARCH_ALBUM', payload: v })}
-              onArtistEnabledChange={(v) => ctx.dispatch({ type: 'SET_SEARCH_ARTIST_ENABLED', payload: v })}
-              onAlbumEnabledChange={(v) => ctx.dispatch({ type: 'SET_SEARCH_ALBUM_ENABLED', payload: v })}
-              onSearch={() => ctx.handleSearch()}
-            />
-
-            {/* Apply buttons */}
-            <ApplyPanel
-              onApplyTags={ctx.applyTags}
-              onCancel={() => ctx.clearSelectionState()}
-            />
-
-            {(ctx.selectedResult || ctx.localTags) ? (
-              <div style={{ display: 'flex', flexDirection: 'column' }}>
+      {/* Column 3: Main Content Area (Comparison & Tracks) */}
+      <div className="main-content" style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0, overflow: 'hidden', backgroundColor: COLORS.bg }}>
+        <div className="diff-panel" style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '16px 20px', overflowY: 'auto', overflowX: 'hidden', minWidth: 0 }}>
+          {(ctx.selectedResult || ctx.localTags) ? (
+            <>
+              <div style={{ display: 'flex', flexDirection: 'column', flex: '1 0 auto' }}>
                 <TagComparison
                   selectedResult={ctx.selectedResult}
                   localTags={ctx.localTags}
@@ -260,13 +234,20 @@ function AppContent() {
                   </div>
                 )}
               </div>
-            ) : (
-              <div style={{ height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: COLORS.textInvisible, opacity: 0.5 }}>
-                <Layout size={40} style={{ marginBottom: '10px' }} />
-                <p style={{ fontWeight: '500', fontSize: FS, fontFamily: FONT }}>Select a folder with MP3 files</p>
+
+              <div style={{ marginTop: '20px', paddingTop: '16px', borderTop: `1px solid ${COLORS.border}`, flexShrink: 0 }}>
+                <ApplyPanel
+                  onApplyTags={ctx.applyTags}
+                  onCancel={() => ctx.clearSelectionState()}
+                />
               </div>
-            )}
-          </div>
+            </>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: COLORS.textInvisible, opacity: 0.5, flex: 1 }}>
+              <Layout size={40} style={{ marginBottom: '10px' }} />
+              <p style={{ fontWeight: '500', fontSize: FS, fontFamily: FONT }}>Select a folder with MP3 files</p>
+            </div>
+          )}
         </div>
         <Footer />
       </div>
