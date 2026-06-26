@@ -103,6 +103,20 @@ function AppContent() {
   return (
     <div className="dashboard" style={{ display: 'flex', height: '100vh', backgroundColor: COLORS.bg, color: COLORS.text, fontFamily: FONT }}>
 
+      {ctx.viewMode === 'library' ? (<>
+        {/* Library Mode — full width */}
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0, overflow: 'hidden' }}>
+          <div style={{ padding: '10px 12px', borderBottom: `1px solid ${COLORS.border}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexShrink: 0, backgroundColor: COLORS.inputBgAlt }}>
+            <h2 style={{ fontSize: FS, fontWeight: '600', margin: 0, letterSpacing: '0.3px', fontFamily: FONT, color: COLORS.text }}>
+              LIBRARY
+            </h2>
+            <button onClick={() => ctx.dispatch({ type: 'SET_VIEW_MODE', payload: 'main' })} className="hover-toolbar" style={{ ...ICON_BUTTON, display: 'flex', borderRadius: '4px', padding: '4px' }}>
+              <Layout size={14} />
+            </button>
+          </div>
+          <LibraryView entries={ctx.libraryEntries} />
+        </div>
+      </>) : (<>
       {/* Sidebar: Library Tree + Search Results */}
       <div className="sidebar" style={{ display: 'flex', flexDirection: 'column', width: sidebarWidth, flexShrink: 0 }}>
         <div style={{ display: 'flex', flexDirection: 'column', backgroundColor: COLORS.inputBgAlt, overflow: 'hidden', height: '100%' }}>
@@ -114,7 +128,7 @@ function AppContent() {
               <button onClick={ctx.collapseAll} className="hover-toolbar" style={{ ...ICON_BUTTON, display: 'flex', fontSize: FS, fontWeight: '700', borderRadius: '4px', padding: '4px' }} title="Collapse all">
                 &#9650;
               </button>
-              <button onClick={() => ctx.dispatch({ type: 'SET_VIEW_MODE', payload: ctx.viewMode === 'library' ? 'main' : 'library' })} className="hover-toolbar" style={{ ...ICON_BUTTON, display: 'flex', borderRadius: '4px', padding: '4px', color: ctx.viewMode === 'library' ? COLORS.green : undefined }}>
+              <button onClick={() => ctx.dispatch({ type: 'SET_VIEW_MODE', payload: 'library' })} className="hover-toolbar" style={{ ...ICON_BUTTON, display: 'flex', borderRadius: '4px', padding: '4px' }}>
                 <BookOpen size={14} />
               </button>
               <button onClick={() => ctx.dispatch({ type: 'SET_SHOW_SETTINGS', payload: true })} className="hover-toolbar" style={{ ...ICON_BUTTON, display: 'flex', borderRadius: '4px', padding: '4px' }}>
@@ -187,9 +201,6 @@ function AppContent() {
       {/* Main Content Area */}
       <div className="main-content" style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0, overflow: 'hidden' }}>
 
-        {ctx.viewMode === 'library' ? (
-          <LibraryView entries={ctx.libraryEntries} />
-        ) : (<>
         {/* Content Split: Comparison Panel */}
         <div className="bottom-panels" style={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
 
@@ -289,8 +300,8 @@ function AppContent() {
           onOutputModeChange={(v) => ctx.dispatch({ type: 'SET_CONFIG_OUTPUT_MODE', payload: v })}
           onSave={ctx.saveConfig}
         />
-        </>)}
       </div>
+      </>)}
       {ctx.webfetchUrl && (
         <WebfetchOverlay
           url={ctx.webfetchUrl}

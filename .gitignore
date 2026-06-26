@@ -1,12 +1,8 @@
+library/
 node_modules/
 dist/
 *.local
-zzz/
 user_data/
-user_data_tmp/
-user_data_tmp2/
-user_data_img/
-test_muz/
 cache/
 *.log
 .DS_Store

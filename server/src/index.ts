@@ -281,17 +281,17 @@ app.post('/api/tags/update', async (req, res) => {
 
 // ─── Library endpoints ────────────────────────────────────────
 
-app.get('/api/library', async (_req, res) => {
+app.get('/api/collection', async (_req, res) => {
     try {
         const albums = await getAllLibraryAlbums();
         res.json(albums);
     } catch (error) {
-        logger.error('GET /api/library error:', error);
-        res.status(500).json({ error: 'Failed to load library' });
+        logger.error('GET /api/collection error:', error);
+        res.status(500).json({ error: 'Failed to load collection' });
     }
 });
 
-app.get('/api/library/:bandId', async (req, res) => {
+app.get('/api/collection/:bandId', async (req, res) => {
     try {
         const bandId = parseInt(req.params.bandId, 10);
         if (isNaN(bandId)) { res.status(400).json({ error: 'Invalid bandId' }); return; }
@@ -308,7 +308,7 @@ app.get('/api/cover/:bandId/:postId', async (req, res) => {
         const bandId = parseInt(req.params.bandId, 10);
         const postId = parseInt(req.params.postId, 10);
         if (isNaN(bandId) || isNaN(postId)) { res.status(400).end(); return; }
-        const dir = path.join(__dirname, '../library', String(bandId), String(postId));
+        const dir = path.join(__dirname, '../../library', String(bandId), String(postId));
         // Try jpg first, then webp
         for (const ext of ['jpg', 'webp']) {
             const coverPath = path.join(dir, `cover.${ext}`);

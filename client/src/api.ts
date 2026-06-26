@@ -254,6 +254,6 @@ export interface LibraryAlbum {
 }
 
 export async function fetchLibraryAlbums(): Promise<LibraryAlbum[]> {
-  const res = await api.get('/library');
+  const res = await api.get('/collection');
   return res.data;
 }
