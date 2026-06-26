@@ -15,5 +15,6 @@
   "writeTrackNames": true,
   "writeTrackArtists": true,
   "outputFolder": "c:\\vibecode\\dgc2tag\\music_processed\\",
-  "outputMode": "absolute"
+  "outputMode": "absolute",
+  "cleanupIgnorePatterns": [".DS_Store", "Thumbs.db", "desktop.ini"]
 }

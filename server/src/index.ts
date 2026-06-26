@@ -23,6 +23,7 @@ const app = express();
 const configStore = {
     config: await loadConfig(),
 };
+let configLock: Promise<void> = Promise.resolve();
 
 function getConfig(): Config {
     return configStore.config;
@@ -62,43 +63,83 @@ app.get('/api/config', (_req, res) => {
 });
 
 app.post('/api/config', async (req, res) => {
-    const { musicRoot, port, tagDefaults, writeTrackNames, writeTrackArtists, outputFolder, outputMode, enabledSources } = req.body;
-    if (!musicRoot || typeof musicRoot !== 'string') {
-        return res.status(400).json({ error: 'musicRoot is required' });
+    try {
+        const { musicRoot, port, tagDefaults, writeTrackNames, writeTrackArtists, outputFolder, outputMode, enabledSources, cleanupIgnorePatterns } = req.body;
+        if (!musicRoot || typeof musicRoot !== 'string') {
+            return res.status(400).json({ error: 'musicRoot is required' });
+        }
+        const prev = configLock;
+        let release!: () => void;
+        configLock = new Promise<void>(r => { release = r; });
+        await prev;
+        try {
+            const current = getConfig();
+            const newConfig: Config = {
+                musicRoot: path.resolve(musicRoot),
+                port: typeof port === 'number' ? port : current.port,
+                tagDefaults: { ...current.tagDefaults, ...(tagDefaults || {}) },
+                writeTrackNames: typeof writeTrackNames === 'boolean' ? writeTrackNames : current.writeTrackNames,
+                writeTrackArtists: typeof writeTrackArtists === 'boolean' ? writeTrackArtists : current.writeTrackArtists,
+                outputFolder: typeof outputFolder === 'string' && outputFolder.trim() ? outputFolder.trim() : current.outputFolder,
+                outputMode: outputMode === 'absolute' ? 'absolute' : 'subfolder',
+                enabledSources: enabledSources && typeof enabledSources === 'object' ? { ...current.enabledSources, ...enabledSources } : current.enabledSources,
+                cleanupIgnorePatterns: Array.isArray(cleanupIgnorePatterns) ? cleanupIgnorePatterns : current.cleanupIgnorePatterns,
+            };
+            await saveConfig(newConfig);
+            configStore.config = newConfig;
+            logger.info(`updated: musicRoot=${newConfig.musicRoot}, port=${newConfig.port}`);
+            res.json({ success: true, config: newConfig });
+        } finally {
+            release();
+        }
+    } catch (error) {
+        logger.error('POST /api/config error:', error);
+        res.status(500).json({ error: (error as Error).message });
     }
-    const current = getConfig();
-    const newConfig: Config = {
-        musicRoot: path.resolve(musicRoot),
-        port: typeof port === 'number' ? port : current.port,
-        tagDefaults: { ...current.tagDefaults, ...(tagDefaults || {}) },
-        writeTrackNames: typeof writeTrackNames === 'boolean' ? writeTrackNames : current.writeTrackNames,
-        writeTrackArtists: typeof writeTrackArtists === 'boolean' ? writeTrackArtists : current.writeTrackArtists,
-        outputFolder: typeof outputFolder === 'string' && outputFolder.trim() ? outputFolder.trim() : current.outputFolder,
-        outputMode: outputMode === 'absolute' ? 'absolute' : 'subfolder',
-        enabledSources: enabledSources && typeof enabledSources === 'object' ? { ...current.enabledSources, ...enabledSources } : current.enabledSources,
-    };
-    await saveConfig(newConfig);
-    configStore.config = newConfig;
-    logger.info(`updated: musicRoot=${newConfig.musicRoot}, port=${newConfig.port}`);
-    res.json({ success: true, config: newConfig });
 });
 
 app.post('/api/config/write-track-names', async (req, res) => {
-    const { enabled } = req.body;
-    const current = getConfig();
-    configStore.config = { ...current, writeTrackNames: !!enabled };
-    await saveConfig(configStore.config);
-    logger.info(`writeTrackNames=${configStore.config.writeTrackNames}`);
-    res.json({ success: true, writeTrackNames: configStore.config.writeTrackNames });
+    try {
+        const { enabled } = req.body;
+        const prev = configLock;
+        let release!: () => void;
+        configLock = new Promise<void>(r => { release = r; });
+        await prev;
+        try {
+            const current = getConfig();
+            configStore.config = { ...current, writeTrackNames: !!enabled };
+            await saveConfig(configStore.config);
+            logger.info(`writeTrackNames=${configStore.config.writeTrackNames}`);
+            res.json({ success: true, writeTrackNames: configStore.config.writeTrackNames });
+        } finally {
+            release();
+        }
+    } catch (error) {
+        logger.error('POST /api/config/write-track-names error:', error);
+        res.status(500).json({ error: (error as Error).message });
+    }
 });
 
 app.post('/api/config/write-track-artists', async (req, res) => {
-    const { enabled } = req.body;
-    const current = getConfig();
-    configStore.config = { ...current, writeTrackArtists: !!enabled };
-    await saveConfig(configStore.config);
-    logger.info(`writeTrackArtists=${configStore.config.writeTrackArtists}`);
-    res.json({ success: true, writeTrackArtists: configStore.config.writeTrackArtists });
+    try {
+        const { enabled } = req.body;
+        const prev = configLock;
+        let release!: () => void;
+        configLock = new Promise<void>(r => { release = r; });
+        await prev;
+        try {
+            const current = getConfig();
+            configStore.config = { ...current, writeTrackArtists: !!enabled };
+            await saveConfig(configStore.config);
+            logger.info(`writeTrackArtists=${configStore.config.writeTrackArtists}`);
+            res.json({ success: true, writeTrackArtists: configStore.config.writeTrackArtists });
+        } finally {
+            release();
+        }
+    } catch (error) {
+        logger.error('POST /api/config/write-track-artists error:', error);
+        res.status(500).json({ error: (error as Error).message });
+    }
 });
 
 app.get('/api/library', async (_req, res) => {
@@ -232,7 +273,7 @@ app.post('/api/tags/update', async (req, res) => {
                     albumArtistForMove = tags.albumArtist || tags.artist;
                     yearForMove = tags.year || (ft as unknown as Id3Tags)?.year;
                     albumForMove = tags.album;
-                } catch {}
+                } catch (e) { logger.warn(`failed to read tags for move metadata: ${(e as Error).message}`); }
             }
             const renameResult = await renameFilesInPlace(absolutePath, tags.artist, trackArtists, trackNames, cfg.musicRoot);
             renamed = renameResult.renamed;
@@ -242,7 +283,8 @@ app.post('/api/tags/update', async (req, res) => {
             const result = await moveProcessedFiles(
                 absolutePath, getOutputRoot(cfg), cfg.musicRoot, tags,
                 albumArtistForMove, trackArtists, trackNames,
-                cfg.outputMode, yearForMove, albumForMove
+                cfg.outputMode, yearForMove, albumForMove,
+                cfg.cleanupIgnorePatterns,
             );
             moved = result.moved;
             send('log', { message: `Moved ${moved.length} files to output` });
@@ -296,6 +338,9 @@ app.post('/api/parse-genres', async (req, res) => {
     const { html } = req.body;
     if (!html || typeof html !== 'string') {
         return res.status(400).json({ error: 'html is required' });
+    }
+    if (html.length > 1_000_000) {
+        return res.status(413).json({ error: 'HTML too large (max 1MB)' });
     }
 
     try {

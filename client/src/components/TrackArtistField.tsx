@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { FONT, FS, COLORS, INPUT_STYLE } from './styles';
 
 export function TrackArtistField({
@@ -12,6 +12,10 @@ export function TrackArtistField({
 }) {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(value);
+
+  useEffect(() => {
+    if (!editing) setDraft(value);
+  }, [value, editing]);
 
   return (
     <div

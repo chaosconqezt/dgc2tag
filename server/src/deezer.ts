@@ -2,6 +2,7 @@ import axios from 'axios';
 import { logger } from './logger.js';
 
 const DEEZER_BASE = 'https://api.deezer.com';
+const DEEZER_DELAY_MS = 120;
 
 export interface DeezerSearchResult {
     source: 'deezer';
@@ -119,6 +120,8 @@ export async function searchDeezer(artist?: string, album?: string): Promise<Dee
             tracks,
             url: detail.link,
         });
+
+        await new Promise(r => setTimeout(r, DEEZER_DELAY_MS));
     }
 
     logger.info(`${results.length} results`);

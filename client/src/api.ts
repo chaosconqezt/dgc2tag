@@ -72,13 +72,13 @@ api.interceptors.response.use(
   }
 );
 
-export async function fetchConfig(): Promise<{ musicRoot: string; port: number; tagDefaults: Record<string, boolean>; writeTrackNames: boolean; writeTrackArtists: boolean; outputFolder: string; outputMode: 'subfolder' | 'absolute' }> {
+export async function fetchConfig(): Promise<{ musicRoot: string; port: number; tagDefaults: Record<string, boolean>; writeTrackNames: boolean; writeTrackArtists: boolean; outputFolder: string; outputMode: 'subfolder' | 'absolute'; cleanupIgnorePatterns: string[] }> {
   const res = await api.get('/config');
   return res.data;
 }
 
-export async function saveConfig(musicRoot: string, tagDefaults?: Record<string, boolean>, outputFolder?: string, outputMode?: 'subfolder' | 'absolute', enabledSources?: Record<string, boolean>): Promise<void> {
-  await api.post('/config', { musicRoot, tagDefaults, outputFolder, outputMode, enabledSources });
+export async function saveConfig(musicRoot: string, tagDefaults?: Record<string, boolean>, outputFolder?: string, outputMode?: 'subfolder' | 'absolute', enabledSources?: Record<string, boolean>, cleanupIgnorePatterns?: string[]): Promise<void> {
+  await api.post('/config', { musicRoot, tagDefaults, outputFolder, outputMode, enabledSources, cleanupIgnorePatterns });
 }
 
 export async function fetchLibrary(): Promise<FileNode[]> {
@@ -101,12 +101,12 @@ export async function searchAlbums(query: string): Promise<SearchResult[]> {
   return res.data;
 }
 
-export async function sourceSearch(sourceId: string, artist?: string, album?: string): Promise<any[]> {
+export async function sourceSearch(sourceId: string, artist?: string, album?: string): Promise<SearchResult[]> {
   const res = await api.post(`/search-${sourceId}`, { artist, album });
   return res.data;
 }
 
-export async function sourceGetDetails(sourceId: string, id: string): Promise<any> {
+export async function sourceGetDetails(sourceId: string, id: string): Promise<SearchResult | null> {
   const res = await api.get(`/${sourceId}/${id}`);
   return res.data;
 }
@@ -132,15 +132,21 @@ export async function updateTags(
   },
   onProgress: (event: ProgressEvent) => void,
 ): Promise<void> {
+  const controller = new AbortController();
+  const key = `tags-update-${++requestCounter}`;
+  activeControllers.set(key, controller);
+
   const res = await fetch(`${API_BASE}/tags/update`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload),
+    signal: controller.signal,
   });
 
   if (!res.ok) {
     const err = await res.json().catch(() => ({ error: 'Request failed' }));
     onProgress({ event: 'error', data: err });
+    activeControllers.delete(key);
     return;
   }
 
@@ -169,10 +175,11 @@ export async function updateTags(
       }
     }
   }
+  activeControllers.delete(key);
 }
 
-export async function webfetchPage(url: string): Promise<{ content: string }> {
-  const res = await api.get('/webfetch', { params: { url } });
+export async function webfetchPage(url: string, signal?: AbortSignal): Promise<{ content: string }> {
+  const res = await api.get('/webfetch', { params: { url }, signal });
   return res.data;
 }
 

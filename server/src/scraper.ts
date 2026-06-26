@@ -21,7 +21,7 @@ async function findRunningBrowserWs(): Promise<string | null> {
                 return `ws://127.0.0.1:${port}${lines[1]}`;
             }
         }
-    } catch {}
+    } catch (e) { logger.debug(`findRunningBrowserWs: ${(e as Error).message}`); return null; }
     return null;
 }
 
@@ -88,7 +88,7 @@ async function loadTaxonomyFromFile(): Promise<boolean> {
             return true;
         }
         logger.info('cache expired, will refresh');
-    } catch {}
+    } catch (e) { logger.info(`loadTaxonomyFromFile: ${(e as Error).message}`); }
     return false;
 }
 
@@ -166,6 +166,9 @@ export async function ensureTaxonomy(): Promise<void> {
     } else if (Object.keys(genreMap).length > 0) {
         taxonomyLoaded = true;
         logger.info('fetch failed, using stale data');
+    } else {
+        taxonomyLoaded = true;
+        logger.warn('taxonomy unavailable: fetch failed and no cached data');
     }
 }
 
@@ -202,6 +205,47 @@ let page: any = null;
 let managedBrowser = false;
 let browserLaunchPromise: Promise<any> | null = null;
 
+async function launchBrowser(): Promise<any> {
+    logger.info('launching browser...');
+    try {
+        const launched = await (puppeteer as any).launch({
+            headless: process.env.NODE_ENV === 'production' || process.env.HEADLESS === 'true',
+            defaultViewport: null,
+            pipe: false,
+            userDataDir: './user_data',
+            args: [
+                '--window-size=900,700',
+                '--no-sandbox',
+                '--disable-setuid-sandbox',
+                '--disable-blink-features=AutomationControlled',
+            ],
+        });
+
+        browser = launched;
+        managedBrowser = true;
+        const pages = await browser.pages();
+        page = pages[0] || await browser.newPage();
+        await page.goto('https://deathgrind.club', { waitUntil: 'domcontentloaded', timeout: 60000 });
+        logger.info('browser ready — if Cloudflare challenge appears, solve it in the browser window');
+        return browser;
+    } catch (err: any) {
+        if (err.message?.includes('already running')) {
+            logger.info('browser already running, attempting to connect...');
+            const wsEndpoint = await findRunningBrowserWs();
+            if (wsEndpoint) {
+                const connected = await (puppeteer as any).connect({ browserWSEndpoint: wsEndpoint });
+                browser = connected;
+                managedBrowser = false;
+                const pages = await browser.pages();
+                page = pages[0] || await browser.newPage();
+                logger.info('connected to existing browser');
+                return browser;
+            }
+        }
+        throw err;
+    }
+}
+
 export async function ensureBrowser() {
     if (browser && page) {
         try {
@@ -222,47 +266,8 @@ export async function ensureBrowser() {
         return page;
     }
 
-    // Запускаем браузер в фоне
-    browserLaunchPromise = (async () => {
-        logger.info('launching browser...');
-        try {
-            const launched = await (puppeteer as any).launch({
-                headless: process.env.NODE_ENV === 'production' || process.env.HEADLESS === 'true',
-                defaultViewport: null,
-                pipe: false,
-                userDataDir: './user_data',
-                args: [
-                    '--window-size=900,700',
-                    '--no-sandbox',
-                    '--disable-setuid-sandbox',
-                    '--disable-blink-features=AutomationControlled',
-                ],
-            });
-
-            browser = launched;
-            managedBrowser = true;
-            const pages = await browser.pages();
-            page = pages[0] || await browser.newPage();
-            await page.goto('https://deathgrind.club', { waitUntil: 'domcontentloaded', timeout: 60000 });
-            logger.info('browser ready — if Cloudflare challenge appears, solve it in the browser window');
-            return browser;
-        } catch (err: any) {
-            if (err.message?.includes('already running')) {
-                logger.info('browser already running, attempting to connect...');
-                const wsEndpoint = await findRunningBrowserWs();
-                if (wsEndpoint) {
-                    const connected = await (puppeteer as any).connect({ browserWSEndpoint: wsEndpoint });
-                    browser = connected;
-                    managedBrowser = false;
-                    const pages = await browser.pages();
-                    page = pages[0] || await browser.newPage();
-                    logger.info('connected to existing browser');
-                    return browser;
-                }
-            }
-            throw err;
-        }
-    })();
+    // Запускаем браузер в фоне — сразу сохраняем промис
+    browserLaunchPromise = launchBrowser();
 
     try {
         const launched = await browserLaunchPromise;
@@ -304,7 +309,7 @@ async function apiFetch<T>(path: string): Promise<T> {
         return result as T;
     } catch (err) {
         logger.error(`fetch failed for ${url}: ${(err as Error).message}`);
-        try { await p.reload({ waitUntil: 'domcontentloaded' }); } catch {}
+        try { await p.reload({ waitUntil: 'domcontentloaded' }); } catch (e) { logger.warn(`browser reload failed: ${(e as Error).message}`); }
         throw err;
     }
 }
@@ -522,7 +527,10 @@ export async function fetchPageContent(url: string): Promise<string> {
     const p = await ensureBrowser();
 
     const html = await p.evaluate(async (fetchUrl: string) => {
-        const res = await fetch(fetchUrl, { credentials: 'include' });
+        const res = await fetch(fetchUrl, { credentials: 'include', redirect: 'manual' });
+        if (res.status >= 300 && res.status < 400) {
+            throw new Error(`Redirect blocked: ${res.headers.get('location')}`);
+        }
         if (!res.ok) throw new Error(`HTTP ${res.status}: ${res.statusText}`);
         return await res.text();
     }, url);

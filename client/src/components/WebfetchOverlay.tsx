@@ -35,7 +35,7 @@ export function WebfetchOverlay({ url, content, loading, onClose }: WebfetchOver
               <span style={{ fontSize: FS, fontFamily: FONT }}>Loading preview...</span>
             </div>
           ) : (
-            <iframe srcDoc={content || ''} style={{ width: '100%', height: '100%', border: 'none', backgroundColor: '#fff' }} title="DGC Preview" />
+            <iframe srcDoc={content || ''} sandbox="" style={{ width: '100%', height: '100%', border: 'none', backgroundColor: '#fff' }} title="DGC Preview" />
           )}
         </div>
       </div>

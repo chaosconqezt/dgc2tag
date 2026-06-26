@@ -13,6 +13,7 @@ export interface ConfigState {
   configOutputMode: 'subfolder' | 'absolute';
   tagEnabled: Record<string, boolean>;
   enabledSources: Record<string, boolean>;
+  cleanupIgnorePatterns: string[];
 }
 
 export function createConfigActions(
@@ -34,6 +35,9 @@ export function createConfigActions(
         if (data.enabledSources) {
           dispatch({ type: 'SET_ENABLED_SOURCES', payload: data.enabledSources });
         }
+        if (data.cleanupIgnorePatterns) {
+          dispatch({ type: 'SET_CLEANUP_IGNORE_PATTERNS', payload: data.cleanupIgnorePatterns });
+        }
       } catch (err) {
         if (import.meta.env.DEV) console.error('Failed to fetch config', err);
       }
@@ -48,6 +52,7 @@ export function createConfigActions(
           state.configOutputFolder,
           state.configOutputMode,
           state.enabledSources,
+          state.cleanupIgnorePatterns,
         );
         dispatch({ type: 'SET_SHOW_SETTINGS', payload: false });
         await fetchLibrary();

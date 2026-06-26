@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import type { AlbumTags, SearchResult } from '../types';
 import { matchTracks, generateParsedTracks } from '../utils';
 import { FONT, FS, COLORS, CHECKBOX, PANEL_STYLE } from './styles';
@@ -21,7 +21,9 @@ interface TrackMatcherProps {
   onWriteTrackNamesChange: (enabled: boolean) => void;
   onWriteTrackArtistsChange: (enabled: boolean) => void;
   onTrackNameEnabledChange: (num: string, enabled: boolean) => void;
+  onTrackNameEnabledBatchChange: (nums: string[], enabled: boolean) => void;
   onTrackArtistsEnabledChange: (num: string, enabled: boolean) => void;
+  onTrackArtistsEnabledBatchChange: (nums: string[], enabled: boolean) => void;
   onEditedTrackNameChange: (num: string, value: string) => void;
   onEditedTrackArtistChange: (num: string, value: string) => void;
   onCompilationChange: (enabled: boolean) => void;
@@ -41,7 +43,9 @@ export function TrackMatcher({
   onWriteTrackNamesChange,
   onWriteTrackArtistsChange,
   onTrackNameEnabledChange,
+  onTrackNameEnabledBatchChange,
   onTrackArtistsEnabledChange,
+  onTrackArtistsEnabledBatchChange,
   onEditedTrackNameChange,
   onEditedTrackArtistChange,
   onCompilationChange,
@@ -51,10 +55,10 @@ export function TrackMatcher({
 
   if (!localTags?.files) return null;
 
-  const remoteTracks = generateParsedTracks(albumDetails, localTags);
-  const artists = [...new Set(remoteTracks.map(t => t.artist))];
+  const remoteTracks = useMemo(() => generateParsedTracks(albumDetails, localTags), [albumDetails, localTags]);
+  const artists = useMemo(() => [...new Set(remoteTracks.map(t => t.artist))], [remoteTracks]);
   const hasMultiArtist = compilation || artists.length > 1;
-  const matched = matchTracks(remoteTracks, localTags.files, localTags.trackTitles, false, filenameMode);
+  const matched = useMemo(() => matchTracks(remoteTracks, localTags.files, localTags.trackTitles, false, filenameMode), [remoteTracks, localTags.files, localTags.trackTitles, filenameMode]);
 
   const localCount = localTags.files.length;
   const remoteCount = remoteTracks.length;
@@ -67,12 +71,12 @@ export function TrackMatcher({
 
   const handleTitlesToggle = (enabled: boolean) => {
     onWriteTrackNamesChange(enabled);
-    remoteTracks.forEach(t => onTrackNameEnabledChange(t.num, enabled));
+    onTrackNameEnabledBatchChange(remoteTracks.map(t => t.num), enabled);
   };
 
   const handleArtistsToggle = (enabled: boolean) => {
     onWriteTrackArtistsChange(enabled);
-    remoteTracks.forEach(t => onTrackArtistsEnabledChange(t.num, enabled));
+    onTrackArtistsEnabledBatchChange(remoteTracks.map(t => t.num), enabled);
   };
 
   const display: TrackDisplayConfig = { filenameMode, showFilenamePreviews };

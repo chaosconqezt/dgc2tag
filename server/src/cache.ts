@@ -1,7 +1,9 @@
 import { mkdir, readdir, unlink } from 'fs/promises';
-import { join } from 'path';
+import { join, dirname } from 'path';
+import { fileURLToPath } from 'url';
 
-const PROJECT_ROOT = join(process.cwd(), '..');
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const PROJECT_ROOT = join(__dirname, '..');
 const CACHE_DIR = join(PROJECT_ROOT, 'cache');
 const BANDS_DIR = join(CACHE_DIR, 'bands');
 const RELEASES_DIR = join(CACHE_DIR, 'releases');

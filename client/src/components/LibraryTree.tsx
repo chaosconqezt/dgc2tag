@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import type { FileNode } from '../types';
 import { FONT, FS, COLORS } from './styles';
 
@@ -9,28 +10,40 @@ interface LibraryTreeProps {
   onSelectFolder: (path: string) => void;
 }
 
-function countDirs(node: FileNode): number {
-  let count = 0;
-  for (const child of node.children || []) {
-    if (child.type === 'directory') {
-      count += 1 + countDirs(child);
-    }
-  }
-  return count;
-}
-
-function countAudioFiles(node: FileNode): number {
-  let count = 0;
-  for (const child of node.children || []) {
-    if (child.type === 'file') count++;
-    else count += countAudioFiles(child);
-  }
-  return count;
-}
-
 export function LibraryTree({ tree, selectedFolder, expandedNodes, onToggleNode, onSelectFolder }: LibraryTreeProps) {
   const ARROW_W = 6;
   const INDENT = 5;
+
+  const dirCountMap = useMemo(() => {
+    const map = new Map<string, number>();
+    const walk = (node: FileNode) => {
+      let count = 0;
+      for (const child of node.children || []) {
+        if (child.type === 'directory') {
+          count += 1 + walk(child);
+        }
+      }
+      map.set(node.path, count);
+      return count;
+    };
+    for (const node of tree) walk(node);
+    return map;
+  }, [tree]);
+
+  const audioCountMap = useMemo(() => {
+    const map = new Map<string, number>();
+    const walk = (node: FileNode): number => {
+      let count = 0;
+      for (const child of node.children || []) {
+        if (child.type === 'file') count++;
+        else count += walk(child);
+      }
+      map.set(node.path, count);
+      return count;
+    };
+    for (const node of tree) walk(node);
+    return map;
+  }, [tree]);
 
   const renderTree = (nodes: FileNode[], depth: number): React.ReactNode[] => {
     if (!Array.isArray(nodes)) return [];
@@ -41,8 +54,8 @@ export function LibraryTree({ tree, selectedFolder, expandedNodes, onToggleNode,
       const hasKids = children.length > 0;
       const indent = depth * INDENT;
       const isSelected = selectedFolder === node.path;
-      const dirCount = isDir ? countDirs(node) : 0;
-      const audioCount = isDir && isSelected && node.hasAudioFiles ? countAudioFiles(node) : 0;
+      const dirCount = isDir ? (dirCountMap.get(node.path) ?? 0) : 0;
+      const audioCount = isDir && isSelected && node.hasAudioFiles ? (audioCountMap.get(node.path) ?? 0) : 0;
 
       const item = (
         <div key={node.path}>

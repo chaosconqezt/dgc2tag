@@ -8,9 +8,12 @@ interface TagComparisonProps {
   localTags: AlbumTags | null;
   tagEnabled: Record<string, boolean>;
   editedSiteValues: Record<string, string>;
+  editedExtraTags: Record<string, string>;
   stripRemoteParentheses: boolean;
   onTagEnabledChange: (key: string, enabled: boolean) => void;
   onEditedSiteValuesChange: (key: string, value: string) => void;
+  onEditedExtraTagChange: (key: string, value: string) => void;
+  onClearAllExtraTags: (keys: string[]) => void;
 }
 
 function formatReleaseType(val: string): string {
@@ -19,32 +22,52 @@ function formatReleaseType(val: string): string {
   return val.charAt(0).toUpperCase() + val.slice(1);
 }
 
-function ExtraTagsSection({ sourceTags, outputTags, onOutputChange }: { sourceTags: Record<string, string>; outputTags: Record<string, string>; onOutputChange: (key: string, value: string) => void }) {
+function ExtraTagsSection({ sourceTags, outputTags, onOutputChange, onClearAll }: { sourceTags: Record<string, string>; outputTags: Record<string, string>; onOutputChange: (key: string, value: string) => void; onClearAll: (keys: string[]) => void }) {
   const [expanded, setExpanded] = useState(false);
   const allKeys = [...new Set([...Object.keys(sourceTags), ...Object.keys(outputTags)])];
 
-  if (allKeys.length === 0) return null;
+  const handleClearAll = () => {
+    if (!window.confirm(`Delete ${allKeys.length} extra tag${allKeys.length > 1 ? 's' : ''} from file?`)) return;
+    onClearAll(allKeys);
+  };
 
   return (
     <div style={{ marginTop: '4px' }}>
-      <button
-        onClick={() => setExpanded(!expanded)}
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '4px',
-          background: 'none',
-          border: 'none',
-          color: COLORS.textDim,
-          cursor: 'pointer',
-          fontSize: FS,
-          fontFamily: FONT,
-          padding: '4px 0',
-        }}
-      >
-        <span style={{ transform: expanded ? 'rotate(90deg)' : 'rotate(0deg)', transition: 'transform 0.15s', fontSize: '10px' }}>▶</span>
-        {allKeys.length} extra tag{allKeys.length > 1 ? 's' : ''}
-      </button>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+        <button
+          onClick={() => setExpanded(!expanded)}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '4px',
+            background: 'none',
+            border: 'none',
+            color: COLORS.textDim,
+            cursor: 'pointer',
+            fontSize: FS,
+            fontFamily: FONT,
+            padding: '4px 0',
+          }}
+        >
+          <span style={{ transform: expanded ? 'rotate(90deg)' : 'rotate(0deg)', transition: 'transform 0.15s', fontSize: '10px' }}>&#9654;</span>
+          {allKeys.length > 0 ? `${allKeys.length} extra tag${allKeys.length > 1 ? 's' : ''}` : 'extra tags'}
+        </button>
+        <button
+          onClick={handleClearAll}
+          style={{
+            background: 'none',
+            border: `1px solid ${COLORS.textFaint}`,
+            color: COLORS.textFaint,
+            cursor: 'pointer',
+            fontSize: '10px',
+            fontFamily: FONT,
+            padding: '1px 5px',
+            borderRadius: '3px',
+          }}
+        >
+          Clear all
+        </button>
+      </div>
       {expanded && (
         <div style={{ marginTop: '4px' }}>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '4px', marginBottom: '2px' }}>
@@ -75,11 +98,14 @@ export function TagComparison({
   localTags,
   tagEnabled,
   editedSiteValues,
+  editedExtraTags,
   stripRemoteParentheses,
   onTagEnabledChange,
   onEditedSiteValuesChange,
+  onEditedExtraTagChange,
+  onClearAllExtraTags,
 }: TagComparisonProps) {
-  const isDeezer = selectedResult ? selectedResult.postId < 0 : false;
+  const isDeezer = selectedResult ? selectedResult.source === 'deezer' : false;
   const deezerId = isDeezer && selectedResult ? Math.abs(selectedResult.postId) : null;
 
   const rawArtist = selectedResult
@@ -261,7 +287,6 @@ export function TagComparison({
           sourceTags={localTags?.extraTags || {}}
           outputTags={(() => {
             const tags: Record<string, string> = {};
-            // These tags are in the main TAGS panel — don't duplicate
             const skip = new Set(['country', 'label', 'releasetype', 'genre', 'DGC_POST_ID', 'DEEZER_ID']);
             if (localTags?.extraTags) {
               for (const [k, v] of Object.entries(localTags.extraTags)) {
@@ -273,9 +298,13 @@ export function TagComparison({
                 if (!skip.has(k) && !tags[k]) tags[k] = v;
               }
             }
+            for (const [k, v] of Object.entries(editedExtraTags)) {
+              if (!skip.has(k)) tags[k] = v;
+            }
             return tags;
           })()}
-          onOutputChange={() => {}}
+          onOutputChange={onEditedExtraTagChange}
+          onClearAll={onClearAllExtraTags}
         />
       </div>
     </div>

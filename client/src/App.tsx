@@ -43,7 +43,7 @@ function AppContent() {
       if (!isResizing.current) return;
       const delta = ev.clientX - startX;
       const newWidth = Math.min(Math.max(startWidth + delta, 200), 600);
-      saveWidth(newWidth);
+      requestAnimationFrame(() => saveWidth(newWidth));
     };
 
     const onMouseUp = () => {
@@ -70,7 +70,7 @@ function AppContent() {
       if (!isResizingTree.current) return;
       const delta = ev.clientY - startY;
       const newH = Math.min(Math.max(startH + delta, 80), 800);
-      saveTreeHeight(newH);
+      requestAnimationFrame(() => saveTreeHeight(newH));
     };
 
     const onMouseUp = () => {
@@ -93,7 +93,7 @@ function AppContent() {
       await ctx.fetchConfig();
       await ctx.fetchLibrary();
     };
-    init();
+    init().catch(console.error);
     return () => {
       api.cancelActiveRequests();
     };
@@ -216,9 +216,12 @@ function AppContent() {
                   localTags={ctx.localTags}
                   tagEnabled={ctx.tagEnabled}
                   editedSiteValues={ctx.editedSiteValues}
+                  editedExtraTags={ctx.editedExtraTags}
                   stripRemoteParentheses={ctx.stripRemoteParentheses}
                   onTagEnabledChange={(key, enabled) => ctx.dispatch({ type: 'SET_TAG_ENABLED_KEY', payload: { key, enabled } })}
                   onEditedSiteValuesChange={(key, value) => ctx.dispatch({ type: 'SET_EDITED_SITE_VALUE', payload: { key, value } })}
+                  onEditedExtraTagChange={(key, value) => ctx.dispatch({ type: 'SET_EDITED_EXTRA_TAG', payload: { key, value } })}
+                  onClearAllExtraTags={(keys) => ctx.dispatch({ type: 'CLEAR_ALL_EXTRA_TAGS', payload: keys })}
                 />
 
                 <TrackMatcher
@@ -237,7 +240,9 @@ function AppContent() {
                   onWriteTrackNamesChange={(enabled) => { ctx.dispatch({ type: 'SET_WRITE_TRACK_NAMES', payload: enabled }); api.setWriteTrackNames(enabled); }}
                   onWriteTrackArtistsChange={(enabled) => { ctx.dispatch({ type: 'SET_WRITE_TRACK_ARTISTS', payload: enabled }); api.setWriteTrackArtists(enabled); }}
                   onTrackNameEnabledChange={(num, enabled) => ctx.dispatch({ type: 'SET_TRACK_NAME_ENABLED', payload: { num, enabled } })}
+                  onTrackNameEnabledBatchChange={(nums, enabled) => ctx.dispatch({ type: 'SET_TRACK_NAME_ENABLED_BATCH', payload: { nums, enabled } })}
                   onTrackArtistsEnabledChange={(num, enabled) => ctx.dispatch({ type: 'SET_TRACK_ARTISTS_ENABLED', payload: { num, enabled } })}
+                  onTrackArtistsEnabledBatchChange={(nums, enabled) => ctx.dispatch({ type: 'SET_TRACK_ARTISTS_ENABLED_BATCH', payload: { nums, enabled } })}
                   onEditedTrackNameChange={(num, value) => ctx.dispatch({ type: 'SET_EDITED_TRACK_NAME', payload: { num, value } })}
                   onEditedTrackArtistChange={(num, value) => ctx.dispatch({ type: 'SET_EDITED_TRACK_ARTIST', payload: { num, value } })}
                   onCompilationChange={(enabled) => {
@@ -296,6 +301,8 @@ function AppContent() {
           onTagDefaultsChange={(defaults) => ctx.dispatch({ type: 'SET_TAG_ENABLED', payload: defaults })}
           enabledSources={ctx.enabledSources}
           onEnabledSourcesChange={(sources) => ctx.dispatch({ type: 'SET_ENABLED_SOURCES', payload: sources })}
+          cleanupIgnorePatterns={ctx.cleanupIgnorePatterns}
+          onCleanupIgnorePatternsChange={(patterns) => ctx.dispatch({ type: 'SET_CLEANUP_IGNORE_PATTERNS', payload: patterns })}
           onClose={() => ctx.dispatch({ type: 'SET_SHOW_SETTINGS', payload: false })}
         />
       )}

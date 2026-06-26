@@ -74,6 +74,11 @@ async function writeSingleTag(
         'DISCID': (tags as any).discId,
         'originalyear': (tags as any).originalYear,
     };
+    if ((tags as any).extraTags && typeof (tags as any).extraTags === 'object') {
+        for (const [k, v] of Object.entries((tags as any).extraTags as Record<string, string>)) {
+            if (v !== undefined && v !== '') customFields[k] = v;
+        }
+    }
     logger.info(`[writeSingleTag] custom fields: ${JSON.stringify(customFields)}`);
     updatedTags.userDefinedText = writeUserDefinedText(
         (currentTags.userDefinedText as { description?: string; value?: string }[]) || [],
@@ -175,6 +180,7 @@ export async function moveProcessedFiles(
     outputMode?: 'subfolder' | 'absolute',
     yearOverride?: string,
     albumOverride?: string,
+    cleanupIgnorePatterns?: string[],
 ): Promise<{ moved: string[] }> {
     const resolvedOutput = path.resolve(outputRoot);
     const resolvedMusicRoot = path.resolve(musicRoot);
@@ -214,14 +220,14 @@ export async function moveProcessedFiles(
     await fs.mkdir(artistDir, { recursive: true });
 
     if (path.resolve(sourceFolder) === path.resolve(destDir!)) {
-        const count = (await getMp3Files(sourceFolder)).length;
-        return { moved: Array(count).fill(0).map((_, i) => `file_${i + 1}`) };
+        const moved = await getMp3Files(sourceFolder);
+        return { moved };
     }
 
     try {
         await fs.rename(sourceFolder, destDir!);
         logger.info(`moved folder: ${sourceFolder} → ${destDir}`);
-        await cleanEmptyFolders(path.dirname(sourceFolder), resolvedMusicRoot);
+        await cleanEmptyFolders(path.dirname(sourceFolder), resolvedMusicRoot, cleanupIgnorePatterns);
     } catch {
         // Fallback: copy then delete
         await fs.mkdir(destDir!, { recursive: true });
@@ -243,29 +249,30 @@ export async function moveProcessedFiles(
         }
         if (!copyFailed) {
             await fs.rm(sourceFolder, { recursive: true, force: true });
-            await cleanEmptyFolders(path.dirname(sourceFolder), resolvedMusicRoot);
+            await cleanEmptyFolders(path.dirname(sourceFolder), resolvedMusicRoot, cleanupIgnorePatterns);
         }
     }
 
-    const count = (await getMp3Files(destDir!)).length;
-    return { moved: Array(count).fill(0).map((_, i) => `file_${i + 1}`) };
+    const moved = await getMp3Files(destDir!);
+    return { moved };
 }
 
 function sanitize(name: string): string {
     return name.replace(/[<>:"/\\|?*]/g, '_').replace(/\s+/g, ' ').trim();
 }
 
-async function cleanEmptyFolders(dir: string, stopAt: string): Promise<void> {
+async function cleanEmptyFolders(dir: string, stopAt: string, ignorePatterns: string[] = []): Promise<void> {
     const resolvedDir = path.resolve(dir);
     if (resolvedDir === stopAt || !resolvedDir.startsWith(stopAt)) return;
     try {
         const entries = await fs.readdir(dir);
-        if (entries.length === 0) {
-            await fs.rm(dir);
+        const realEntries = entries.filter(e => !ignorePatterns.includes(e));
+        if (realEntries.length === 0) {
+            await fs.rm(dir, { recursive: true, force: true });
             logger.debug(`removed empty folder: ${dir}`);
-            await cleanEmptyFolders(path.dirname(dir), stopAt);
+            await cleanEmptyFolders(path.dirname(dir), stopAt, ignorePatterns);
         }
-    } catch {}
+    } catch (e) { logger.debug(`cleanEmptyFolders: ${(e as Error).message}`); }
 }
 
 async function copyDirRecursive(src: string, dst: string): Promise<void> {

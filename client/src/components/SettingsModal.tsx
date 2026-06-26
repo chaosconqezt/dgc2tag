@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Settings, X, Trash2 } from 'lucide-react';
 import { FONT, FS, COLORS } from './styles';
 
@@ -17,6 +17,8 @@ interface SettingsModalProps {
   onTagDefaultsChange: (defaults: Record<string, boolean>) => void;
   enabledSources: Record<string, boolean>;
   onEnabledSourcesChange: (sources: Record<string, boolean>) => void;
+  cleanupIgnorePatterns: string[];
+  onCleanupIgnorePatternsChange: (patterns: string[]) => void;
   onClose: () => void;
 }
 
@@ -38,7 +40,8 @@ const SOURCE_FIELDS = [
   { id: 'bandcamp', label: 'Bandcamp', color: '#629aa9' },
 ];
 
-export function SettingsModal({ musicRoot, outputFolder, outputMode, saving, onMusicRootChange, onOutputFolderChange, onOutputModeChange, onSave, onClearCache, clearingCache, tagDefaults, onTagDefaultsChange, enabledSources, onEnabledSourcesChange, onClose }: SettingsModalProps) {
+export function SettingsModal({ musicRoot, outputFolder, outputMode, saving, onMusicRootChange, onOutputFolderChange, onOutputModeChange, onSave, onClearCache, clearingCache, tagDefaults, onTagDefaultsChange, enabledSources, onEnabledSourcesChange, cleanupIgnorePatterns, onCleanupIgnorePatternsChange, onClose }: SettingsModalProps) {
+  const [newPattern, setNewPattern] = useState('');
   useEffect(() => {
     const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
     window.addEventListener('keydown', handler);
@@ -125,6 +128,23 @@ export function SettingsModal({ musicRoot, outputFolder, outputMode, saving, onM
               ))}
             </div>
             <div style={hintStyle}>Disabled sources won't be searched</div>
+          </div>
+
+          <div>
+            <label style={labelStyle}>Cleanup Ignore Patterns</label>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', marginBottom: '6px' }}>
+              {cleanupIgnorePatterns.map((p, i) => (
+                <span key={i} style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: FS, color: COLORS.textMuted, fontFamily: FONT, padding: '3px 8px', borderRadius: '4px', backgroundColor: COLORS.borderLight, border: `1px solid ${COLORS.textInvisible}` }}>
+                  {p}
+                  <button onClick={() => onCleanupIgnorePatternsChange(cleanupIgnorePatterns.filter((_, j) => j !== i))} style={{ background: 'none', border: 'none', color: COLORS.textDim, cursor: 'pointer', padding: 0, fontSize: FS, lineHeight: 1 }}>&times;</button>
+                </span>
+              ))}
+            </div>
+            <div style={{ display: 'flex', gap: '4px' }}>
+              <input type="text" value={newPattern} onChange={(e) => setNewPattern(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter' && newPattern.trim()) { onCleanupIgnorePatternsChange([...cleanupIgnorePatterns, newPattern.trim()]); setNewPattern(''); } }} style={{ ...inputStyle, flex: 1 }} placeholder="e.g. .DS_Store" />
+              <button onClick={() => { if (newPattern.trim()) { onCleanupIgnorePatternsChange([...cleanupIgnorePatterns, newPattern.trim()]); setNewPattern(''); } }} style={{ background: COLORS.border, color: COLORS.textMuted, border: `1px solid ${COLORS.textInvisible}`, borderRadius: '6px', padding: '4px 10px', fontSize: FS, cursor: 'pointer', fontFamily: FONT }}>Add</button>
+            </div>
+            <div style={hintStyle}>Files ignored when checking if artist folder is empty after move</div>
           </div>
 
           <button onClick={onSave} disabled={saving} style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', height: '32px', fontSize: FS, background: COLORS.red, color: '#fff', border: 'none', borderRadius: '6px', cursor: saving ? 'wait' : 'pointer', fontFamily: FONT }}>

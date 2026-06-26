@@ -1,5 +1,4 @@
 import fs from 'fs/promises';
-import { readdirSync } from 'fs';
 import path from 'path';
 
 // Local Dirent interface to avoid fs/promises type incompatibility
@@ -65,7 +64,7 @@ async function buildDirectory(
 
     let entries: DirentLike[];
     try {
-        entries = readdirSync(dirPath, { withFileTypes: true }) as unknown as DirentLike[];
+        entries = await fs.readdir(dirPath, { withFileTypes: true }) as unknown as DirentLike[];
     } catch {
         return { name: path.basename(dirPath), path: dirPath, type: 'directory', hasAudioFiles: false };
     }

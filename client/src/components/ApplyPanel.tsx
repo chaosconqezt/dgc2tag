@@ -60,7 +60,7 @@ export function ApplyPanel({ onApplyTags, onCancel }: ApplyPanelProps) {
         onMouseLeave={(e) => { e.currentTarget.style.transform = 'none'; e.currentTarget.style.backgroundColor = 'transparent'; }}
         style={{ ...btnBase, background: 'transparent', color: COLORS.textDim, border: `1px solid ${COLORS.border}`, transition: 'all 0.15s' }}
       >
-        <X size={11} /> ОТМЕНА
+        <X size={11} /> CANCEL
       </button>
     </div>
   );

@@ -12,6 +12,7 @@ export interface AppState {
   albumDetails: SearchResult | null;
   tagEnabled: Record<string, boolean>;
   editedSiteValues: Record<string, string>;
+  editedExtraTags: Record<string, string>;
   editedTrackNames: Record<string, string>;
   editedTrackArtists: Record<string, string>;
   writeTrackNames: boolean;
@@ -81,7 +82,7 @@ export function createApplyTags(
       tagsToApply.postId = String(state.localTags.postId);
     }
     if (sr && state.tagEnabled.deezerId !== false) {
-      if (sr.postId < 0) {
+      if (sr.source === 'deezer') {
         tagsToApply.deezerId = state.editedSiteValues.deezerId ?? String(Math.abs(sr.postId));
       } else if (state.localTags?.deezerId != null) {
         tagsToApply.deezerId = String(state.localTags.deezerId);
@@ -97,6 +98,10 @@ export function createApplyTags(
     if (sr?.catalogNumber) tagsToApply.catalogNumber = sr.catalogNumber;
     if (sr?.discId) tagsToApply.discId = sr.discId;
     if (sr?.originalYear) tagsToApply.originalYear = sr.originalYear;
+
+    if (Object.keys(state.editedExtraTags).length > 0) {
+      tagsToApply.extraTags = state.editedExtraTags;
+    }
 
     const parsedTracks = generateParsedTracks(state.albumDetails, state.localTags);
 

@@ -118,10 +118,14 @@ function extractExtraTags(data: any, tracks: { num: string; recordingId?: string
 
 // ── API ───────────────────────────────────────────────────────
 
+function escapeLucene(value: string): string {
+  return value.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+}
+
 export async function searchMusicBrainz(artist?: string, album?: string): Promise<MusicBrainzResult[]> {
   const parts: string[] = [];
-  if (artist) parts.push(`artist:"${artist}"`);
-  if (album) parts.push(`release:"${album}"`);
+  if (artist) parts.push(`artist:"${escapeLucene(artist)}"`);
+  if (album) parts.push(`release:"${escapeLucene(album)}"`);
   const query = parts.join(' AND ');
   if (!query) return [];
 

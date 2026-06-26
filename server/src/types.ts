@@ -26,7 +26,7 @@ export interface Id3Tags {
     albumArtist?: string;
     genre?: string;
     year?: string;
-    track?: number;
+    track?: string | number;
     trackNumber?: string | number;
     title?: string;
     length?: number | string;

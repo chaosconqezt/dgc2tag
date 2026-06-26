@@ -29,6 +29,8 @@ export async function getTags(folderPath: string): Promise<AlbumTags> {
     const albumArtistsSet = new Set<string>();
     const bitrates: number[] = [];
     const bitratesVbr: boolean[] = [];
+    const knownFrames = ['country', 'releasetype', 'musicbrainz album type', 'dgc_post_id', 'deezer_id'];
+    const extraTagsMap: Record<string, Set<string>> = {};
 
     for (const file of mp3Files) {
         const filePath = path.join(folderPath, file);
@@ -70,9 +72,8 @@ export async function getTags(folderPath: string): Promise<AlbumTags> {
             if (profile.includes('V') || profile.toLowerCase().includes('vbr')) {
                 metadataVbr = true;
             }
-        } catch (err) {
+        } catch {
             // fallback to ID3/bitrate methods
-            // logger.debug(`music-metadata failed for ${filePath}: ${err}`);
         }
 
         // 2. Try TLEN (milliseconds) from ID3
@@ -86,7 +87,6 @@ export async function getTags(folderPath: string): Promise<AlbumTags> {
         if (durationSec === undefined && tags.length !== undefined) {
             const len = Number(tags.length);
             if (!isNaN(len)) {
-                // Heuristic: if value > 1000 assume milliseconds
                 durationSec = len > 1000 ? Math.round(len / 1000) : Math.round(len);
             }
         }
@@ -99,9 +99,8 @@ export async function getTags(folderPath: string): Promise<AlbumTags> {
         }
         // 5. Fallback: assume constant bitrate 128 kbps
         if (durationSec === undefined) {
-            durationSec = Math.round((stat.size * 8) / (128 * 1000)); // 128 kbps
+            durationSec = Math.round((stat.size * 8) / (128 * 1000));
         }
-        // Ensure non‑negative
         if (durationSec < 0) durationSec = 0;
 
         trackDurations[filePath] = durationSec;
@@ -112,6 +111,30 @@ export async function getTags(folderPath: string): Promise<AlbumTags> {
         if (finalBitrate && finalBitrate > 0) {
             bitrates.push(finalBitrate);
             bitratesVbr.push(metadataVbr || (tagBitrate === undefined && !metadataBitrate));
+        }
+
+        // Collect extra userDefinedText tags
+        if (tags.userDefinedText) {
+            for (const frame of tags.userDefinedText) {
+                const desc = frame.description?.toLowerCase() || '';
+                if (desc && !knownFrames.includes(desc) && frame.value) {
+                    const key = frame.description!;
+                    if (!extraTagsMap[key]) extraTagsMap[key] = new Set();
+                    extraTagsMap[key]!.add(frame.value);
+                }
+            }
+        }
+        if (tags.notes) {
+            if (!extraTagsMap['Notes']) extraTagsMap['Notes'] = new Set();
+            extraTagsMap['Notes'].add(tags.notes);
+        }
+        if (tags.bitrate) {
+            if (!extraTagsMap['Bitrate']) extraTagsMap['Bitrate'] = new Set();
+            extraTagsMap['Bitrate'].add(String(tags.bitrate));
+        }
+        if (tags.audioFormat) {
+            if (!extraTagsMap['Format']) extraTagsMap['Format'] = new Set();
+            extraTagsMap['Format'].add(tags.audioFormat);
         }
     }
 
@@ -178,42 +201,6 @@ export async function getTags(folderPath: string): Promise<AlbumTags> {
     if (rt !== undefined) result.releaseType = rt;
 
     // Collect extra userDefinedText tags from ALL tracks (track unique values)
-    const knownFrames = ['country', 'releasetype', 'musicbrainz album type', 'dgc_post_id', 'deezer_id'];
-    const extraTagsMap: Record<string, Set<string>> = {};
-
-    for (const file of mp3Files) {
-        const filePath = path.join(folderPath, file);
-        let tags: Id3Tags;
-        try {
-            tags = readTags(filePath);
-        } catch {
-            continue;
-        }
-
-        if (tags.userDefinedText) {
-            for (const frame of tags.userDefinedText) {
-                const desc = frame.description?.toLowerCase() || '';
-                if (desc && !knownFrames.includes(desc) && frame.value) {
-                    const key = frame.description!;
-                    if (!extraTagsMap[key]) extraTagsMap[key] = new Set();
-                    extraTagsMap[key]!.add(frame.value);
-                }
-            }
-        }
-        if (tags.notes) {
-            if (!extraTagsMap['Notes']) extraTagsMap['Notes'] = new Set();
-            extraTagsMap['Notes'].add(tags.notes);
-        }
-        if (tags.bitrate) {
-            if (!extraTagsMap['Bitrate']) extraTagsMap['Bitrate'] = new Set();
-            extraTagsMap['Bitrate'].add(String(tags.bitrate));
-        }
-        if (tags.audioFormat) {
-            if (!extraTagsMap['Format']) extraTagsMap['Format'] = new Set();
-            extraTagsMap['Format'].add(tags.audioFormat);
-        }
-    }
-
     const extraTags: Record<string, string> = {};
     for (const [key, values] of Object.entries(extraTagsMap)) {
         const arr = [...values];

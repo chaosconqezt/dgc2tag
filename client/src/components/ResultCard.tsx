@@ -76,7 +76,7 @@ export function ResultCard({
         }}
       >
         {coverUrl ? (
-          <img src={coverUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+          <img src={coverUrl} alt="" loading="lazy" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
         ) : (
           <Disc3 size={16} color={COLORS.textInvisible} />
         )}

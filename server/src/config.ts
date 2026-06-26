@@ -24,6 +24,7 @@ export interface Config {
     outputFolder: string;
     outputMode: 'subfolder' | 'absolute';
     enabledSources: Record<string, boolean>;
+    cleanupIgnorePatterns: string[];
 }
 
 const CONFIG_PATH = path.join(__dirname, '../config.json');
@@ -45,6 +46,7 @@ export async function loadConfig(): Promise<Config> {
             outputFolder: typeof parsed.outputFolder === 'string' ? parsed.outputFolder : DEFAULTS.outputFolder,
             outputMode: parsed.outputMode === 'absolute' ? 'absolute' : 'subfolder',
             enabledSources: { dgc: true, deezer: true, mbrainz: true, bandcamp: true, ...(parsed.enabledSources || {}) },
+            cleanupIgnorePatterns: Array.isArray(parsed.cleanupIgnorePatterns) ? parsed.cleanupIgnorePatterns : DEFAULTS.cleanupIgnorePatterns,
         };
     } catch {
         return { ...DEFAULTS };
@@ -64,4 +66,5 @@ const DEFAULTS: Config = {
     outputFolder: 'tag',
     outputMode: 'subfolder',
     enabledSources: { dgc: true, deezer: true, mbrainz: true, bandcamp: true },
+    cleanupIgnorePatterns: ['.DS_Store', 'Thumbs.db', 'desktop.ini'],
 };

@@ -39,6 +39,7 @@ export interface AppState {
   enabledSources: Record<string, boolean>;
   tagEnabled: Record<string, boolean>;
   editedSiteValues: Record<string, string>;
+  editedExtraTags: Record<string, string>;
   editedTrackNames: Record<string, string>;
   editedTrackArtists: Record<string, string>;
   writeTrackNames: boolean;
@@ -48,6 +49,7 @@ export interface AppState {
   stripRemoteParentheses: boolean;
   compilation: boolean;
   serverParsedTracks: { num: string; artist: string; name: string; duration?: number }[] | null;
+  cleanupIgnorePatterns: string[];
 }
 
 export type Action =
@@ -79,12 +81,16 @@ export type Action =
   | { type: 'SET_TAG_ENABLED'; payload: Record<string, boolean> }
   | { type: 'SET_TAG_ENABLED_KEY'; payload: { key: string; enabled: boolean } }
   | { type: 'SET_EDITED_SITE_VALUE'; payload: { key: string; value: string } }
+  | { type: 'SET_EDITED_EXTRA_TAG'; payload: { key: string; value: string } }
+  | { type: 'CLEAR_ALL_EXTRA_TAGS'; payload: string[] }
   | { type: 'SET_EDITED_TRACK_NAME'; payload: { num: string; value: string } }
   | { type: 'SET_EDITED_TRACK_ARTIST'; payload: { num: string; value: string } }
   | { type: 'SET_WRITE_TRACK_NAMES'; payload: boolean }
   | { type: 'SET_WRITE_TRACK_ARTISTS'; payload: boolean }
   | { type: 'SET_TRACK_NAME_ENABLED'; payload: { num: string; enabled: boolean } }
+  | { type: 'SET_TRACK_NAME_ENABLED_BATCH'; payload: { nums: string[]; enabled: boolean } }
   | { type: 'SET_TRACK_ARTISTS_ENABLED'; payload: { num: string; enabled: boolean } }
+  | { type: 'SET_TRACK_ARTISTS_ENABLED_BATCH'; payload: { nums: string[]; enabled: boolean } }
   | { type: 'SET_WEBFETCH_URL'; payload: string | null }
   | { type: 'SET_WEBFETCH_CONTENT'; payload: string | null }
   | { type: 'SET_WEBFETCH_LOADING'; payload: boolean }
@@ -98,7 +104,8 @@ export type Action =
   | { type: 'SET_STRIP_REMOTE_PARENS'; payload: boolean }
   | { type: 'SET_COMPILATION'; payload: boolean }
   | { type: 'SET_SERVER_PARSED_TRACKS'; payload: { num: string; artist: string; name: string; duration?: number }[] | null }
-  | { type: 'SET_RESULT_MODAL'; payload: { success: boolean; message: string; details?: string[] } | null };
+  | { type: 'SET_RESULT_MODAL'; payload: { success: boolean; message: string; details?: string[] } | null }
+  | { type: 'SET_CLEANUP_IGNORE_PATTERNS'; payload: string[] };
 
 export const initialState: AppState = {
   tree: [],
@@ -137,6 +144,7 @@ export const initialState: AppState = {
   enabledSources: { dgc: true, deezer: true, mbrainz: true, bandcamp: true },
   tagEnabled: { ...DEFAULT_TAG_DEFAULTS },
   editedSiteValues: {},
+  editedExtraTags: {},
   editedTrackNames: {},
   editedTrackArtists: {},
   writeTrackNames: true,
@@ -146,6 +154,7 @@ export const initialState: AppState = {
   stripRemoteParentheses: false,
   compilation: false,
   serverParsedTracks: null,
+  cleanupIgnorePatterns: ['.DS_Store', 'Thumbs.db', 'desktop.ini'],
 };
 
 export function appReducer(state: AppState, action: Action): AppState {
@@ -188,6 +197,7 @@ export function appReducer(state: AppState, action: Action): AppState {
         albumDetails: null,
         tagEnabled: { ...DEFAULT_TAG_DEFAULTS },
         editedSiteValues: {},
+        editedExtraTags: {},
         editedTrackNames: {},
         editedTrackArtists: {},
         trackNameEnabled: {},
@@ -200,6 +210,10 @@ export function appReducer(state: AppState, action: Action): AppState {
       return { ...state, tagEnabled: { ...state.tagEnabled, [action.payload.key]: action.payload.enabled } };
     case 'SET_EDITED_SITE_VALUE':
       return { ...state, editedSiteValues: { ...state.editedSiteValues, [action.payload.key]: action.payload.value } };
+    case 'SET_EDITED_EXTRA_TAG':
+      return { ...state, editedExtraTags: { ...state.editedExtraTags, [action.payload.key]: action.payload.value } };
+    case 'CLEAR_ALL_EXTRA_TAGS':
+      return { ...state, editedExtraTags: Object.fromEntries(action.payload.map(k => [k, ''])) };
     case 'SET_EDITED_TRACK_NAME':
       return { ...state, editedTrackNames: { ...state.editedTrackNames, [action.payload.num]: action.payload.value } };
     case 'SET_EDITED_TRACK_ARTIST':
@@ -208,8 +222,12 @@ export function appReducer(state: AppState, action: Action): AppState {
     case 'SET_WRITE_TRACK_ARTISTS': return { ...state, writeTrackArtists: action.payload };
     case 'SET_TRACK_NAME_ENABLED':
       return { ...state, trackNameEnabled: { ...state.trackNameEnabled, [action.payload.num]: action.payload.enabled } };
+    case 'SET_TRACK_NAME_ENABLED_BATCH':
+      return { ...state, trackNameEnabled: { ...state.trackNameEnabled, ...Object.fromEntries(action.payload.nums.map(n => [n, action.payload.enabled])) } };
     case 'SET_TRACK_ARTISTS_ENABLED':
       return { ...state, trackArtistsEnabled: { ...state.trackArtistsEnabled, [action.payload.num]: action.payload.enabled } };
+    case 'SET_TRACK_ARTISTS_ENABLED_BATCH':
+      return { ...state, trackArtistsEnabled: { ...state.trackArtistsEnabled, ...Object.fromEntries(action.payload.nums.map(n => [n, action.payload.enabled])) } };
     case 'SET_WEBFETCH_URL': return { ...state, webfetchUrl: action.payload };
     case 'SET_WEBFETCH_CONTENT': return { ...state, webfetchContent: action.payload };
     case 'SET_WEBFETCH_LOADING': return { ...state, webfetchLoading: action.payload };
@@ -224,7 +242,9 @@ export function appReducer(state: AppState, action: Action): AppState {
     case 'SET_COMPILATION': return { ...state, compilation: action.payload };
     case 'SET_SERVER_PARSED_TRACKS': return { ...state, serverParsedTracks: action.payload };
     case 'SET_RESULT_MODAL': return { ...state, resultModal: action.payload };
+    case 'SET_CLEANUP_IGNORE_PATTERNS': return { ...state, cleanupIgnorePatterns: action.payload };
     default:
+      if (import.meta.env.DEV) console.warn(`[reducer] unknown action: ${action.type}`);
       return state;
   }
 }
