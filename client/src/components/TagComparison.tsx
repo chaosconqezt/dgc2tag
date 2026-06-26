@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import type { AlbumTags, SearchResult } from '../types';
 import { similarity } from '../utils';
-import { FONT, FS, FS_S, FS_XS, COLORS, CHECKBOX, CELL_STYLE, INPUT_STYLE, PERCENT_STYLE, PANEL_STYLE, GRID_STYLE, ROW_STYLE } from './styles';
+import { FONT, FS, FS_SM, FS_S, FS_XS, COLORS, CHECKBOX, CELL_STYLE, INPUT_STYLE, PERCENT_STYLE, PANEL_STYLE, GRID_STYLE, ROW_STYLE } from './styles';
 
 interface TagComparisonProps {
   selectedResult: SearchResult | null;
@@ -151,6 +151,7 @@ export function TagComparison({
       <div style={{ height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: COLORS.textInvisible, opacity: 0.5 }}>
         <div style={{ fontSize: '40px', marginBottom: '10px' }}>&#9776;</div>
         <p style={{ fontWeight: '500', fontSize: FS, fontFamily: FONT }}>Select a folder with MP3 files</p>
+        <p style={{ fontSize: FS_SM, fontFamily: FONT, marginTop: '4px' }}>Click a folder in the tree on the left</p>
       </div>
     );
   }

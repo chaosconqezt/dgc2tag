@@ -36,7 +36,8 @@ export function FolderPicker({ initialPath, onSelect, onClose }: FolderPickerPro
   const expandToPath = async (targetPath: string) => {
     const parts = targetPath.split(/[\\/]/).filter(Boolean);
     // On Windows, first part is like "C:" so we need "C:\\"
-    let currentPath = process.platform === 'win32' ? parts[0] + '\\' : '/' + parts[1];
+    const isWin = /^[A-Z]:$/i.test(parts[0] ?? '');
+    let currentPath = isWin ? parts[0] + '\\' : '/' + (parts[1] ?? '');
     const newTree: TreeNode[] = roots.map(r => ({
       name: r.name,
       path: r.path,

@@ -3,7 +3,7 @@ import ErrorBoundary from './components/ErrorBoundary';
 import { AppProvider, useAppContext } from './hooks/useAppContext';
 import * as api from './api';
 import { RefreshCw, Layout, Settings } from 'lucide-react';
-import { FONT, FS, COLORS, ICON_BUTTON } from './components/styles';
+import { FONT, FS, FS_SM, COLORS, ICON_BUTTON } from './components/styles';
 import { parseCompilationTracklist } from './utils';
 import { WebfetchOverlay } from './components/WebfetchOverlay';
 import { SettingsModal } from './components/SettingsModal';
@@ -268,6 +268,7 @@ function AppContent() {
               <div style={{ height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: COLORS.textInvisible, opacity: 0.5 }}>
                 <Layout size={40} style={{ marginBottom: '10px' }} />
                 <p style={{ fontWeight: '500', fontSize: FS, fontFamily: FONT }}>Select a folder with MP3 files</p>
+                <p style={{ fontSize: FS_SM, fontFamily: FONT, marginTop: '4px' }}>Click a folder in the tree on the left</p>
               </div>
             )}
           </div>

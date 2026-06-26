@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { FolderOpen } from 'lucide-react';
-import { FONT, FS, COLORS } from './styles';
+import { FONT, COLORS } from './styles';
 import { FolderPicker } from './FolderPicker';
 
 interface FooterProps {
