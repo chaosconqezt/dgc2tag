@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { Globe, X, RefreshCw } from 'lucide-react';
-import { FONT, FS, COLORS } from './styles';
+import { FONT, FS, COLORS, ICON_BUTTON, OVERLAY_BACKDROP, MODAL_PANEL } from './styles';
 
 interface WebfetchOverlayProps {
   url: string;
@@ -17,14 +17,14 @@ export function WebfetchOverlay({ url, content, loading, onClose }: WebfetchOver
   }, [onClose]);
 
   return (
-    <div style={{ position: 'fixed', inset: 0, zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(4px)' }} onClick={onClose}>
-      <div style={{ width: '90vw', height: '85vh', backgroundColor: COLORS.inputBg, borderRadius: '10px', border: `1px solid ${COLORS.border}`, display: 'flex', flexDirection: 'column', overflow: 'hidden' }} onClick={(e) => e.stopPropagation()}>
+    <div style={OVERLAY_BACKDROP} onClick={onClose}>
+      <div style={{ ...MODAL_PANEL, width: '90vw', height: '85vh' }} onClick={(e) => e.stopPropagation()}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 14px', borderBottom: `1px solid ${COLORS.border}`, backgroundColor: COLORS.inputBgAlt }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
             <Globe size={12} color={COLORS.red} />
             <span style={{ fontSize: FS, color: COLORS.textMuted, fontWeight: '500', fontFamily: FONT }}>{url}</span>
           </div>
-          <button onClick={onClose} style={{ background: 'none', border: 'none', color: COLORS.textDim, cursor: 'pointer', padding: '4px' }}>
+          <button onClick={onClose} style={{ ...ICON_BUTTON, padding: '4px' }}>
             <X size={14} />
           </button>
         </div>

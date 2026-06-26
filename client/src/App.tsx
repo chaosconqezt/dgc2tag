@@ -3,7 +3,7 @@ import ErrorBoundary from './components/ErrorBoundary';
 import { AppProvider, useAppContext } from './hooks/useAppContext';
 import * as api from './api';
 import { RefreshCw, Layout, Settings } from 'lucide-react';
-import { FONT, FS, COLORS } from './components/styles';
+import { FONT, FS, COLORS, ICON_BUTTON } from './components/styles';
 import { parseCompilationTracklist } from './utils';
 import { WebfetchOverlay } from './components/WebfetchOverlay';
 import { SettingsModal } from './components/SettingsModal';
@@ -110,13 +110,13 @@ function AppContent() {
               DGC TAGGER
             </h2>
             <div style={{ display: 'flex', gap: '4px' }}>
-              <button onClick={ctx.collapseAll} onMouseEnter={(e) => { e.currentTarget.style.color = COLORS.text; e.currentTarget.style.backgroundColor = COLORS.inputBg; }} onMouseLeave={(e) => { e.currentTarget.style.color = COLORS.textDim; e.currentTarget.style.backgroundColor = 'none'; }} style={{ background: 'none', border: 'none', color: COLORS.textDim, cursor: 'pointer', display: 'flex', fontSize: FS, fontWeight: '700', borderRadius: '4px', padding: '4px' }} title="Collapse all">
+              <button onClick={ctx.collapseAll} className="hover-toolbar" style={{ ...ICON_BUTTON, display: 'flex', fontSize: FS, fontWeight: '700', borderRadius: '4px', padding: '4px' }} title="Collapse all">
                 &#9650;
               </button>
-              <button onClick={() => ctx.dispatch({ type: 'SET_SHOW_SETTINGS', payload: true })} onMouseEnter={(e) => { e.currentTarget.style.color = COLORS.text; e.currentTarget.style.backgroundColor = COLORS.inputBg; }} onMouseLeave={(e) => { e.currentTarget.style.color = COLORS.textDim; e.currentTarget.style.backgroundColor = 'none'; }} style={{ background: 'none', border: 'none', color: COLORS.textDim, cursor: 'pointer', display: 'flex', borderRadius: '4px', padding: '4px' }}>
+              <button onClick={() => ctx.dispatch({ type: 'SET_SHOW_SETTINGS', payload: true })} className="hover-toolbar" style={{ ...ICON_BUTTON, display: 'flex', borderRadius: '4px', padding: '4px' }}>
                 <Settings size={14} />
               </button>
-              <button onClick={ctx.fetchLibrary} onMouseEnter={(e) => { e.currentTarget.style.color = COLORS.text; e.currentTarget.style.backgroundColor = COLORS.inputBg; }} onMouseLeave={(e) => { e.currentTarget.style.color = COLORS.textDim; e.currentTarget.style.backgroundColor = 'none'; }} style={{ background: 'none', border: 'none', color: COLORS.textDim, cursor: 'pointer', display: 'flex', borderRadius: '4px', padding: '4px' }}>
+              <button onClick={ctx.fetchLibrary} className="hover-toolbar" style={{ ...ICON_BUTTON, display: 'flex', borderRadius: '4px', padding: '4px' }}>
                 <RefreshCw size={14} className={ctx.loading ? 'animate-spin' : ''} />
               </button>
             </div>
@@ -134,14 +134,12 @@ function AppContent() {
           {/* Resize handle: tree ↔ matches */}
           <div
             onMouseDown={onResizeTreeStart}
+            className="hover-red"
             style={{
               height: '4px',
               cursor: 'row-resize',
               flexShrink: 0,
-              transition: 'background-color 0.15s',
             }}
-            onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = COLORS.red; }}
-            onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; }}
           />
 
           {/* Search Results — vertical list */}
@@ -170,15 +168,13 @@ function AppContent() {
       {/* Resize handle */}
       <div
         onMouseDown={onResizeStart}
+        className="hover-red"
         style={{
           width: '4px',
           cursor: 'col-resize',
           backgroundColor: 'transparent',
           flexShrink: 0,
-          transition: 'background-color 0.15s',
         }}
-        onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = COLORS.red; }}
-        onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; }}
       />
 
       {/* Main Content Area */}

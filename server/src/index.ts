@@ -229,8 +229,11 @@ app.post('/api/tags/update', async (req, res) => {
     res.setHeader('X-Accel-Buffering', 'no');
     res.flushHeaders();
 
+    let aborted = false;
+    req.on('close', () => { aborted = true; });
+
     const send = (event: string, data: unknown) => {
-        res.write(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`);
+        if (!aborted) res.write(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`);
     };
 
     send('start', { message: 'Starting...' });
@@ -244,12 +247,14 @@ app.post('/api/tags/update', async (req, res) => {
         }
 
         // Phase 1: Write tags
+        if (aborted) return res.end();
         const mp3Files = await getMp3Files(absolutePath);
         send('phase', { phase: 'Writing tags', current: 0, total: mp3Files.length });
         await writeTags({ folderPath: absolutePath, tags, trackArtists, trackNames }, cfg.musicRoot);
         send('phase', { phase: 'Tags written', current: mp3Files.length, total: mp3Files.length });
 
         // Phase 2: Compare tags (read before/after)
+        if (aborted) return res.end();
         send('phase', { phase: 'Comparing tags', current: 0, total: mp3Files.length });
         const tagChanges: string[] = [];
         for (let i = 0; i < mp3Files.length; i++) {
@@ -259,6 +264,7 @@ app.post('/api/tags/update', async (req, res) => {
         send('log', { message: `Compared ${mp3Files.length} files` });
 
         // Phase 3: Rename / Move
+        if (aborted) return res.end();
         let moved: string[] | undefined;
         let renamed: { from: string; to: string }[] | undefined;
         if (moveFiles) {

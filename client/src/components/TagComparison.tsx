@@ -206,7 +206,7 @@ export function TagComparison({
           const readonly = 'readonly' in f && (f as { readonly?: boolean }).readonly === true;
 
           return (
-            <div key={f.key} style={{ ...ROW_STYLE(enabled), borderRadius: '4px', transition: 'background-color 0.1s' }} onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = COLORS.inputBg)} onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}>
+            <div key={f.key} style={{ ...ROW_STYLE(enabled), borderRadius: '4px' }} className="hover-bg">
               <div style={GRID_STYLE}>
                 <input
                   type="checkbox"
@@ -245,7 +245,7 @@ export function TagComparison({
         })}
 
         {/* IDs row: DGC + Deezer side by side */}
-        <div style={{ ...ROW_STYLE(true), borderRadius: '4px', transition: 'background-color 0.1s' }} onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = COLORS.inputBg)} onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}>
+        <div style={{ ...ROW_STYLE(true), borderRadius: '4px' }} className="hover-bg">
           <div style={{ display: 'grid', gridTemplateColumns: '11px 1fr 40px 1fr', gap: '4px', alignItems: 'center' }}>
             <input type="checkbox" checked disabled readOnly style={{ ...CHECKBOX, justifySelf: 'center', opacity: 0.3 }} />
             <div style={{ ...CELL_STYLE, display: 'flex', gap: '4px' }}>

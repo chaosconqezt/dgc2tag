@@ -84,3 +84,30 @@ export const ROW_STYLE = (enabled: boolean) => ({
   marginBottom: '4px',
   opacity: enabled ? 1 : 0.95,
 });
+
+export const ICON_BUTTON = {
+  background: 'none',
+  border: 'none',
+  color: COLORS.textDim,
+  cursor: 'pointer',
+};
+
+export const OVERLAY_BACKDROP = {
+  position: 'fixed' as const,
+  inset: 0,
+  zIndex: 1000,
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  backgroundColor: 'rgba(0,0,0,0.8)',
+  backdropFilter: 'blur(4px)',
+};
+
+export const MODAL_PANEL = {
+  backgroundColor: COLORS.inputBg,
+  borderRadius: '10px',
+  border: `1px solid ${COLORS.border}`,
+  display: 'flex',
+  flexDirection: 'column' as const,
+  overflow: 'hidden',
+};

@@ -1,4 +1,4 @@
-import { FONT, FS, COLORS } from './styles';
+import { FONT, FS, COLORS, ICON_BUTTON, OVERLAY_BACKDROP, MODAL_PANEL } from './styles';
 
 interface ProgressOverlayProps {
   phase: string;

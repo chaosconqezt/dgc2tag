@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Settings, X, Trash2 } from 'lucide-react';
-import { FONT, FS, COLORS } from './styles';
+import { FONT, FS, COLORS, ICON_BUTTON, OVERLAY_BACKDROP, MODAL_PANEL } from './styles';
 
 interface SettingsModalProps {
   musicRoot: string;
@@ -61,14 +61,14 @@ export function SettingsModal({ musicRoot, outputFolder, outputMode, saving, onM
   const hintStyle = { fontSize: FS, color: COLORS.textInvisible, marginTop: '4px', fontFamily: FONT };
 
   return (
-    <div style={{ position: 'fixed', inset: 0, zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(4px)' }} onClick={onClose}>
-      <div style={{ width: '420px', backgroundColor: COLORS.inputBg, borderRadius: '10px', border: `1px solid ${COLORS.border}`, display: 'flex', flexDirection: 'column', overflow: 'hidden' }} onClick={(e) => e.stopPropagation()}>
+    <div style={OVERLAY_BACKDROP} onClick={onClose}>
+      <div style={{ ...MODAL_PANEL, width: '420px' }} onClick={(e) => e.stopPropagation()}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 14px', borderBottom: `1px solid ${COLORS.border}`, backgroundColor: COLORS.inputBgAlt }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
             <Settings size={12} color={COLORS.red} />
             <span style={{ fontSize: FS, color: COLORS.textMuted, fontWeight: '500', fontFamily: FONT }}>SETTINGS</span>
           </div>
-          <button onClick={onClose} style={{ background: 'none', border: 'none', color: COLORS.textDim, cursor: 'pointer', padding: '4px' }}>
+          <button onClick={onClose} style={{ ...ICON_BUTTON, padding: '4px' }}>
             <X size={14} />
           </button>
         </div>
@@ -136,7 +136,7 @@ export function SettingsModal({ musicRoot, outputFolder, outputMode, saving, onM
               {cleanupIgnorePatterns.map((p, i) => (
                 <span key={i} style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: FS, color: COLORS.textMuted, fontFamily: FONT, padding: '3px 8px', borderRadius: '4px', backgroundColor: COLORS.borderLight, border: `1px solid ${COLORS.textInvisible}` }}>
                   {p}
-                  <button onClick={() => onCleanupIgnorePatternsChange(cleanupIgnorePatterns.filter((_, j) => j !== i))} style={{ background: 'none', border: 'none', color: COLORS.textDim, cursor: 'pointer', padding: 0, fontSize: FS, lineHeight: 1 }}>&times;</button>
+                  <button onClick={() => onCleanupIgnorePatternsChange(cleanupIgnorePatterns.filter((_, j) => j !== i))} style={{ ...ICON_BUTTON, padding: 0, fontSize: FS, lineHeight: 1 }}>&times;</button>
                 </span>
               ))}
             </div>

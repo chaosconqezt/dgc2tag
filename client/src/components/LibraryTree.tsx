@@ -75,8 +75,6 @@ export function LibraryTree({ tree, selectedFolder, expandedNodes, onToggleNode,
               border: isSelected ? `1px solid ${COLORS.red}40` : '1px solid transparent',
               marginBottom: '0px',
             }}
-            onMouseEnter={(e) => { if (!isSelected) e.currentTarget.style.backgroundColor = COLORS.inputBg; }}
-            onMouseLeave={(e) => { if (!isSelected) e.currentTarget.style.backgroundColor = 'transparent'; }}
             title={node.name}
             onClick={() => {
               if (isDir) {

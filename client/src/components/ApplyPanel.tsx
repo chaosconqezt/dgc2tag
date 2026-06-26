@@ -56,9 +56,8 @@ export function ApplyPanel({ onApplyTags, onCancel }: ApplyPanelProps) {
       <button
         onClick={onCancel}
         title="Deselect current result"
-        onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-1px)'; e.currentTarget.style.backgroundColor = COLORS.textInvisible; }}
-        onMouseLeave={(e) => { e.currentTarget.style.transform = 'none'; e.currentTarget.style.backgroundColor = 'transparent'; }}
-        style={{ ...btnBase, background: 'transparent', color: COLORS.textDim, border: `1px solid ${COLORS.border}`, transition: 'all 0.15s' }}
+        className="hover-lift"
+        style={{ ...btnBase, background: 'transparent', color: COLORS.textDim, border: `1px solid ${COLORS.border}` }}
       >
         <X size={11} /> CANCEL
       </button>

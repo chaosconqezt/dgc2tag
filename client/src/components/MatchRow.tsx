@@ -62,8 +62,7 @@ export function MatchRow({
       borderRadius: '3px',
       padding: '1px 0',
     }}
-    onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = COLORS.inputBg)}
-    onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+    className="hover-bg"
     >
       <div style={{ width: '11px', flexShrink: 0 }}>
         <input
