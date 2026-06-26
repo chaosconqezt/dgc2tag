@@ -87,13 +87,11 @@ export function ResultCard({
         {/* Line 1: Artist · Year · Label · link */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '4px', minWidth: 0 }}>
           <span
+            className="text-ellipsis"
             style={{
               fontWeight: '600',
               fontSize: FS,
               color: accentColor,
-              whiteSpace: 'nowrap',
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
               fontFamily: FONT,
               flex: 1,
               minWidth: 0,
@@ -116,12 +114,10 @@ export function ResultCard({
         {/* Line 2: Album · Label · track count */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '6px', minWidth: 0 }}>
           <span
+            className="text-ellipsis"
             style={{
               fontSize: FS,
               color: COLORS.textMuted,
-              whiteSpace: 'nowrap',
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
               fontFamily: FONT,
               flex: 1,
               minWidth: 0,
@@ -130,7 +126,7 @@ export function ResultCard({
             {albumName}
           </span>
           {label && (
-            <span style={{ fontSize: FS, color: COLORS.textFaint, fontFamily: FONT, whiteSpace: 'nowrap', flexShrink: 0 }}>
+            <span className="text-ellipsis" style={{ fontSize: FS, color: COLORS.textFaint, fontFamily: FONT, flexShrink: 0 }}>
               {label}
             </span>
           )}

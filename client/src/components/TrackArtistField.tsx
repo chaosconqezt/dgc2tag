@@ -77,12 +77,10 @@ export function TrackArtistField({
         />
       ) : (
         <span
+          className="text-ellipsis"
           onClick={() => { setDraft(value); setEditing(true); }}
           title={value}
           style={{
-            overflow: 'hidden',
-            textOverflow: 'ellipsis',
-            whiteSpace: 'nowrap',
             display: 'block',
           }}
         >{value || '—'}</span>

@@ -1,5 +1,8 @@
 export const FONT = 'Inter, system-ui, sans-serif';
 export const FS = '14px';
+export const FS_S = '12px';
+export const FS_SM = '11px';
+export const FS_XS = '10px';
 
 export const COLORS = {
   bg: 'var(--bg)',
@@ -7,6 +10,7 @@ export const COLORS = {
   border: 'var(--border)',
   borderLight: 'var(--border-light)',
   text: 'var(--text)',
+  textBright: 'var(--text-bright)',
   textMuted: 'var(--text-muted)',
   textDim: 'var(--text-dim)',
   textFaint: 'var(--text-faint)',
@@ -15,6 +19,8 @@ export const COLORS = {
   yellow: 'var(--yellow)',
   red: 'var(--red)',
   purple: 'var(--purple)',
+  mbrainz: 'var(--mbrainz)',
+  bandcamp: 'var(--bandcamp)',
   inputBg: 'var(--input-bg)',
   inputBgAlt: 'var(--input-bg-alt)',
   inputBgAlt2: 'var(--input-bg-alt2)',
@@ -110,4 +116,43 @@ export const MODAL_PANEL = {
   display: 'flex',
   flexDirection: 'column' as const,
   overflow: 'hidden',
+};
+
+export const MODAL_HEADER = {
+  display: 'flex',
+  justifyContent: 'space-between',
+  alignItems: 'center',
+  padding: '10px 14px',
+  borderBottom: `1px solid ${COLORS.border}`,
+  backgroundColor: COLORS.inputBgAlt,
+};
+
+export const LABEL_STYLE = {
+  display: 'block' as const,
+  fontSize: FS,
+  color: COLORS.textDim,
+  fontWeight: '700' as const,
+  textTransform: 'uppercase' as const,
+  letterSpacing: '0.5px',
+  marginBottom: '6px',
+  fontFamily: FONT,
+};
+
+export const MODAL_INPUT_STYLE = {
+  width: '100%',
+  boxSizing: 'border-box' as const,
+  background: COLORS.bg,
+  border: `1px solid ${COLORS.textInvisible}`,
+  borderRadius: '6px',
+  padding: '8px 10px',
+  color: COLORS.text,
+  fontSize: FS,
+  fontFamily: FONT,
+};
+
+export const HINT_STYLE = {
+  fontSize: FS,
+  color: COLORS.textInvisible,
+  marginTop: '4px',
+  fontFamily: FONT,
 };

@@ -18,6 +18,9 @@ interface AppContextType extends AppState {
   collapseAll: () => void;
   dirHasAudioFiles: (dirPath: string) => boolean;
   handleFolderSelect: (folderPath: string) => Promise<void>;
+  renameNode: (oldPath: string, newName: string) => Promise<{ success: boolean; newPath: string }>;
+  deleteNode: (filePath: string) => Promise<void>;
+  moveNode: (oldPath: string, targetDir: string) => Promise<{ success: boolean; newPath: string }>;
   handleSearch: (artist?: string, album?: string, artistEnabled?: boolean, albumEnabled?: boolean) => Promise<void>;
   loadAlbumDetails: (postId: number) => Promise<void>;
   handleSelectResult: (res: SearchResult) => void;
@@ -51,9 +54,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     [state.searchArtist, state.searchAlbum, state.searchArtistEnabled, state.searchAlbumEnabled, state.selectedResult, state.selectedDeezer, state.tagEnabled, state.enabledSources, dispatch, clearSelectionState],
   );
 
-  const { fetchLibrary, toggleNode, collapseAll, dirHasAudioFiles, handleFolderSelect } = useMemo(
-    () => createLibraryActions({ tree: state.tree }, dispatch, clearSelectionState, handleSearch),
-    [state.tree, dispatch, clearSelectionState, handleSearch],
+  const { fetchLibrary, toggleNode, collapseAll, dirHasAudioFiles, handleFolderSelect, renameNode, deleteNode, moveNode } = useMemo(
+    () => createLibraryActions({ tree: state.tree, selectedFolder: state.selectedFolder }, dispatch, clearSelectionState, handleSearch),
+    [state.tree, state.selectedFolder, dispatch, clearSelectionState, handleSearch],
   );
 
   const { fetchConfig, saveConfig, clearCache } = createConfigActions(
@@ -72,9 +75,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     ...state, dispatch,
     fetchConfig, saveConfig, clearCache,
     fetchLibrary, toggleNode, collapseAll, dirHasAudioFiles, handleFolderSelect,
+    renameNode, deleteNode, moveNode,
     handleSearch, loadAlbumDetails, handleSelectResult, handleSelectDeezer, handleSelectMbrainz,
     handleWebfetch, closeWebfetch, clearSelectionState, applyTags,
-  }), [state, dispatch, fetchConfig, saveConfig, clearCache, fetchLibrary, toggleNode, collapseAll, dirHasAudioFiles, handleFolderSelect, handleSearch, loadAlbumDetails, handleSelectResult, handleSelectDeezer, handleSelectMbrainz, handleWebfetch, closeWebfetch, clearSelectionState, applyTags]);
+  }), [state, dispatch, fetchConfig, saveConfig, clearCache, fetchLibrary, toggleNode, collapseAll, dirHasAudioFiles, handleFolderSelect, renameNode, deleteNode, moveNode, handleSearch, loadAlbumDetails, handleSelectResult, handleSelectDeezer, handleSelectMbrainz, handleWebfetch, closeWebfetch, clearSelectionState, applyTags]);
 
   return (
     <AppContext.Provider value={contextValue}>

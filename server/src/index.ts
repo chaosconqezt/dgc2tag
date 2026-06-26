@@ -1,5 +1,6 @@
 import express from 'express';
 import cors from 'cors';
+import fs from 'fs/promises';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { createServer as createViteServer } from 'vite';
@@ -10,7 +11,7 @@ import { getTags, type AlbumTags } from './tagger.js';
 import NodeID3 from 'node-id3';
 import type { Id3Tags } from './types.js';
 import { writeTags, moveProcessedFiles, renameFilesInPlace } from './tagWriter.js';
-import { getMp3Files, isInsideMusicRoot } from './trackUtils.js';
+import { getMp3Files, isInsideMusicRoot, assertInsideMusicRoot } from './trackUtils.js';
 import { searchAlbums, getAlbumDetails, fetchPageContent, parseGenresFromPage, getBrowserStatus, ensureTaxonomy } from './scraper.js';
 import { loadConfig, saveConfig, type Config } from './config.js';
 import { clearCache } from './cache.js';
@@ -266,6 +267,161 @@ app.post('/api/tags/update', async (req, res) => {
         res.json({ success: true, moved, renamed });
     } catch (error) {
         logger.error(`POST /api/tags/update error:`, error);
+        res.status(500).json({ error: (error as Error).message });
+    }
+});
+
+// ─── File operations (rename / move / delete) ────────────────────
+
+app.post('/api/files/rename', async (req, res) => {
+    const { oldPath, newName } = req.body;
+    if (!oldPath || !newName || typeof oldPath !== 'string' || typeof newName !== 'string') {
+        return res.status(400).json({ error: 'oldPath and newName are required' });
+    }
+    if (newName.includes('/') || newName.includes('\\') || newName.includes('\0')) {
+        return res.status(400).json({ error: 'Invalid name' });
+    }
+
+    try {
+        const cfg = getConfig();
+        const absOld = path.resolve(oldPath);
+        assertInsideMusicRoot(absOld, cfg.musicRoot);
+
+        const absNew = path.join(path.dirname(absOld), newName);
+        assertInsideMusicRoot(absNew, cfg.musicRoot);
+
+        if (absOld === absNew) return res.json({ success: true, newPath: absOld });
+        if (await fs.access(absNew).then(() => true).catch(() => false)) {
+            return res.status(409).json({ error: 'Target already exists' });
+        }
+
+        await fs.rename(absOld, absNew);
+        logger.info(`Renamed: ${absOld} → ${absNew}`);
+        res.json({ success: true, newPath: absNew });
+    } catch (error) {
+        logger.error('POST /api/files/rename error:', error);
+        res.status(500).json({ error: (error as Error).message });
+    }
+});
+
+app.post('/api/files/move', async (req, res) => {
+    const { oldPath, targetDir } = req.body;
+    if (!oldPath || !targetDir || typeof oldPath !== 'string' || typeof targetDir !== 'string') {
+        return res.status(400).json({ error: 'oldPath and targetDir are required' });
+    }
+
+    try {
+        const cfg = getConfig();
+        const absOld = path.resolve(oldPath);
+        const absTarget = path.resolve(targetDir);
+        assertInsideMusicRoot(absOld, cfg.musicRoot);
+        assertInsideMusicRoot(absTarget, cfg.musicRoot);
+
+        const absNew = path.join(absTarget, path.basename(absOld));
+        if (absOld === absNew) return res.json({ success: true, newPath: absOld });
+        if (await fs.access(absNew).then(() => true).catch(() => false)) {
+            return res.status(409).json({ error: 'Target already exists' });
+        }
+
+        try {
+            await fs.rename(absOld, absNew);
+        } catch (renameErr: any) {
+            if (renameErr?.code === 'EXDEV') {
+                // Cross-device: copy + delete
+                const stat = await fs.stat(absOld);
+                if (stat.isDirectory()) {
+                    await fs.mkdir(absNew, { recursive: true });
+                    const entries = await fs.readdir(absOld, { withFileTypes: true });
+                    for (const entry of entries) {
+                        const src = path.join(absOld, entry.name);
+                        const dst = path.join(absNew, entry.name);
+                        await fs.rename(src, dst);
+                    }
+                } else {
+                    await fs.copyFile(absOld, absNew);
+                }
+                await fs.rm(absOld, { recursive: true, force: true });
+            } else {
+                throw renameErr;
+            }
+        }
+
+        logger.info(`Moved: ${absOld} → ${absNew}`);
+        res.json({ success: true, newPath: absNew });
+    } catch (error) {
+        logger.error('POST /api/files/move error:', error);
+        res.status(500).json({ error: (error as Error).message });
+    }
+});
+
+app.post('/api/files/delete', async (req, res) => {
+    const { filePath } = req.body;
+    if (!filePath || typeof filePath !== 'string') {
+        return res.status(400).json({ error: 'filePath is required' });
+    }
+
+    try {
+        const cfg = getConfig();
+        const absPath = path.resolve(filePath);
+        assertInsideMusicRoot(absPath, cfg.musicRoot);
+
+        await fs.rm(absPath, { recursive: true, force: true });
+        logger.info(`Deleted: ${absPath}`);
+        res.json({ success: true });
+    } catch (error) {
+        logger.error('POST /api/files/delete error:', error);
+        res.status(500).json({ error: (error as Error).message });
+    }
+});
+
+// ─── Directory browsing for folder picker ────────────────────────
+
+app.get('/api/directory/roots', async (_req, res) => {
+    try {
+        const cfg = getConfig();
+        const roots: { name: string; path: string }[] = [];
+
+        if (process.platform === 'win32') {
+            // List drive letters
+            for (const letter of 'CDEFGHIJ'.split('')) {
+                const drivePath = `${letter}:\\`;
+                try {
+                    await fs.access(drivePath);
+                    roots.push({ name: `${letter}:\\`, path: drivePath });
+                } catch { /* drive not accessible */ }
+            }
+            // Also add music root's drive if not already listed
+            const musicDrive = cfg.musicRoot.substring(0, 3);
+            if (!roots.some(r => r.path === musicDrive)) {
+                roots.push({ name: musicDrive, path: musicDrive });
+            }
+        } else {
+            // Unix: start from /
+            roots.push({ name: '/', path: '/' });
+        }
+
+        res.json(roots);
+    } catch (error) {
+        logger.error('GET /api/directory/roots error:', error);
+        res.status(500).json({ error: (error as Error).message });
+    }
+});
+
+app.get('/api/directory/children', async (req, res) => {
+    const { dirPath } = req.query;
+    if (!dirPath || typeof dirPath !== 'string') {
+        return res.status(400).json({ error: 'dirPath is required' });
+    }
+
+    try {
+        const absPath = path.resolve(dirPath);
+        const entries = await fs.readdir(absPath, { withFileTypes: true });
+        const dirs = entries
+            .filter(e => e.isDirectory())
+            .map(e => ({ name: e.name, path: path.join(absPath, e.name) }))
+            .sort((a, b) => a.name.localeCompare(b.name));
+        res.json(dirs);
+    } catch (error) {
         res.status(500).json({ error: (error as Error).message });
     }
 });

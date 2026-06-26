@@ -1,6 +1,6 @@
 import type { AlbumTags } from '../types';
 import { matchTracks } from '../utils';
-import { FONT, FS, COLORS, CHECKBOX, INPUT_STYLE } from './styles';
+import { FONT, FS, FS_S, COLORS, CHECKBOX, INPUT_STYLE } from './styles';
 
 function formatDuration(seconds?: number | null, fallback?: string): string {
   if (seconds === undefined || seconds === null) return fallback ?? '';
@@ -78,19 +78,17 @@ export function MatchRow({
       <div style={{ flex: 1, textAlign: 'left', paddingLeft: '4px', minWidth: 0 }}>
         {m.local ? (
           <>
-            <div title={localLabel} style={{
+            <div title={localLabel} className="text-ellipsis" style={{
               fontSize: FS, fontFamily: FONT,
               color: COLORS.textMuted,
-              overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
             }}>
-              <span style={{ fontSize: '12px', color: COLORS.textFaint, fontFamily: 'monospace', marginRight: '4px' }}>{m.local.num || '?'}</span>
+              <span style={{ fontSize: FS_S, color: COLORS.textFaint, fontFamily: 'monospace', marginRight: '4px' }}>{m.local.num || '?'}</span>
               {localLabel || '—'}
             </div>
             {showFilenamePreviews && m.local && filenameMode === 'id3' && m.local.file !== m.local.name && (
-              <div title={m.local.file} style={{
+              <div title={m.local.file} className="text-ellipsis" style={{
                 fontSize: FS, fontFamily: FONT,
                 color: COLORS.textFaint,
-                overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
               }}>
                 {m.local.file || ''}
               </div>
@@ -118,7 +116,7 @@ export function MatchRow({
       </div>
 
       <div style={{ flex: 1, paddingLeft: '4px', minWidth: 0, display: 'flex', alignItems: 'center', gap: '4px' }}>
-        <span style={{ fontSize: '12px', color: COLORS.textFaint, fontFamily: 'monospace', flexShrink: 0 }}>{m.remote.num}</span>
+        <span style={{ fontSize: FS_S, color: COLORS.textFaint, fontFamily: 'monospace', flexShrink: 0 }}>{m.remote.num}</span>
         <input
           type="text"
           value={displayName}

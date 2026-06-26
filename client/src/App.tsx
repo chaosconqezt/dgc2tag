@@ -128,6 +128,9 @@ function AppContent() {
               expandedNodes={ctx.expandedNodes}
               onToggleNode={ctx.toggleNode}
               onSelectFolder={ctx.handleFolderSelect}
+              onRename={ctx.renameNode}
+              onDelete={ctx.deleteNode}
+              onMove={ctx.moveNode}
             />
           </div>
 
@@ -269,7 +272,15 @@ function AppContent() {
             )}
           </div>
         </div>
-        <Footer />
+        <Footer
+          musicRoot={ctx.configMusicRoot}
+          outputFolder={ctx.configOutputFolder}
+          outputMode={ctx.configOutputMode}
+          onMusicRootChange={(v) => ctx.dispatch({ type: 'SET_CONFIG_MUSIC_ROOT', payload: v })}
+          onOutputFolderChange={(v) => ctx.dispatch({ type: 'SET_CONFIG_OUTPUT_FOLDER', payload: v })}
+          onOutputModeChange={(v) => ctx.dispatch({ type: 'SET_CONFIG_OUTPUT_MODE', payload: v })}
+          onSave={ctx.saveConfig}
+        />
       </div>
       {ctx.webfetchUrl && (
         <WebfetchOverlay
@@ -283,13 +294,7 @@ function AppContent() {
       {/* Settings Modal */}
       {ctx.showSettings && (
         <SettingsModal
-          musicRoot={ctx.configMusicRoot}
-          outputFolder={ctx.configOutputFolder}
-          outputMode={ctx.configOutputMode}
           saving={ctx.configSaving}
-          onMusicRootChange={(v) => ctx.dispatch({ type: 'SET_CONFIG_MUSIC_ROOT', payload: v })}
-          onOutputFolderChange={(v) => ctx.dispatch({ type: 'SET_CONFIG_OUTPUT_FOLDER', payload: v })}
-          onOutputModeChange={(v) => ctx.dispatch({ type: 'SET_CONFIG_OUTPUT_MODE', payload: v })}
           onSave={ctx.saveConfig}
           onClearCache={ctx.clearCache}
           clearingCache={ctx.clearingCache}

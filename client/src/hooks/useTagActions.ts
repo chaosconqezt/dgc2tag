@@ -25,18 +25,6 @@ export type AppDispatch = React.Dispatch<{
   payload?: unknown;
 }>;
 
-export interface ProgressState {
-  active: boolean;
-  phase: string;
-  current: number;
-  total: number;
-  log: string[];
-  done: boolean;
-  success: boolean;
-  message: string;
-  details?: string[];
-}
-
 export function createApplyTags(
   state: AppState,
   dispatch: AppDispatch,

@@ -211,3 +211,28 @@ export async function searchAlbumsBandcamp(artist?: string, album?: string): Pro
   const res = await api.post('/search-bandcamp', { artist, album });
   return res.data;
 }
+
+export async function renameFile(oldPath: string, newName: string): Promise<{ success: boolean; newPath: string }> {
+  const res = await api.post('/files/rename', { oldPath, newName });
+  return res.data;
+}
+
+export async function moveFile(oldPath: string, targetDir: string): Promise<{ success: boolean; newPath: string }> {
+  const res = await api.post('/files/move', { oldPath, targetDir });
+  return res.data;
+}
+
+export async function deleteFile(filePath: string): Promise<{ success: boolean }> {
+  const res = await api.post('/files/delete', { filePath });
+  return res.data;
+}
+
+export async function fetchDirectoryRoots(): Promise<{ name: string; path: string }[]> {
+  const res = await api.get('/directory/roots');
+  return res.data;
+}
+
+export async function browseDirectory(dirPath: string): Promise<{ name: string; path: string }[]> {
+  const res = await api.get('/directory/children', { params: { dirPath } });
+  return res.data;
+}

@@ -74,10 +74,9 @@ export function MultiArtistTracks({
               <span style={{ width: '11px', flexShrink: 0 }} />
               <div style={{ flex: 1, textAlign: 'left', minWidth: 0 }}>
                 {m.local ? (
-                  <div title={localTags.trackArtists?.[m.local.file] || ''} style={{
+                  <div title={localTags.trackArtists?.[m.local.file] || ''} className="text-ellipsis" style={{
                     fontSize: FS, fontFamily: FONT,
                     color: COLORS.textFaint,
-                    overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
                   }}>
                     {localTags.trackArtists?.[m.local.file] || ''}
                   </div>

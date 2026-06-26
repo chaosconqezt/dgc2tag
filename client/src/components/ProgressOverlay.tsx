@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import { FONT, FS, COLORS, ICON_BUTTON, OVERLAY_BACKDROP, MODAL_PANEL } from './styles';
+import { FONT, FS, FS_SM, COLORS, ICON_BUTTON, OVERLAY_BACKDROP, MODAL_PANEL, MODAL_HEADER } from './styles';
 
 interface ProgressOverlayProps {
   phase: string;
@@ -27,7 +27,7 @@ export function ProgressOverlay({ phase, current, total, log, done, success, mes
     <div style={OVERLAY_BACKDROP} onClick={done ? onClose : undefined}>
       <div style={{ ...MODAL_PANEL, width: '500px', maxHeight: '80vh' }} onClick={(e) => e.stopPropagation()}>
         {/* Header */}
-        <div style={{ padding: '10px 14px', borderBottom: `1px solid ${COLORS.border}`, backgroundColor: COLORS.inputBgAlt, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div style={MODAL_HEADER}>
           <span style={{ fontSize: FS, color: COLORS.textMuted, fontWeight: '600', fontFamily: FONT }}>
             {done ? (success ? 'Done' : 'Error') : phase}
           </span>
@@ -41,7 +41,7 @@ export function ProgressOverlay({ phase, current, total, log, done, success, mes
         {/* Progress bar */}
         {!done && total > 0 && (
           <div style={{ padding: '10px 14px 6px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px', fontSize: '11px', fontFamily: FONT }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px', fontSize: FS_SM, fontFamily: FONT }}>
               <span style={{ color: COLORS.textMuted }}>{current} / {total}</span>
               <span style={{ color: COLORS.textDim }}>{pct}%</span>
             </div>
@@ -54,10 +54,10 @@ export function ProgressOverlay({ phase, current, total, log, done, success, mes
         {/* Log */}
         <div ref={logRef} style={{ flex: 1, overflowY: 'auto', padding: '8px 14px', minHeight: '80px', maxHeight: '300px' }}>
           {log.length === 0 && !done ? (
-            <span style={{ fontSize: '11px', color: COLORS.textInvisible, fontFamily: FONT }}>Starting...</span>
+            <span style={{ fontSize: FS_SM, color: COLORS.textInvisible, fontFamily: FONT }}>Starting...</span>
           ) : (
             log.map((line, i) => (
-              <div key={i} style={{ fontSize: '11px', color: COLORS.textMuted, fontFamily: 'monospace', lineHeight: '1.6', whiteSpace: 'pre-wrap' }}>
+              <div key={i} style={{ fontSize: FS_SM, color: COLORS.textMuted, fontFamily: 'monospace', lineHeight: '1.6', whiteSpace: 'pre-wrap' }}>
                 {line}
               </div>
             ))
@@ -66,7 +66,7 @@ export function ProgressOverlay({ phase, current, total, log, done, success, mes
             <>
               <div style={{ height: '1px', backgroundColor: COLORS.border, margin: '6px 0' }} />
               {details.map((line, i) => (
-                <div key={`d-${i}`} style={{ fontSize: '11px', color: COLORS.textMuted, fontFamily: 'monospace', lineHeight: '1.6', whiteSpace: 'pre-wrap' }}>
+                <div key={`d-${i}`} style={{ fontSize: FS_SM, color: COLORS.textMuted, fontFamily: 'monospace', lineHeight: '1.6', whiteSpace: 'pre-wrap' }}>
                   {line}
                 </div>
               ))}

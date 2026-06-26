@@ -32,7 +32,7 @@ export function ApplyPanel({ onApplyTags, onCancel }: ApplyPanelProps) {
         title="Write tags, rename files, and move to output folder"
         onMouseEnter={(e) => (e.currentTarget.style.transform = 'translateY(-1px)')}
         onMouseLeave={(e) => (e.currentTarget.style.transform = 'none')}
-        style={{ ...btnBase, background: 'linear-gradient(180deg, #2563eb 0%, #1d4ed8 100%)', color: '#fff', boxShadow: '0 1px 6px rgba(37, 99, 243, 0.3)', transition: 'transform 0.15s' }}
+        style={{ ...btnBase, background: 'linear-gradient(180deg, #2563eb 0%, #1d4ed8 100%)', color: COLORS.textBright, boxShadow: '0 1px 6px rgba(37, 99, 243, 0.3)', transition: 'transform 0.15s' }}
       >
         <ArrowRightLeft size={11} /> WRITE & MOVE
       </button>
@@ -41,7 +41,7 @@ export function ApplyPanel({ onApplyTags, onCancel }: ApplyPanelProps) {
         title="Write tags and rename files to 'Track. Artist - Title.ext'"
         onMouseEnter={(e) => (e.currentTarget.style.transform = 'translateY(-1px)')}
         onMouseLeave={(e) => (e.currentTarget.style.transform = 'none')}
-        style={{ ...btnBase, background: `linear-gradient(180deg, ${COLORS.purple} 0%, #7c3aed 100%)`, color: '#fff', boxShadow: `0 1px 6px rgba(167, 139, 250, 0.3)`, transition: 'transform 0.15s' }}
+        style={{ ...btnBase, background: `linear-gradient(180deg, ${COLORS.purple} 0%, #7c3aed 100%)`, color: COLORS.textBright, boxShadow: `0 1px 6px rgba(167, 139, 250, 0.3)`, transition: 'transform 0.15s' }}
       >
         <FileEdit size={11} /> WRITE & RENAME
       </button>
@@ -49,7 +49,7 @@ export function ApplyPanel({ onApplyTags, onCancel }: ApplyPanelProps) {
         onClick={() => onApplyTags('write')}
         title="Write tags only, do not rename or move files"
         className="btn-primary"
-        style={{ ...btnBase, background: `linear-gradient(180deg, ${COLORS.red} 0%, #dc2626 100%)`, color: '#fff', boxShadow: `0 1px 6px rgba(239, 68, 68, 0.3)` }}
+        style={{ ...btnBase, background: `linear-gradient(180deg, ${COLORS.red} 0%, #dc2626 100%)`, color: COLORS.textBright, boxShadow: `0 1px 6px rgba(239, 68, 68, 0.3)` }}
       >
         <Check size={11} /> WRITE
       </button>

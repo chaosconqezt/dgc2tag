@@ -5,6 +5,7 @@ export type AppDispatch = React.Dispatch<{ type: string; payload?: unknown }>;
 
 export interface LibraryState {
   tree: FileNode[];
+  selectedFolder: string | null;
 }
 
 export function createLibraryActions(
@@ -22,6 +23,20 @@ export function createLibraryActions(
       return false;
     };
     return check(state.tree);
+  };
+
+  const refreshAndSelect = async (newPath?: string | null) => {
+    const data = await api.fetchLibrary();
+    dispatch({ type: 'SET_TREE', payload: data });
+    if (newPath !== undefined) {
+      dispatch({ type: 'SET_SELECTED_FOLDER', payload: newPath });
+    } else if (state.selectedFolder) {
+      // Check if selected folder still exists
+      const exists = data.some(function check(n: FileNode): boolean {
+        return n.path === state.selectedFolder || (n.children ?? []).some(check);
+      });
+      if (!exists) dispatch({ type: 'SET_SELECTED_FOLDER', payload: null });
+    }
   };
 
   return {
@@ -79,6 +94,26 @@ export function createLibraryActions(
         if (import.meta.env.DEV) console.error('Failed to fetch tags');
         dispatch({ type: 'SET_LOADING', payload: false });
       }
+    },
+
+    renameNode: async (oldPath: string, newName: string) => {
+      const result = await api.renameFile(oldPath, newName);
+      const wasSelected = state.selectedFolder === oldPath;
+      await refreshAndSelect(wasSelected ? result.newPath : undefined);
+      return result;
+    },
+
+    deleteNode: async (filePath: string) => {
+      const wasSelected = state.selectedFolder === filePath;
+      await api.deleteFile(filePath);
+      await refreshAndSelect(wasSelected ? null : undefined);
+    },
+
+    moveNode: async (oldPath: string, targetDir: string) => {
+      const result = await api.moveFile(oldPath, targetDir);
+      const wasSelected = state.selectedFolder === oldPath;
+      await refreshAndSelect(wasSelected ? result.newPath : undefined);
+      return result;
     },
   };
 }

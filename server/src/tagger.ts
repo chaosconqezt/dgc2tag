@@ -63,6 +63,8 @@ export async function getTags(folderPath: string): Promise<AlbumTags> {
             const metadata = await mm.parseFile(filePath);
             if (metadata.format?.duration !== null && typeof metadata.format.duration === 'number') {
                 durationSec = Math.round(metadata.format.duration);
+            } else {
+                logger.warn(`music-metadata: no duration for ${file} (format=${metadata.format?.codec}, duration=${metadata.format?.duration})`);
             }
             if (metadata.format?.bitrate) {
                 metadataBitrate = Math.round(metadata.format.bitrate / 1000);
@@ -71,8 +73,8 @@ export async function getTags(folderPath: string): Promise<AlbumTags> {
             if (profile.includes('V') || profile.toLowerCase().includes('vbr')) {
                 metadataVbr = true;
             }
-        } catch {
-            // durationSec stays undefined — track matcher will show ERR
+        } catch (err) {
+            logger.warn(`music-metadata failed for ${file}: ${(err as Error).message}`);
         }
 
         trackDurations[filePath] = durationSec;

@@ -1,4 +1,4 @@
-import React, { Component, ErrorInfo, ReactNode } from 'react';
+import React, { Component, type ErrorInfo, type ReactNode } from 'react';
 import { FONT, FS, COLORS } from './styles';
 
 interface Props {
@@ -33,7 +33,7 @@ const FALLBACK_CONTENT = (
       style={{
         padding: '8px 20px',
         background: '#3b82f6',
-        color: '#fff',
+        color: COLORS.textBright,
         border: 'none',
         borderRadius: '6px',
         cursor: 'pointer',

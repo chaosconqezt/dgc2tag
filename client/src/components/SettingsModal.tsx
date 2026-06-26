@@ -1,15 +1,9 @@
 import { useEffect, useState } from 'react';
 import { Settings, X, Trash2 } from 'lucide-react';
-import { FONT, FS, COLORS, ICON_BUTTON, OVERLAY_BACKDROP, MODAL_PANEL } from './styles';
+import { FONT, FS, COLORS, ICON_BUTTON, OVERLAY_BACKDROP, MODAL_PANEL, MODAL_HEADER, LABEL_STYLE, MODAL_INPUT_STYLE, HINT_STYLE } from './styles';
 
 interface SettingsModalProps {
-  musicRoot: string;
-  outputFolder: string;
-  outputMode: 'subfolder' | 'absolute';
   saving: boolean;
-  onMusicRootChange: (value: string) => void;
-  onOutputFolderChange: (value: string) => void;
-  onOutputModeChange: (mode: 'subfolder' | 'absolute') => void;
   onSave: () => void;
   onClearCache: () => void;
   clearingCache: boolean;
@@ -34,13 +28,13 @@ const TAG_FIELDS = [
 ];
 
 const SOURCE_FIELDS = [
-  { id: 'dgc', label: 'DGC', color: '#ef4444' },
-  { id: 'deezer', label: 'Deezer', color: '#4ade80' },
-  { id: 'mbrainz', label: 'MusicBrainz', color: '#f97316' },
-  { id: 'bandcamp', label: 'Bandcamp', color: '#629aa9' },
+  { id: 'dgc', label: 'DGC', color: COLORS.red },
+  { id: 'deezer', label: 'Deezer', color: COLORS.green },
+  { id: 'mbrainz', label: 'MusicBrainz', color: COLORS.mbrainz },
+  { id: 'bandcamp', label: 'Bandcamp', color: COLORS.bandcamp },
 ];
 
-export function SettingsModal({ musicRoot, outputFolder, outputMode, saving, onMusicRootChange, onOutputFolderChange, onOutputModeChange, onSave, onClearCache, clearingCache, tagDefaults, onTagDefaultsChange, enabledSources, onEnabledSourcesChange, cleanupIgnorePatterns, onCleanupIgnorePatternsChange, onClose }: SettingsModalProps) {
+export function SettingsModal({ saving, onSave, onClearCache, clearingCache, tagDefaults, onTagDefaultsChange, enabledSources, onEnabledSourcesChange, cleanupIgnorePatterns, onCleanupIgnorePatternsChange, onClose }: SettingsModalProps) {
   const [newPattern, setNewPattern] = useState('');
   useEffect(() => {
     const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
@@ -56,14 +50,10 @@ export function SettingsModal({ musicRoot, outputFolder, outputMode, saving, onM
     onEnabledSourcesChange({ ...enabledSources, [id]: !enabledSources[id] });
   };
 
-  const labelStyle = { display: 'block' as const, fontSize: FS, color: COLORS.textDim, fontWeight: '700' as const, textTransform: 'uppercase' as const, letterSpacing: '0.5px', marginBottom: '6px', fontFamily: FONT };
-  const inputStyle = { width: '100%', boxSizing: 'border-box' as const, background: COLORS.bg, border: `1px solid ${COLORS.textInvisible}`, borderRadius: '6px', padding: '8px 10px', color: COLORS.text, fontSize: FS, fontFamily: FONT };
-  const hintStyle = { fontSize: FS, color: COLORS.textInvisible, marginTop: '4px', fontFamily: FONT };
-
   return (
     <div style={OVERLAY_BACKDROP} onClick={onClose}>
       <div style={{ ...MODAL_PANEL, width: '420px' }} onClick={(e) => e.stopPropagation()}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 14px', borderBottom: `1px solid ${COLORS.border}`, backgroundColor: COLORS.inputBgAlt }}>
+        <div style={MODAL_HEADER}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
             <Settings size={12} color={COLORS.red} />
             <span style={{ fontSize: FS, color: COLORS.textMuted, fontWeight: '500', fontFamily: FONT }}>SETTINGS</span>
@@ -74,38 +64,7 @@ export function SettingsModal({ musicRoot, outputFolder, outputMode, saving, onM
         </div>
         <div style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
           <div>
-            <label style={labelStyle}>Music Library Path</label>
-            <input type="text" value={musicRoot} onChange={(e) => onMusicRootChange(e.target.value)} style={inputStyle} placeholder="c:\music\library" />
-            <div style={hintStyle}>Output will be placed in this subfolder inside the library</div>
-          </div>
-
-          <div>
-            <label style={labelStyle}>Output Path</label>
-            <div style={{ display: 'flex', gap: '4px', marginBottom: '6px' }}>
-              <label style={{ display: 'flex', alignItems: 'center', gap: '4px', cursor: 'pointer', fontSize: FS, color: outputMode === 'subfolder' ? COLORS.text : COLORS.textFaint, fontFamily: FONT, padding: '4px 8px', borderRadius: '4px', backgroundColor: outputMode === 'subfolder' ? COLORS.borderLight : 'transparent', border: `1px solid ${outputMode === 'subfolder' ? COLORS.textInvisible : 'transparent'}` }}>
-                <input type="radio" name="outputMode" checked={outputMode === 'subfolder'} onChange={() => onOutputModeChange('subfolder')} style={{ accentColor: COLORS.red }} />
-                Subfolder
-              </label>
-              <label style={{ display: 'flex', alignItems: 'center', gap: '4px', cursor: 'pointer', fontSize: FS, color: outputMode === 'absolute' ? COLORS.text : COLORS.textFaint, fontFamily: FONT, padding: '4px 8px', borderRadius: '4px', backgroundColor: outputMode === 'absolute' ? COLORS.borderLight : 'transparent', border: `1px solid ${outputMode === 'absolute' ? COLORS.textInvisible : 'transparent'}` }}>
-                <input type="radio" name="outputMode" checked={outputMode === 'absolute'} onChange={() => onOutputModeChange('absolute')} style={{ accentColor: COLORS.red }} />
-                Absolute Path
-              </label>
-            </div>
-            {outputMode === 'subfolder' ? (
-              <>
-                <input type="text" value={outputFolder} onChange={(e) => onOutputFolderChange(e.target.value)} style={inputStyle} placeholder="dgc" />
-                <div style={hintStyle}>Subfolder inside the music library</div>
-              </>
-            ) : (
-              <>
-                <input type="text" value={outputFolder} onChange={(e) => onOutputFolderChange(e.target.value)} style={inputStyle} placeholder="d:\output\releases" />
-                <div style={hintStyle}>Full path to output directory</div>
-              </>
-            )}
-          </div>
-
-          <div>
-            <label style={labelStyle}>Default Tag Mappings</label>
+            <label style={LABEL_STYLE}>Default Tag Mappings</label>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '4px' }}>
               {TAG_FIELDS.map(f => (
                 <label key={f.key} style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', fontSize: FS, color: COLORS.textMuted, fontFamily: FONT, padding: '3px 6px', borderRadius: '4px', backgroundColor: tagDefaults[f.key] ? COLORS.borderLight : 'transparent' }}>
@@ -114,11 +73,11 @@ export function SettingsModal({ musicRoot, outputFolder, outputMode, saving, onM
                 </label>
               ))}
             </div>
-            <div style={hintStyle}>These defaults are remembered between albums</div>
+            <div style={HINT_STYLE}>These defaults are remembered between albums</div>
           </div>
 
           <div>
-            <label style={labelStyle}>Search Sources</label>
+            <label style={LABEL_STYLE}>Search Sources</label>
             <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
               {SOURCE_FIELDS.map(s => (
                 <label key={s.id} style={{ display: 'flex', alignItems: 'center', gap: '4px', cursor: 'pointer', fontSize: FS, color: enabledSources[s.id] !== false ? s.color : COLORS.textFaint, fontFamily: FONT, padding: '4px 8px', borderRadius: '4px', backgroundColor: enabledSources[s.id] !== false ? `${s.color}15` : 'transparent', border: `1px solid ${enabledSources[s.id] !== false ? `${s.color}40` : COLORS.textInvisible}`, transition: 'all 0.15s' }}>
@@ -127,11 +86,11 @@ export function SettingsModal({ musicRoot, outputFolder, outputMode, saving, onM
                 </label>
               ))}
             </div>
-            <div style={hintStyle}>Disabled sources won't be searched</div>
+            <div style={HINT_STYLE}>Disabled sources won't be searched</div>
           </div>
 
           <div>
-            <label style={labelStyle}>Cleanup Ignore Patterns</label>
+            <label style={LABEL_STYLE}>Cleanup Ignore Patterns</label>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', marginBottom: '6px' }}>
               {cleanupIgnorePatterns.map((p, i) => (
                 <span key={i} style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: FS, color: COLORS.textMuted, fontFamily: FONT, padding: '3px 8px', borderRadius: '4px', backgroundColor: COLORS.borderLight, border: `1px solid ${COLORS.textInvisible}` }}>
@@ -141,23 +100,23 @@ export function SettingsModal({ musicRoot, outputFolder, outputMode, saving, onM
               ))}
             </div>
             <div style={{ display: 'flex', gap: '4px' }}>
-              <input type="text" value={newPattern} onChange={(e) => setNewPattern(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter' && newPattern.trim()) { onCleanupIgnorePatternsChange([...cleanupIgnorePatterns, newPattern.trim()]); setNewPattern(''); } }} style={{ ...inputStyle, flex: 1 }} placeholder="e.g. .DS_Store" />
+              <input type="text" value={newPattern} onChange={(e) => setNewPattern(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter' && newPattern.trim()) { onCleanupIgnorePatternsChange([...cleanupIgnorePatterns, newPattern.trim()]); setNewPattern(''); } }} style={{ ...MODAL_INPUT_STYLE, flex: 1 }} placeholder="e.g. .DS_Store" />
               <button onClick={() => { if (newPattern.trim()) { onCleanupIgnorePatternsChange([...cleanupIgnorePatterns, newPattern.trim()]); setNewPattern(''); } }} style={{ background: COLORS.border, color: COLORS.textMuted, border: `1px solid ${COLORS.textInvisible}`, borderRadius: '6px', padding: '4px 10px', fontSize: FS, cursor: 'pointer', fontFamily: FONT }}>Add</button>
             </div>
-            <div style={hintStyle}>Files ignored when checking if artist folder is empty after move</div>
+            <div style={HINT_STYLE}>Files ignored when checking if artist folder is empty after move</div>
           </div>
 
-          <button onClick={onSave} disabled={saving} style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', height: '32px', fontSize: FS, background: COLORS.red, color: '#fff', border: 'none', borderRadius: '6px', cursor: saving ? 'wait' : 'pointer', fontFamily: FONT }}>
+          <button onClick={onSave} disabled={saving} style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', height: '32px', fontSize: FS, background: COLORS.red, color: COLORS.textBright, border: 'none', borderRadius: '6px', cursor: saving ? 'wait' : 'pointer', fontFamily: FONT }}>
             {saving ? 'Saving...' : 'Save & Reload'}
           </button>
 
           <div style={{ borderTop: `1px solid ${COLORS.border}`, paddingTop: '12px' }}>
-            <label style={labelStyle}>Cache</label>
+            <label style={LABEL_STYLE}>Cache</label>
             <button onClick={onClearCache} disabled={clearingCache} style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', height: '32px', fontSize: FS, background: COLORS.border, color: COLORS.textMuted, border: `1px solid ${COLORS.textInvisible}`, borderRadius: '6px', cursor: clearingCache ? 'wait' : 'pointer', fontFamily: FONT }}>
               <Trash2 size={12} />
               {clearingCache ? 'Clearing...' : 'Clear Cache'}
             </button>
-            <div style={hintStyle}>Clear cached album data from deathgrind.club</div>
+            <div style={HINT_STYLE}>Clear cached album data from deathgrind.club</div>
           </div>
         </div>
       </div>

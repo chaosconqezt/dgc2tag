@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import type { AlbumTags, SearchResult } from '../types';
 import { similarity } from '../utils';
-import { FONT, FS, COLORS, CHECKBOX, CELL_STYLE, INPUT_STYLE, PERCENT_STYLE, PANEL_STYLE, GRID_STYLE, ROW_STYLE } from './styles';
+import { FONT, FS, FS_S, FS_XS, COLORS, CHECKBOX, CELL_STYLE, INPUT_STYLE, PERCENT_STYLE, PANEL_STYLE, GRID_STYLE, ROW_STYLE } from './styles';
 
 interface TagComparisonProps {
   selectedResult: SearchResult | null;
@@ -49,7 +49,7 @@ function ExtraTagsSection({ sourceTags, outputTags, onOutputChange, onClearAll }
             padding: '4px 0',
           }}
         >
-          <span style={{ transform: expanded ? 'rotate(90deg)' : 'rotate(0deg)', transition: 'transform 0.15s', fontSize: '10px' }}>&#9654;</span>
+          <span style={{ transform: expanded ? 'rotate(90deg)' : 'rotate(0deg)', transition: 'transform 0.15s', fontSize: FS_XS }}>&#9654;</span>
           {allKeys.length > 0 ? `${allKeys.length} extra tag${allKeys.length > 1 ? 's' : ''}` : 'extra tags'}
         </button>
         <button
@@ -59,7 +59,7 @@ function ExtraTagsSection({ sourceTags, outputTags, onOutputChange, onClearAll }
             border: `1px solid ${COLORS.textFaint}`,
             color: COLORS.textFaint,
             cursor: 'pointer',
-            fontSize: '10px',
+            fontSize: FS_XS,
             fontFamily: FONT,
             padding: '1px 5px',
             borderRadius: '3px',
@@ -71,19 +71,19 @@ function ExtraTagsSection({ sourceTags, outputTags, onOutputChange, onClearAll }
       {expanded && (
         <div style={{ marginTop: '4px' }}>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '4px', marginBottom: '2px' }}>
-            <div style={{ fontSize: '10px', color: COLORS.textDim, fontWeight: '700', textTransform: 'uppercase', fontFamily: FONT }}>Tag</div>
-            <div style={{ fontSize: '10px', color: COLORS.textDim, fontWeight: '700', textTransform: 'uppercase', fontFamily: FONT }}>Current</div>
-            <div style={{ fontSize: '10px', color: COLORS.green, fontWeight: '700', textTransform: 'uppercase', fontFamily: FONT }}>New</div>
+            <div style={{ fontSize: FS_XS, color: COLORS.textDim, fontWeight: '700', textTransform: 'uppercase', fontFamily: FONT }}>Tag</div>
+            <div style={{ fontSize: FS_XS, color: COLORS.textDim, fontWeight: '700', textTransform: 'uppercase', fontFamily: FONT }}>Current</div>
+            <div style={{ fontSize: FS_XS, color: COLORS.green, fontWeight: '700', textTransform: 'uppercase', fontFamily: FONT }}>New</div>
           </div>
           {allKeys.map(key => (
             <div key={key} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '4px', marginBottom: '2px', alignItems: 'center' }}>
-              <div style={{ ...CELL_STYLE, textAlign: 'right', color: COLORS.textDim, fontSize: '12px' }}>{key}</div>
-              <div style={{ ...CELL_STYLE, color: COLORS.textMuted, fontSize: '12px' }}>{sourceTags[key] || <span style={{ color: COLORS.textInvisible }}>—</span>}</div>
+              <div style={{ ...CELL_STYLE, textAlign: 'right', color: COLORS.textDim, fontSize: FS_S }}>{key}</div>
+              <div style={{ ...CELL_STYLE, color: COLORS.textMuted, fontSize: FS_S }}>{sourceTags[key] || <span style={{ color: COLORS.textInvisible }}>—</span>}</div>
               <input
                 type="text"
                 value={outputTags[key] ?? ''}
                 onChange={(e) => onOutputChange(key, e.target.value)}
-                style={{ ...INPUT_STYLE, color: COLORS.green, backgroundColor: COLORS.greenBg, border: `1px solid ${COLORS.greenBorder}`, fontSize: '12px' }}
+                style={{ ...INPUT_STYLE, color: COLORS.green, backgroundColor: COLORS.greenBg, border: `1px solid ${COLORS.greenBorder}`, fontSize: FS_S }}
               />
             </div>
           ))}
@@ -164,14 +164,14 @@ export function TagComparison({
     if (key === 'artist' && Array.isArray(file)) {
       if (file.length === 0) return <span style={{ color: COLORS.textInvisible }}>—</span>;
       if (file.length === 1) return (
-        <div style={{ fontSize: FS, color: COLORS.textMuted, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontFamily: FONT }}>
+        <div className="text-ellipsis" style={{ fontSize: FS, color: COLORS.textMuted, fontFamily: FONT }}>
           {file[0]}
         </div>
       );
       return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1px' }}>
           {file.map((val, i) => (
-            <div key={i} style={{ fontSize: FS, color: COLORS.textMuted, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontFamily: FONT }}>
+            <div key={i} className="text-ellipsis" style={{ fontSize: FS, color: COLORS.textMuted, fontFamily: FONT }}>
               {val}
             </div>
           ))}
@@ -180,7 +180,7 @@ export function TagComparison({
     }
     if (!file) return <span style={{ color: COLORS.textInvisible }}>—</span>;
     return (
-      <div style={{ fontSize: FS, color: COLORS.textMuted, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontFamily: FONT }}>
+      <div className="text-ellipsis" style={{ fontSize: FS, color: COLORS.textMuted, fontFamily: FONT }}>
         {String(file)}
       </div>
     );
@@ -217,10 +217,10 @@ export function TagComparison({
                   style={{ ...CHECKBOX, justifySelf: 'center', opacity: readonly ? 0.3 : 1 }}
                 />
                 <div style={{ ...CELL_STYLE, display: 'flex', alignItems: 'center' }}>
-                  <span style={{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  <span className="text-ellipsis" style={{ flex: 1, minWidth: 0 }}>
                     {renderLocalValue(f.file, f.key)}
                   </span>
-                  <span style={{ fontSize: FS, color: COLORS.textFaint, opacity: 0.5, whiteSpace: 'nowrap', fontFamily: FONT, marginLeft: '4px', flexShrink: 0 }}>{f.label}</span>
+                  <span className="text-ellipsis" style={{ fontSize: FS, color: COLORS.textFaint, opacity: 0.5, fontFamily: FONT, marginLeft: '4px', flexShrink: 0 }}>{f.label}</span>
                 </div>
                 <div style={{ ...PERCENT_STYLE }}>
                   {readonly ? '' : `${sim}%`}
@@ -251,14 +251,14 @@ export function TagComparison({
             <div style={{ ...CELL_STYLE, display: 'flex', gap: '4px' }}>
               <span style={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', gap: '4px' }}>
                 <span style={{ fontSize: FS, color: COLORS.textFaint, opacity: 0.5, fontFamily: FONT, flexShrink: 0 }}>DGC</span>
-                <span style={{ fontSize: FS, color: COLORS.textMuted, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontFamily: FONT }}>
+                <span className="text-ellipsis" style={{ fontSize: FS, color: COLORS.textMuted, fontFamily: FONT }}>
                   {dgcPostId || <span style={{ color: COLORS.textInvisible }}>—</span>}
                 </span>
               </span>
               <span style={{ width: '1px', background: COLORS.borderLight, alignSelf: 'stretch' }} />
               <span style={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', gap: '4px' }}>
                 <span style={{ fontSize: FS, color: COLORS.textFaint, opacity: 0.5, fontFamily: FONT, flexShrink: 0 }}>DZ</span>
-                <span style={{ fontSize: FS, color: COLORS.textMuted, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontFamily: FONT }}>
+                <span className="text-ellipsis" style={{ fontSize: FS, color: COLORS.textMuted, fontFamily: FONT }}>
                   {dzDeezerId || <span style={{ color: COLORS.textInvisible }}>—</span>}
                 </span>
               </span>
@@ -267,14 +267,14 @@ export function TagComparison({
             <div style={{ ...INPUT_STYLE, display: 'flex', gap: '4px', color: COLORS.textMuted, backgroundColor: COLORS.inputBg, border: `1px solid ${COLORS.borderLight}` }}>
               <span style={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', gap: '4px' }}>
                 <span style={{ fontSize: FS, color: COLORS.textFaint, opacity: 0.5, fontFamily: FONT, flexShrink: 0 }}>DGC</span>
-                <span style={{ fontSize: FS, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontFamily: FONT }}>
+                <span className="text-ellipsis" style={{ fontSize: FS, fontFamily: FONT }}>
                   {siteDgcId || <span style={{ color: COLORS.textInvisible }}>—</span>}
                 </span>
               </span>
               <span style={{ width: '1px', background: COLORS.borderLight, alignSelf: 'stretch' }} />
               <span style={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', gap: '4px' }}>
                 <span style={{ fontSize: FS, color: COLORS.textFaint, opacity: 0.5, fontFamily: FONT, flexShrink: 0 }}>DZ</span>
-                <span style={{ fontSize: FS, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontFamily: FONT }}>
+                <span className="text-ellipsis" style={{ fontSize: FS, fontFamily: FONT }}>
                   {siteDeezerId || <span style={{ color: COLORS.textInvisible }}>—</span>}
                 </span>
               </span>

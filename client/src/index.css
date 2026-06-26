@@ -9,6 +9,7 @@
   --border: #27272a;
   --border-light: #1f1f23;
   --text: #f4f4f5;
+  --text-bright: #fff;
   --text-muted: #a1a1aa;
   --text-dim: #71717a;
   --text-faint: #52525b;
@@ -17,6 +18,8 @@
   --green: #4ade80;
   --yellow: #fbbf24;
   --purple: #a78bfa;
+  --mbrainz: #f97316;
+  --bandcamp: #629aa9;
   --green-bg: rgba(74,222,128,0.05);
   --green-border: rgba(74,222,128,0.2);
   --purple-bg: rgba(167,139,250,0.05);
@@ -183,4 +186,19 @@ a:focus-visible {
 .hover-lift:hover {
   transform: translateY(-1px);
   background-color: var(--text-invisible);
+}
+
+/* Text utilities */
+.text-ellipsis {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Label utilities */
+.label-inline {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  cursor: pointer;
 }
