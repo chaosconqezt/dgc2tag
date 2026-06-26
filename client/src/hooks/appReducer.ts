@@ -1,5 +1,5 @@
 import type { FileNode, AlbumTags, SearchResult, DeezerSearchResult } from '../types';
-import type { MusicBrainzSearchResult } from '../api';
+import type { MusicBrainzSearchResult, LibraryAlbum } from '../api';
 import { DEFAULT_TAG_DEFAULTS } from './useConfig';
 
 export interface AppState {
@@ -50,6 +50,8 @@ export interface AppState {
   compilation: boolean;
   serverParsedTracks: { num: string; artist: string; name: string; duration?: number }[] | null;
   cleanupIgnorePatterns: string[];
+  libraryEntries: LibraryAlbum[];
+  viewMode: 'main' | 'library';
 }
 
 export type Action =
@@ -105,7 +107,9 @@ export type Action =
   | { type: 'SET_COMPILATION'; payload: boolean }
   | { type: 'SET_SERVER_PARSED_TRACKS'; payload: { num: string; artist: string; name: string; duration?: number }[] | null }
   | { type: 'SET_RESULT_MODAL'; payload: { success: boolean; message: string; details?: string[] } | null }
-  | { type: 'SET_CLEANUP_IGNORE_PATTERNS'; payload: string[] };
+  | { type: 'SET_CLEANUP_IGNORE_PATTERNS'; payload: string[] }
+  | { type: 'SET_LIBRARY_ENTRIES'; payload: LibraryAlbum[] }
+  | { type: 'SET_VIEW_MODE'; payload: 'main' | 'library' };
 
 export const initialState: AppState = {
   tree: [],
@@ -155,6 +159,8 @@ export const initialState: AppState = {
   compilation: false,
   serverParsedTracks: null,
   cleanupIgnorePatterns: ['.DS_Store', 'Thumbs.db', 'desktop.ini'],
+  libraryEntries: [],
+  viewMode: 'main',
 };
 
 export function appReducer(state: AppState, action: Action): AppState {
@@ -243,6 +249,8 @@ export function appReducer(state: AppState, action: Action): AppState {
     case 'SET_SERVER_PARSED_TRACKS': return { ...state, serverParsedTracks: action.payload };
     case 'SET_RESULT_MODAL': return { ...state, resultModal: action.payload };
     case 'SET_CLEANUP_IGNORE_PATTERNS': return { ...state, cleanupIgnorePatterns: action.payload };
+    case 'SET_LIBRARY_ENTRIES': return { ...state, libraryEntries: action.payload };
+    case 'SET_VIEW_MODE': return { ...state, viewMode: action.payload };
     default:
       if (import.meta.env.DEV) console.warn(`[reducer] unknown action: ${action.type}`);
       return state;

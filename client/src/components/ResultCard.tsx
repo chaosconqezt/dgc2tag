@@ -67,7 +67,7 @@ export function ResultCard({
           height: '40px',
           borderRadius: '4px',
           overflow: 'hidden',
-          backgroundColor: '#1a1a1a',
+          backgroundColor: COLORS.bg,
           border: `1px solid ${COLORS.border}`,
           flexShrink: 0,
           display: 'flex',

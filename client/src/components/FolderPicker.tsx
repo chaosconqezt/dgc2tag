@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { ChevronRight, ChevronDown, Folder, HardDrive } from 'lucide-react';
-import { FONT, FS, COLORS, OVERLAY_BACKDROP, MODAL_PANEL, MODAL_HEADER, ICON_BUTTON } from './styles';
+import { FONT, FS, FS_SM, COLORS, OVERLAY_BACKDROP, MODAL_PANEL, MODAL_HEADER, ICON_BUTTON } from './styles';
 import { fetchDirectoryRoots, browseDirectory } from '../api';
 
 interface FolderPickerProps {
@@ -159,7 +159,7 @@ export function FolderPicker({ initialPath, onSelect, onClose }: FolderPickerPro
         <div style={MODAL_HEADER}>
           <span style={{ fontSize: FS, color: COLORS.textMuted, fontWeight: '600', fontFamily: FONT }}>Select folder</span>
           <button onClick={onClose} style={{ ...ICON_BUTTON, padding: '4px' }}>
-            <span style={{ fontSize: '16px' }}>&times;</span>
+                    <span style={{ fontSize: FS_SM }}>&times;</span>
           </button>
         </div>
 

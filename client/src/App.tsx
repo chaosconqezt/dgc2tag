@@ -2,7 +2,7 @@ import { useEffect, useState, useRef, useCallback } from 'react';
 import ErrorBoundary from './components/ErrorBoundary';
 import { AppProvider, useAppContext } from './hooks/useAppContext';
 import * as api from './api';
-import { RefreshCw, Layout, Settings } from 'lucide-react';
+import { RefreshCw, Layout, Settings, BookOpen } from 'lucide-react';
 import { FONT, FS, FS_SM, COLORS, ICON_BUTTON } from './components/styles';
 import { parseCompilationTracklist } from './utils';
 import { WebfetchOverlay } from './components/WebfetchOverlay';
@@ -16,6 +16,7 @@ import { TagComparison } from './components/TagComparison';
 import { TrackMatcher } from './components/TrackMatcher';
 import { ApplyPanel } from './components/ApplyPanel';
 import { Footer } from './components/Footer';
+import { LibraryView } from './components/LibraryView';
 
 function AppContent() {
   const ctx = useAppContext();
@@ -113,6 +114,9 @@ function AppContent() {
               <button onClick={ctx.collapseAll} className="hover-toolbar" style={{ ...ICON_BUTTON, display: 'flex', fontSize: FS, fontWeight: '700', borderRadius: '4px', padding: '4px' }} title="Collapse all">
                 &#9650;
               </button>
+              <button onClick={() => ctx.dispatch({ type: 'SET_VIEW_MODE', payload: ctx.viewMode === 'library' ? 'main' : 'library' })} className="hover-toolbar" style={{ ...ICON_BUTTON, display: 'flex', borderRadius: '4px', padding: '4px', color: ctx.viewMode === 'library' ? COLORS.green : undefined }}>
+                <BookOpen size={14} />
+              </button>
               <button onClick={() => ctx.dispatch({ type: 'SET_SHOW_SETTINGS', payload: true })} className="hover-toolbar" style={{ ...ICON_BUTTON, display: 'flex', borderRadius: '4px', padding: '4px' }}>
                 <Settings size={14} />
               </button>
@@ -183,6 +187,9 @@ function AppContent() {
       {/* Main Content Area */}
       <div className="main-content" style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0, overflow: 'hidden' }}>
 
+        {ctx.viewMode === 'library' ? (
+          <LibraryView entries={ctx.libraryEntries} />
+        ) : (<>
         {/* Content Split: Comparison Panel */}
         <div className="bottom-panels" style={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
 
@@ -282,6 +289,7 @@ function AppContent() {
           onOutputModeChange={(v) => ctx.dispatch({ type: 'SET_CONFIG_OUTPUT_MODE', payload: v })}
           onSave={ctx.saveConfig}
         />
+        </>)}
       </div>
       {ctx.webfetchUrl && (
         <WebfetchOverlay

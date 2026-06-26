@@ -22,6 +22,7 @@ export interface AlbumTags {
   trackArtists?: Record<string, string>; // filePath → artist
   trackDurations?: Record<string, number | undefined>;
   postId?: number;
+  bandId?: number;
   deezerId?: number;
   artists?: string[];
   albumArtists?: string[];
@@ -33,6 +34,7 @@ export interface SearchResult {
   source: 'dgc' | 'deezer' | 'musicbrainz' | string;
   id: string;
   postId: number;
+  bandId?: number | null;
   albumName: string | null;
   artist: string;
   albumArtist: string;

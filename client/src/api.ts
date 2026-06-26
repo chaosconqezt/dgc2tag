@@ -133,6 +133,7 @@ export async function updateTags(
     trackNames?: Record<string, string>;
     moveFiles: boolean;
     renameFiles?: boolean;
+    coverUrl?: string | null;
   },
 ): Promise<UpdateResult> {
   const res = await api.post('/tags/update', payload);
@@ -234,5 +235,25 @@ export async function fetchDirectoryRoots(): Promise<{ name: string; path: strin
 
 export async function browseDirectory(dirPath: string): Promise<{ name: string; path: string }[]> {
   const res = await api.get('/directory/children', { params: { dirPath } });
+  return res.data;
+}
+
+export interface LibraryAlbum {
+  postId: number;
+  bandId: number;
+  bandName: string;
+  artist: string;
+  album: string;
+  year: string | null;
+  genre: string | null;
+  label: string | null;
+  releaseType: string | null;
+  coverUrl: string | null;
+  inLibrary: boolean;
+  dateAdded: string;
+}
+
+export async function fetchLibraryAlbums(): Promise<LibraryAlbum[]> {
+  const res = await api.get('/library');
   return res.data;
 }

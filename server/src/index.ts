@@ -13,6 +13,7 @@ import type { Id3Tags } from './types.js';
 import { writeTags, moveProcessedFiles, renameFilesInPlace } from './tagWriter.js';
 import { getMp3Files, isInsideMusicRoot, assertInsideMusicRoot } from './trackUtils.js';
 import { searchAlbums, getAlbumDetails, fetchPageContent, parseGenresFromPage, getBrowserStatus, ensureTaxonomy } from './scraper.js';
+import { saveAlbumToLibrary, getAllLibraryAlbums, getBandAlbums } from './library.js';
 import { loadConfig, saveConfig, type Config } from './config.js';
 import { clearCache } from './cache.js';
 import { sources } from './sources/index.js';
@@ -220,7 +221,7 @@ app.get('/api/post/:id', async (req, res) => {
 });
 
 app.post('/api/tags/update', async (req, res) => {
-    const { folderPath, tags, trackArtists, trackNames, moveFiles, renameFiles } = req.body;
+    const { folderPath, tags, trackArtists, trackNames, moveFiles, renameFiles, coverUrl } = req.body;
     if (!folderPath || !tags) return res.status(400).json({ error: 'folderPath and tags are required' });
 
     try {
@@ -232,6 +233,13 @@ app.post('/api/tags/update', async (req, res) => {
 
         // Phase 1: Write tags
         await writeTags({ folderPath: absolutePath, tags, trackArtists, trackNames }, cfg.musicRoot);
+
+        // Phase 1.5: Save to library if DGC album
+        if (tags.postId && tags.bandId) {
+            await saveAlbumToLibrary(tags, coverUrl || null).catch(e =>
+                logger.warn(`library save failed: ${(e as Error).message}`)
+            );
+        }
 
         // Phase 2: Rename / Move
         let moved: string[] | undefined;
@@ -268,6 +276,54 @@ app.post('/api/tags/update', async (req, res) => {
     } catch (error) {
         logger.error(`POST /api/tags/update error:`, error);
         res.status(500).json({ error: (error as Error).message });
+    }
+});
+
+// ─── Library endpoints ────────────────────────────────────────
+
+app.get('/api/library', async (_req, res) => {
+    try {
+        const albums = await getAllLibraryAlbums();
+        res.json(albums);
+    } catch (error) {
+        logger.error('GET /api/library error:', error);
+        res.status(500).json({ error: 'Failed to load library' });
+    }
+});
+
+app.get('/api/library/:bandId', async (req, res) => {
+    try {
+        const bandId = parseInt(req.params.bandId, 10);
+        if (isNaN(bandId)) { res.status(400).json({ error: 'Invalid bandId' }); return; }
+        const albums = await getBandAlbums(bandId);
+        res.json(albums);
+    } catch (error) {
+        logger.error('GET /api/library/:bandId error:', error);
+        res.status(500).json({ error: 'Failed to load band library' });
+    }
+});
+
+app.get('/api/cover/:bandId/:postId', async (req, res) => {
+    try {
+        const bandId = parseInt(req.params.bandId, 10);
+        const postId = parseInt(req.params.postId, 10);
+        if (isNaN(bandId) || isNaN(postId)) { res.status(400).end(); return; }
+        const dir = path.join(__dirname, '../library', String(bandId), String(postId));
+        // Try jpg first, then webp
+        for (const ext of ['jpg', 'webp']) {
+            const coverPath = path.join(dir, `cover.${ext}`);
+            try {
+                await fs.access(coverPath);
+                res.setHeader('Content-Type', ext === 'webp' ? 'image/webp' : 'image/jpeg');
+                res.setHeader('Cache-Control', 'public, max-age=86400');
+                const data = await fs.readFile(coverPath);
+                res.send(data);
+                return;
+            } catch { }
+        }
+        res.status(404).end();
+    } catch {
+        res.status(500).end();
     }
 });
 

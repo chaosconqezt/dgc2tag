@@ -69,6 +69,11 @@ export function createApplyTags(
     } else if (state.localTags?.postId != null) {
       tagsToApply.postId = String(state.localTags.postId);
     }
+    if (sr?.bandId) {
+      tagsToApply.bandId = String(sr.bandId);
+    } else if (state.localTags?.bandId != null) {
+      tagsToApply.bandId = String(state.localTags.bandId);
+    }
     if (sr && state.tagEnabled.deezerId !== false) {
       if (sr.source === 'deezer') {
         tagsToApply.deezerId = state.editedSiteValues.deezerId ?? String(Math.abs(sr.postId));
@@ -120,6 +125,7 @@ export function createApplyTags(
         trackNames,
         moveFiles: mode === 'move',
         renameFiles: mode === 'rename' || mode === 'move',
+        coverUrl: sr?.coverUrl ?? null,
       });
 
       if (!result.success) {

@@ -13,6 +13,7 @@ export interface AlbumTags {
     trackArtists?: Record<string, string>;
     trackDurations?: Record<string, number | undefined>;
     postId?: number | null;
+    bandId?: number | null;
     deezerId?: number | null;
     artists?: string[];
     albumArtists?: string[];

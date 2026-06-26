@@ -195,6 +195,35 @@ a:focus-visible {
   white-space: nowrap;
 }
 
+/* Apply action buttons */
+.btn-move {
+  background: #132940;
+  color: #7dadd4;
+  border: 1px solid #1e3d5f;
+}
+.btn-move:hover {
+  background: #1a3a5c;
+  transform: translateY(-1px);
+}
+.btn-rename {
+  background: #1f1730;
+  color: #a892c4;
+  border: 1px solid #2e2444;
+}
+.btn-rename:hover {
+  background: #2a1f3d;
+  transform: translateY(-1px);
+}
+.btn-write {
+  background: #2c1717;
+  color: #c49292;
+  border: 1px solid #3f2424;
+}
+.btn-write:hover {
+  background: #3a1f1f;
+  transform: translateY(-1px);
+}
+
 /* Label utilities */
 .label-inline {
   display: flex;

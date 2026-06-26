@@ -152,6 +152,9 @@ export async function getTags(folderPath: string): Promise<AlbumTags> {
     const postIdFrame = firstTags.userDefinedText?.find(
         (t: { description?: string; value?: string }) => t.description?.toLowerCase() === 'dgc_post_id'
     );
+    const bandIdFrame = firstTags.userDefinedText?.find(
+        (t: { description?: string; value?: string }) => t.description?.toLowerCase() === 'band_id'
+    );
     const deezerIdFrame = firstTags.userDefinedText?.find(
         (t: { description?: string; value?: string }) => t.description?.toLowerCase() === 'deezer_id'
     );
@@ -208,6 +211,7 @@ export async function getTags(folderPath: string): Promise<AlbumTags> {
     result.trackArtists = trackArtistsMap;
     result.trackDurations = trackDurations;
     if (postIdFrame) result.postId = Number(postIdFrame.value) || null;
+    if (bandIdFrame) result.bandId = Number(bandIdFrame.value) || null;
     if (deezerIdFrame) result.deezerId = Number(deezerIdFrame.value) || null;
     result.artists = [...trackArtistsSet];
     result.albumArtists = [...albumArtistsSet];

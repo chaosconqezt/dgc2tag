@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { FolderOpen } from 'lucide-react';
-import { FONT, COLORS } from './styles';
+import { FONT, FS, FS_SM, FS_XS, COLORS } from './styles';
 import { FolderPicker } from './FolderPicker';
 
 interface FooterProps {
@@ -39,7 +39,7 @@ export function Footer({ musicRoot, outputFolder, outputMode, onMusicRootChange,
       gap: '16px',
       backgroundColor: COLORS.inputBgAlt,
       fontFamily: FONT,
-      fontSize: '11px',
+      fontSize: FS_SM,
       color: COLORS.textDim,
       flexShrink: 0,
     }}>
@@ -87,7 +87,7 @@ export function Footer({ musicRoot, outputFolder, outputMode, onMusicRootChange,
             borderRadius: '3px',
             padding: '1px 6px',
             cursor: 'pointer',
-            fontSize: '10px',
+            fontSize: FS_XS,
             fontFamily: FONT,
             color: outputMode === 'subfolder' ? COLORS.text : COLORS.textFaint,
           }}
@@ -102,7 +102,7 @@ export function Footer({ musicRoot, outputFolder, outputMode, onMusicRootChange,
             borderRadius: '3px',
             padding: '1px 6px',
             cursor: 'pointer',
-            fontSize: '10px',
+            fontSize: FS_XS,
             fontFamily: FONT,
             color: outputMode === 'absolute' ? COLORS.text : COLORS.textFaint,
           }}

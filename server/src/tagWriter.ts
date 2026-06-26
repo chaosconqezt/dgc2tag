@@ -65,6 +65,7 @@ async function writeSingleTag(
         'Country': tags.country,
         'RELEASETYPE': tags.releaseType,
         'DGC_POST_ID': tags.postId != null ? String(tags.postId) : undefined,
+        'BAND_ID': tags.bandId != null ? String(tags.bandId) : undefined,
         'DEEZER_ID': tags.deezerId != null ? String(tags.deezerId) : undefined,
         'MusicBrainz Album Id': (tags as any).musicbrainzReleaseId,
         'MusicBrainz Artist Id': (tags as any).musicbrainzArtistId,

@@ -128,6 +128,7 @@ export async function getBandcampAlbum(url: string): Promise<SearchResult | null
             source: 'bandcamp',
             id: bcUrl,
             postId: 0,
+            bandId: null,
             albumName,
             artist,
             albumArtist: artist,

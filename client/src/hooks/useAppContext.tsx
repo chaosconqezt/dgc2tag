@@ -1,6 +1,7 @@
-import { createContext, useContext, useReducer, useCallback, useRef, useMemo } from 'react';
+import { createContext, useContext, useReducer, useCallback, useRef, useMemo, useEffect } from 'react';
 import type { SearchResult, DeezerSearchResult } from '../types';
 import type { MusicBrainzSearchResult } from '../api';
+import * as api from '../api';
 import { appReducer, initialState, type AppState, type Action } from './appReducer';
 import { createApplyTags } from './useTagActions';
 import { createWebfetchActions } from './useWebfetch';
@@ -30,6 +31,7 @@ interface AppContextType extends AppState {
   closeWebfetch: () => void;
   clearSelectionState: () => void;
   applyTags: (mode: 'write' | 'rename' | 'move') => Promise<void>;
+  fetchLibraryEntries: () => Promise<void>;
 }
 
 const AppContext = createContext<AppContextType | null>(null);
@@ -71,14 +73,28 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     [state, clearSelectionState, fetchLibrary],
   );
 
+  const fetchLibraryEntries = useCallback(async () => {
+    try {
+      const entries = await api.fetchLibraryAlbums();
+      dispatch({ type: 'SET_LIBRARY_ENTRIES', payload: entries });
+    } catch (err) {
+      if (import.meta.env.DEV) console.error('Failed to fetch library entries', err);
+    }
+  }, [dispatch]);
+
+  // Load library on startup
+  useEffect(() => {
+    fetchLibraryEntries();
+  }, [fetchLibraryEntries]);
+
   const contextValue = useMemo(() => ({
     ...state, dispatch,
     fetchConfig, saveConfig, clearCache,
     fetchLibrary, toggleNode, collapseAll, dirHasAudioFiles, handleFolderSelect,
     renameNode, deleteNode, moveNode,
     handleSearch, loadAlbumDetails, handleSelectResult, handleSelectDeezer, handleSelectMbrainz,
-    handleWebfetch, closeWebfetch, clearSelectionState, applyTags,
-  }), [state, dispatch, fetchConfig, saveConfig, clearCache, fetchLibrary, toggleNode, collapseAll, dirHasAudioFiles, handleFolderSelect, renameNode, deleteNode, moveNode, handleSearch, loadAlbumDetails, handleSelectResult, handleSelectDeezer, handleSelectMbrainz, handleWebfetch, closeWebfetch, clearSelectionState, applyTags]);
+    handleWebfetch, closeWebfetch, clearSelectionState, applyTags, fetchLibraryEntries,
+  }), [state, dispatch, fetchConfig, saveConfig, clearCache, fetchLibrary, toggleNode, collapseAll, dirHasAudioFiles, handleFolderSelect, renameNode, deleteNode, moveNode, handleSearch, loadAlbumDetails, handleSelectResult, handleSelectDeezer, handleSelectMbrainz, handleWebfetch, closeWebfetch, clearSelectionState, applyTags, fetchLibraryEntries]);
 
   return (
     <AppContext.Provider value={contextValue}>

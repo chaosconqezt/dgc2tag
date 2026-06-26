@@ -31,6 +31,7 @@ export interface SearchResult {
     source: string;
     id: string;
     postId: number;
+    bandId: number | null;
     albumName: string | null;
     artist: string;
     albumArtist: string;
@@ -373,6 +374,7 @@ function mapPost(post: DgcPost, genresRaw: number[] | undefined, typeRaw: number
         source: 'dgc',
         id: String(post.postId),
         postId: post.postId,
+        bandId: bands[0]?.bandId ?? null,
         albumName: post.album || null,
         artist,
         albumArtist: artist,
@@ -547,6 +549,67 @@ export async function fetchPageContent(url: string): Promise<string> {
     );
 
     return injectedHtml;
+}
+
+export interface DiscographyAlbum {
+    postId: number;
+    bandId: number;
+    album: string | null;
+    artist: string;
+    year: string | null;
+    genres: string[];
+    label: string | null;
+    releaseType: string | null;
+    coverUrl: string | null;
+}
+
+export interface DiscographyResult {
+    bandId: number;
+    bandName: string;
+    albums: DiscographyAlbum[];
+}
+
+export async function getBandDiscography(bandId: number): Promise<DiscographyResult | null> {
+    logger.info(`getBandDiscography(${bandId})`);
+    await ensureTaxonomy();
+
+    const allPosts: DgcPost[] = [];
+    let offset = 0;
+    let hasMore = true;
+    let bandName = '';
+
+    while (hasMore) {
+        const data = await apiFetch<{ band: { name: string; discography: { posts: DgcPost[]; hasMore: boolean; offset: number } } }>(
+            `/api/bands/${bandId}?offset=${offset}`
+        );
+        if (!data.band) return null;
+        bandName = data.band.name;
+        allPosts.push(...(data.band.discography?.posts || []));
+        hasMore = data.band.discography?.hasMore ?? false;
+        offset = data.band.discography?.offset ?? offset + 1;
+        if (hasMore) await new Promise(r => setTimeout(r, 1500));
+    }
+
+    logger.info(`getBandDiscography(${bandId}) → ${allPosts.length} albums`);
+
+    return {
+        bandId,
+        bandName,
+        albums: allPosts.map(p => {
+            const sr = mapPost(p, p.genre, p.type);
+            return {
+                postId: p.postId,
+                bandId,
+                album: sr.albumName,
+                artist: sr.artist,
+                year: sr.year,
+                genres: sr.genres,
+                label: sr.label,
+                releaseType: sr.releaseType,
+                coverUrl: sr.coverUrl,
+            };
+        }),
+    };
 }
 
 export function getBrowserStatus(): { connected: boolean; hasPage: boolean } {

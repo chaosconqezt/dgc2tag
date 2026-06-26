@@ -32,7 +32,7 @@ const FALLBACK_CONTENT = (
       onClick={() => window.location.reload()}
       style={{
         padding: '8px 20px',
-        background: '#3b82f6',
+        background: COLORS.purple,
         color: COLORS.textBright,
         border: 'none',
         borderRadius: '6px',
