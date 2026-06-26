@@ -222,57 +222,24 @@ app.post('/api/tags/update', async (req, res) => {
     const { folderPath, tags, trackArtists, trackNames, moveFiles, renameFiles } = req.body;
     if (!folderPath || !tags) return res.status(400).json({ error: 'folderPath and tags are required' });
 
-    // SSE headers
-    res.setHeader('Content-Type', 'text/event-stream');
-    res.setHeader('Cache-Control', 'no-cache');
-    res.setHeader('Connection', 'keep-alive');
-    res.setHeader('X-Accel-Buffering', 'no');
-    res.flushHeaders();
-
-    let aborted = false;
-    req.on('close', () => { aborted = true; });
-
-    const send = (event: string, data: unknown) => {
-        if (!aborted) res.write(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`);
-    };
-
-    send('start', { message: 'Starting...' });
-
     try {
         const cfg = getConfig();
         const absolutePath = path.resolve(folderPath);
         if (!isInsideMusicRoot(absolutePath, cfg.musicRoot)) {
-            send('error', { error: 'Access denied' });
-            return res.end();
+            return res.status(403).json({ error: 'Access denied' });
         }
 
         // Phase 1: Write tags
-        if (aborted) return res.end();
-        const mp3Files = await getMp3Files(absolutePath);
-        send('phase', { phase: 'Writing tags', current: 0, total: mp3Files.length });
         await writeTags({ folderPath: absolutePath, tags, trackArtists, trackNames }, cfg.musicRoot);
-        send('phase', { phase: 'Tags written', current: mp3Files.length, total: mp3Files.length });
 
-        // Phase 2: Compare tags (read before/after)
-        if (aborted) return res.end();
-        send('phase', { phase: 'Comparing tags', current: 0, total: mp3Files.length });
-        const tagChanges: string[] = [];
-        for (let i = 0; i < mp3Files.length; i++) {
-            send('file', { current: i + 1, total: mp3Files.length, file: mp3Files[i], phase: 'compare' });
-        }
-        // Simplified: just report count
-        send('log', { message: `Compared ${mp3Files.length} files` });
-
-        // Phase 3: Rename / Move
-        if (aborted) return res.end();
+        // Phase 2: Rename / Move
         let moved: string[] | undefined;
         let renamed: { from: string; to: string }[] | undefined;
         if (moveFiles) {
-            send('phase', { phase: 'Renaming files...', current: 0, total: 1 });
-            const origMp3 = await getMp3Files(absolutePath);
             let albumArtistForMove: string | undefined;
             let yearForMove: string | undefined;
             let albumForMove: string | undefined;
+            const origMp3 = await getMp3Files(absolutePath);
             if (origMp3[0]) {
                 try {
                     const ft = NodeID3.read(path.join(absolutePath, origMp3[0]));
@@ -283,9 +250,7 @@ app.post('/api/tags/update', async (req, res) => {
             }
             const renameResult = await renameFilesInPlace(absolutePath, tags.artist, trackArtists, trackNames, cfg.musicRoot);
             renamed = renameResult.renamed;
-            send('log', { message: `Renamed ${renamed.length} files` });
 
-            send('phase', { phase: 'Moving files...', current: 0, total: 1 });
             const result = await moveProcessedFiles(
                 absolutePath, getOutputRoot(cfg), cfg.musicRoot, tags,
                 albumArtistForMove, trackArtists, trackNames,
@@ -293,20 +258,16 @@ app.post('/api/tags/update', async (req, res) => {
                 cfg.cleanupIgnorePatterns,
             );
             moved = result.moved;
-            send('log', { message: `Moved ${moved.length} files to output` });
         } else if (renameFiles) {
-            send('phase', { phase: 'Renaming files...', current: 0, total: 1 });
             const result = await renameFilesInPlace(absolutePath, tags.artist, trackArtists, trackNames, cfg.musicRoot);
             renamed = result.renamed;
-            send('log', { message: `Renamed ${renamed.length} files` });
         }
 
-        send('done', { success: true, moved, renamed, tagChanges });
+        res.json({ success: true, moved, renamed });
     } catch (error) {
         logger.error(`POST /api/tags/update error:`, error);
-        send('error', { error: (error as Error).message });
+        res.status(500).json({ error: (error as Error).message });
     }
-    res.end();
 });
 
 const ALLOWED_WEBFETCH_HOSTS = ['deathgrind.club', 'cdn.deathgrind.club'];

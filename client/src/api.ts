@@ -118,9 +118,11 @@ export async function fetchAlbumDetails(postId: number): Promise<SearchResult> {
   return res.data;
 }
 
-export interface ProgressEvent {
-  event: 'start' | 'phase' | 'file' | 'log' | 'done' | 'error';
-  data: any;
+export interface UpdateResult {
+  success: boolean;
+  moved?: string[];
+  renamed?: { from: string; to: string }[];
+  error?: string;
 }
 
 export async function updateTags(
@@ -132,52 +134,9 @@ export async function updateTags(
     moveFiles: boolean;
     renameFiles?: boolean;
   },
-  onProgress: (event: ProgressEvent) => void,
-): Promise<void> {
-  const controller = new AbortController();
-  const key = `tags-update-${++requestCounter}`;
-  activeControllers.set(key, controller);
-
-  const res = await fetch(`${API_BASE}/tags/update`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload),
-    signal: controller.signal,
-  });
-
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({ error: 'Request failed' }));
-    onProgress({ event: 'error', data: err });
-    activeControllers.delete(key);
-    return;
-  }
-
-  const reader = res.body!.getReader();
-  const decoder = new TextDecoder();
-  let buffer = '';
-
-  while (true) {
-    const { done, value } = await reader.read();
-    if (done) break;
-    buffer += decoder.decode(value, { stream: true });
-
-    const lines = buffer.split('\n');
-    buffer = lines.pop() || '';
-
-    let eventType = '';
-    for (const line of lines) {
-      if (line.startsWith('event: ')) {
-        eventType = line.slice(7).trim();
-      } else if (line.startsWith('data: ') && eventType) {
-        try {
-          const data = JSON.parse(line.slice(6));
-          onProgress({ event: eventType as ProgressEvent['event'], data });
-        } catch {}
-        eventType = '';
-      }
-    }
-  }
-  activeControllers.delete(key);
+): Promise<UpdateResult> {
+  const res = await api.post('/tags/update', payload);
+  return res.data;
 }
 
 export async function webfetchPage(url: string, signal?: AbortSignal): Promise<{ content: string }> {

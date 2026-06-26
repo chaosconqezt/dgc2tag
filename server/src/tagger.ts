@@ -23,7 +23,7 @@ export async function getTags(folderPath: string): Promise<AlbumTags> {
     const filePaths: string[] = [];
     const trackTitles: Record<string, string> = {};
     const trackArtistsMap: Record<string, string> = {};
-    const trackDurations: Record<string, number> = {};
+    const trackDurations: Record<string, number | undefined> = {};
     const trackNums: Record<string, string> = {}; // filePath → trackNum
     const trackArtistsSet = new Set<string>();
     const albumArtistsSet = new Set<string>();
@@ -54,10 +54,9 @@ export async function getTags(folderPath: string): Promise<AlbumTags> {
         }
         if (tags.performerInfo) albumArtistsSet.add(tags.performerInfo as string);
 
-        // ----- duration detection -----
+        // ----- duration detection via music-metadata -----
         let durationSec: number | undefined = undefined;
 
-        // 1. Try music-metadata for accurate duration
         let metadataBitrate: number | undefined;
         let metadataVbr = false;
         try {
@@ -73,35 +72,8 @@ export async function getTags(folderPath: string): Promise<AlbumTags> {
                 metadataVbr = true;
             }
         } catch {
-            // fallback to ID3/bitrate methods
+            // durationSec stays undefined — track matcher will show ERR
         }
-
-        // 2. Try TLEN (milliseconds) from ID3
-        if (durationSec === undefined && tags.TLEN !== undefined) {
-            const ms = Number(tags.TLEN);
-            if (!isNaN(ms)) {
-                durationSec = Math.round(ms / 1000);
-            }
-        }
-        // 3. Try length field (could be seconds or milliseconds)
-        if (durationSec === undefined && tags.length !== undefined) {
-            const len = Number(tags.length);
-            if (!isNaN(len)) {
-                durationSec = len > 1000 ? Math.round(len / 1000) : Math.round(len);
-            }
-        }
-        // 4. Fallback to bitrate from tags
-        if (durationSec === undefined && tags.bitrate !== undefined) {
-            const bitrate = Number(tags.bitrate);
-            if (!isNaN(bitrate) && bitrate > 0) {
-                durationSec = Math.round((stat.size * 8) / (bitrate * 1000));
-            }
-        }
-        // 5. Fallback: assume constant bitrate 128 kbps
-        if (durationSec === undefined) {
-            durationSec = Math.round((stat.size * 8) / (128 * 1000));
-        }
-        if (durationSec < 0) durationSec = 0;
 
         trackDurations[filePath] = durationSec;
 

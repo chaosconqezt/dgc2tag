@@ -2,8 +2,9 @@ import type { AlbumTags } from '../types';
 import { matchTracks } from '../utils';
 import { FONT, FS, COLORS, CHECKBOX, INPUT_STYLE } from './styles';
 
-function formatDuration(seconds?: number): string {
-  if (!seconds) return '';
+function formatDuration(seconds?: number | null, fallback?: string): string {
+  if (seconds === undefined || seconds === null) return fallback ?? '';
+  if (seconds === 0) return '';
   const m = Math.floor(seconds / 60);
   const s = seconds % 60;
   return `${m}:${String(s).padStart(2, '0')}`;
@@ -50,7 +51,7 @@ export function MatchRow({
 
   const localDuration = m.local ? localTags.trackDurations?.[m.local.file] : undefined;
   const remoteDuration = m.remote.duration;
-  const displayDuration = localDuration || remoteDuration;
+  const displayDuration = localDuration !== undefined ? localDuration : null;
 
   return (
     <div style={{
@@ -101,7 +102,7 @@ export function MatchRow({
       </div>
 
       <div style={{ width: '36px', textAlign: 'right', flexShrink: 0, fontSize: FS, fontFamily: 'monospace', color: COLORS.textMuted }}>
-        {formatDuration(displayDuration)}
+        {formatDuration(displayDuration, 'ERR')}
       </div>
 
       <div style={{ width: '40px', textAlign: 'center', flexShrink: 0 }}>
@@ -113,7 +114,7 @@ export function MatchRow({
       </div>
 
       <div style={{ width: '36px', textAlign: 'left', flexShrink: 0, fontSize: FS, fontFamily: 'monospace', color: remoteDuration ? COLORS.textMuted : COLORS.textInvisible }}>
-        {formatDuration(remoteDuration)}
+        {formatDuration(remoteDuration, '-:--')}
       </div>
 
       <div style={{ flex: 1, paddingLeft: '4px', minWidth: 0, display: 'flex', alignItems: 'center', gap: '4px' }}>

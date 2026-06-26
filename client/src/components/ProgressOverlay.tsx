@@ -1,3 +1,4 @@
+import { useEffect, useRef } from 'react';
 import { FONT, FS, COLORS, ICON_BUTTON, OVERLAY_BACKDROP, MODAL_PANEL } from './styles';
 
 interface ProgressOverlayProps {
@@ -14,17 +15,24 @@ interface ProgressOverlayProps {
 
 export function ProgressOverlay({ phase, current, total, log, done, success, message, details, onClose }: ProgressOverlayProps) {
   const pct = total > 0 ? Math.round((current / total) * 100) : 0;
+  const logRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (done && logRef.current) {
+      logRef.current.scrollTop = logRef.current.scrollHeight;
+    }
+  }, [done, log.length]);
 
   return (
-    <div style={{ position: 'fixed', inset: 0, zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(4px)' }} onClick={done ? onClose : undefined}>
-      <div style={{ width: '500px', maxHeight: '80vh', backgroundColor: COLORS.inputBg, borderRadius: '10px', border: `1px solid ${COLORS.border}`, display: 'flex', flexDirection: 'column', overflow: 'hidden' }} onClick={(e) => e.stopPropagation()}>
+    <div style={OVERLAY_BACKDROP} onClick={done ? onClose : undefined}>
+      <div style={{ ...MODAL_PANEL, width: '500px', maxHeight: '80vh' }} onClick={(e) => e.stopPropagation()}>
         {/* Header */}
         <div style={{ padding: '10px 14px', borderBottom: `1px solid ${COLORS.border}`, backgroundColor: COLORS.inputBgAlt, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <span style={{ fontSize: FS, color: COLORS.textMuted, fontWeight: '600', fontFamily: FONT }}>
             {done ? (success ? 'Done' : 'Error') : phase}
           </span>
           {done && (
-            <button onClick={onClose} style={{ background: 'none', border: 'none', color: COLORS.textDim, cursor: 'pointer', fontSize: FS, fontFamily: FONT }}>
+            <button onClick={onClose} style={{ ...ICON_BUTTON, fontSize: FS, fontFamily: FONT }}>
               Close
             </button>
           )}
@@ -44,7 +52,7 @@ export function ProgressOverlay({ phase, current, total, log, done, success, mes
         )}
 
         {/* Log */}
-        <div style={{ flex: 1, overflowY: 'auto', padding: '8px 14px', minHeight: '80px', maxHeight: '300px' }}>
+        <div ref={logRef} style={{ flex: 1, overflowY: 'auto', padding: '8px 14px', minHeight: '80px', maxHeight: '300px' }}>
           {log.length === 0 && !done ? (
             <span style={{ fontSize: '11px', color: COLORS.textInvisible, fontFamily: FONT }}>Starting...</span>
           ) : (

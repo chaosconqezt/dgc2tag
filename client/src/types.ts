@@ -20,7 +20,7 @@ export interface AlbumTags {
   files?: string[];          // full paths: c:/music/album/01.mp3
   trackTitles?: Record<string, string>;  // filePath → title
   trackArtists?: Record<string, string>; // filePath → artist
-  trackDurations?: Record<string, number>;
+  trackDurations?: Record<string, number | undefined>;
   postId?: number;
   deezerId?: number;
   artists?: string[];

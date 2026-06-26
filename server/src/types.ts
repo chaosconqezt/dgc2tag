@@ -11,7 +11,7 @@ export interface AlbumTags {
     files?: string[];
     trackTitles?: Record<string, string>;
     trackArtists?: Record<string, string>;
-    trackDurations?: Record<string, number>;
+    trackDurations?: Record<string, number | undefined>;
     postId?: number | null;
     deezerId?: number | null;
     artists?: string[];

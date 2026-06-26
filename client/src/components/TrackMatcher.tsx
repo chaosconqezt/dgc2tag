@@ -49,6 +49,7 @@ export function TrackMatcher({
   onEditedTrackNameChange,
   onEditedTrackArtistChange,
   onCompilationChange,
+  onStripRemoteParenthesesChange,
 }: TrackMatcherProps) {
   const [showFilenamePreviews, setShowFilenamePreviews] = useState(false);
   const [filenameMode, setFilenameMode] = useState<'id3' | 'filename'>('id3');
@@ -119,6 +120,11 @@ export function TrackMatcher({
           <label style={{ display: 'flex', alignItems: 'center', gap: '3px', cursor: 'pointer' }}>
             <input type="checkbox" checked={compilation} onChange={(e) => onCompilationChange(e.target.checked)} style={CHECKBOX} />
             compilation
+          </label>
+          <span style={{ color: COLORS.textInvisible }}>·</span>
+          <label style={{ display: 'flex', alignItems: 'center', gap: '3px', cursor: 'pointer' }}>
+            <input type="checkbox" checked={stripRemoteParentheses} onChange={(e) => onStripRemoteParenthesesChange(e.target.checked)} style={CHECKBOX} />
+            strip parens
           </label>
           {hasMultiArtist && (
             <>

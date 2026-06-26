@@ -79,6 +79,7 @@ async function writeSingleTag(
             if (v !== undefined && v !== '') customFields[k] = v;
         }
     }
+    logger.info(`[writeSingleTag] ${path.basename(filePath)}: artist="${updatedTags.artist}" album="${updatedTags.album}" year="${updatedTags.year}" genre="${updatedTags.genre}"`);
     logger.info(`[writeSingleTag] custom fields: ${JSON.stringify(customFields)}`);
     updatedTags.userDefinedText = writeUserDefinedText(
         (currentTags.userDefinedText as { description?: string; value?: string }[]) || [],
@@ -94,6 +95,9 @@ async function writeSingleTag(
     const updatedBuffer = NodeID3.write(updatedTags as any, fileBuffer);
     if (updatedBuffer && updatedBuffer.length > 0) {
         await fs.writeFile(filePath, updatedBuffer);
+        logger.info(`[writeSingleTag] ${path.basename(filePath)}: wrote ${updatedBuffer.length} bytes`);
+    } else {
+        logger.warn(`[writeSingleTag] ${path.basename(filePath)}: NodeID3.write returned empty buffer`);
     }
 }
 
@@ -132,13 +136,22 @@ export async function renameFilesInPlace(
 ): Promise<{ renamed: { from: string; to: string }[] }> {
     if (musicRoot) assertInsideMusicRoot(folderPath, musicRoot);
     const mp3Files = await getMp3Files(folderPath);
+    const sortedFiles = [...mp3Files].sort();
     const renamed: { from: string; to: string }[] = [];
 
-    for (const file of mp3Files) {
+    for (let i = 0; i < sortedFiles.length; i++) {
+        const file = sortedFiles[i]!;
         const filePath = path.join(folderPath, file);
         const tags = NodeID3.read(filePath) as unknown as Id3Tags;
 
-        const trackNumPadded = (extractTrackNumber(file, tags) || '00').padStart(2, '0');
+        const numFromTag = extractTrackNumber(file, tags);
+        let trackNumStr;
+        if (numFromTag) {
+            trackNumStr = numFromTag;
+        } else {
+            trackNumStr = String(i + 1);
+        }
+        const trackNumPadded = trackNumStr.padStart(2, '0');
         const ext = path.extname(file);
 
         // Key by FULL PATH — stable identifier
