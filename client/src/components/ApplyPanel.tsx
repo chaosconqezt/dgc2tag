@@ -30,37 +30,34 @@ export function ApplyPanel({ onApplyTags, onCancel }: ApplyPanelProps) {
       <button
         onClick={() => onApplyTags('move')}
         title="Write tags, rename files, and move to output folder"
-        onMouseEnter={(e) => (e.currentTarget.style.transform = 'translateY(-1px)')}
-        onMouseLeave={(e) => (e.currentTarget.style.transform = 'none')}
-        style={{ ...btnBase, background: 'linear-gradient(180deg, #2563eb 0%, #1d4ed8 100%)', color: '#fff', boxShadow: '0 1px 6px rgba(37, 99, 243, 0.3)', transition: 'transform 0.15s' }}
+        className="action-btn-primary"
+        style={{ ...btnBase, background: 'linear-gradient(180deg, #2563eb 0%, #1d4ed8 100%)', color: '#fff', boxShadow: '0 1px 6px rgba(37, 99, 243, 0.3)' }}
       >
-        <ArrowRightLeft size={11} /> WRITE & MOVE
+        <ArrowRightLeft size={16} /> WRITE & MOVE
       </button>
       <button
         onClick={() => onApplyTags('rename')}
         title="Write tags and rename files to 'Track. Artist - Title.ext'"
-        onMouseEnter={(e) => (e.currentTarget.style.transform = 'translateY(-1px)')}
-        onMouseLeave={(e) => (e.currentTarget.style.transform = 'none')}
-        style={{ ...btnBase, background: `linear-gradient(180deg, ${COLORS.purple} 0%, #7c3aed 100%)`, color: '#fff', boxShadow: `0 1px 6px rgba(167, 139, 250, 0.3)`, transition: 'transform 0.15s' }}
+        className="action-btn-primary"
+        style={{ ...btnBase, background: `linear-gradient(180deg, ${COLORS.purple} 0%, #7c3aed 100%)`, color: '#fff', boxShadow: `0 1px 6px rgba(167, 139, 250, 0.3)` }}
       >
-        <FileEdit size={11} /> WRITE & RENAME
+        <FileEdit size={16} /> WRITE & RENAME
       </button>
       <button
         onClick={() => onApplyTags('write')}
         title="Write tags only, do not rename or move files"
-        className="btn-primary"
+        className="action-btn-primary btn-primary"
         style={{ ...btnBase, background: `linear-gradient(180deg, ${COLORS.red} 0%, #dc2626 100%)`, color: '#fff', boxShadow: `0 1px 6px rgba(239, 68, 68, 0.3)` }}
       >
-        <Check size={11} /> WRITE
+        <Check size={16} /> WRITE
       </button>
       <button
         onClick={onCancel}
         title="Deselect current result"
-        onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-1px)'; e.currentTarget.style.backgroundColor = COLORS.textInvisible; }}
-        onMouseLeave={(e) => { e.currentTarget.style.transform = 'none'; e.currentTarget.style.backgroundColor = 'transparent'; }}
-        style={{ ...btnBase, background: 'transparent', color: COLORS.textDim, border: `1px solid ${COLORS.border}`, transition: 'all 0.15s' }}
+        className="action-btn-cancel"
+        style={{ ...btnBase }}
       >
-        <X size={11} /> ОТМЕНА
+        <X size={16} /> CANCEL
       </button>
     </div>
   );
