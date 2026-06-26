@@ -8,19 +8,20 @@ export function createWebfetchActions(dispatch: AppDispatch) {
   return {
     handleWebfetch: async (url: string) => {
       if (webfetchController) webfetchController.abort();
-      webfetchController = new AbortController();
+      const controller = new AbortController();
+      webfetchController = controller;
       dispatch({ type: 'SET_WEBFETCH_URL', payload: url });
       dispatch({ type: 'SET_WEBFETCH_LOADING', payload: true });
       dispatch({ type: 'SET_WEBFETCH_CONTENT', payload: null });
       try {
-        const data = await api.webfetchPage(url, webfetchController.signal);
+        const data = await api.webfetchPage(url, controller.signal);
         dispatch({ type: 'SET_WEBFETCH_CONTENT', payload: data.content });
       } catch (err: any) {
         if (err?.name === 'CanceledError' || err?.name === 'AbortError') return;
         if (import.meta.env.DEV) console.error('[client] webfetch error:', err);
         dispatch({ type: 'SET_WEBFETCH_CONTENT', payload: '<p style="color:#ef4444">Failed to load page</p>' });
       } finally {
-        webfetchController = null;
+        if (webfetchController === controller) webfetchController = null;
         dispatch({ type: 'SET_WEBFETCH_LOADING', payload: false });
       }
     },

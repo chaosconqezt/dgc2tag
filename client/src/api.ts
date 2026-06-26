@@ -31,11 +31,13 @@ const api = axios.create({
 
 // Request interceptor: attach AbortController
 api.interceptors.request.use((config) => {
-  const controller = new AbortController();
-  const requestId = createRequestId();
-  (config as Record<string, unknown>).signal = controller.signal;
-  (config as Record<string, unknown>)._requestId = requestId;
-  activeControllers.set(requestId, controller);
+  if (!(config as Record<string, unknown>).signal) {
+    const controller = new AbortController();
+    const requestId = createRequestId();
+    (config as Record<string, unknown>).signal = controller.signal;
+    (config as Record<string, unknown>)._requestId = requestId;
+    activeControllers.set(requestId, controller);
+  }
   return config;
 });
 

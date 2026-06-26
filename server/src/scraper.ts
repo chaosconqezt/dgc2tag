@@ -528,8 +528,8 @@ export async function fetchPageContent(url: string): Promise<string> {
 
     const html = await p.evaluate(async (fetchUrl: string) => {
         const res = await fetch(fetchUrl, { credentials: 'include', redirect: 'manual' });
-        if (res.status >= 300 && res.status < 400) {
-            throw new Error(`Redirect blocked: ${res.headers.get('location')}`);
+        if (res.type === 'opaqueredirect') {
+            throw new Error('Redirect blocked');
         }
         if (!res.ok) throw new Error(`HTTP ${res.status}: ${res.statusText}`);
         return await res.text();

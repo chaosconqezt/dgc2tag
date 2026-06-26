@@ -46,8 +46,6 @@ export function createSearchActions(
   return {
     handleSearch: async (artist?: string, album?: string, artistEnabled?: boolean, albumEnabled?: boolean) => {
       if (searchInProgressRef.current) return;
-      searchInProgressRef.current = true;
-      const gen = ++searchGeneration.current;
 
       const a = artistEnabled ?? state.searchArtistEnabled;
       const b = albumEnabled ?? state.searchAlbumEnabled;
@@ -55,6 +53,9 @@ export function createSearchActions(
       const usedAlbum = album ?? state.searchAlbum;
       const dgcQuery = [a ? usedArtist : '', b ? usedAlbum : ''].filter(Boolean).join(' ');
       if (!dgcQuery) return;
+
+      searchInProgressRef.current = true;
+      const gen = ++searchGeneration.current;
 
       if (import.meta.env.DEV) console.log(`[client] search DGC: "${dgcQuery}"`);
       dispatch({ type: 'SET_DGC_LOADING', payload: true });
@@ -136,6 +137,7 @@ export function createSearchActions(
       }));
 
       const syntheticResult: SearchResult = {
+        source: 'deezer',
         postId: -dz.albumId,
         albumName: dz.albumName,
         artist: dz.artist,
