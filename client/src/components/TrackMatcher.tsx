@@ -57,8 +57,11 @@ export function TrackMatcher({
   if (!localTags?.files) return null;
 
   const remoteTracks = useMemo(() => generateParsedTracks(albumDetails, localTags), [albumDetails, localTags]);
-  const artists = useMemo(() => [...new Set(remoteTracks.map(t => t.artist))], [remoteTracks]);
-  const hasMultiArtist = compilation || artists.length > 1;
+  const serverHasMultiArtist = useMemo(() => {
+    const unique = new Set(remoteTracks.map(t => t.artist).filter(Boolean));
+    return unique.size > 1;
+  }, [remoteTracks]);
+  const hasMultiArtist = compilation || serverHasMultiArtist;
   const matched = useMemo(() => matchTracks(remoteTracks, localTags.files, localTags.trackTitles, false, filenameMode), [remoteTracks, localTags.files, localTags.trackTitles, filenameMode]);
 
   const localCount = localTags.files.length;
@@ -118,8 +121,8 @@ export function TrackMatcher({
           </span>
           <span style={{ color: COLORS.textInvisible }}>·</span>
           <label className="label-inline" style={{ gap: '3px' }}>
-            <input type="checkbox" checked={compilation} onChange={(e) => onCompilationChange(e.target.checked)} style={CHECKBOX} />
-            compilation
+            <input type="checkbox" checked={hasMultiArtist} onChange={(e) => onCompilationChange(e.target.checked)} style={CHECKBOX} />
+            multi-artist
           </label>
           <span style={{ color: COLORS.textInvisible }}>·</span>
           <label className="label-inline" style={{ gap: '3px' }}>

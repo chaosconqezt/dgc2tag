@@ -108,7 +108,7 @@ export function createApplyTags(
         )
       : undefined;
 
-    const trackNames: Record<string, string> | undefined = (state.writeTrackNames || mode !== 'write') && matched.filter(m => m.local).length > 0
+    const trackNames: Record<string, string> | undefined = state.writeTrackNames && matched.filter(m => m.local).length > 0
       ? Object.fromEntries(
           matched.filter(m => m.local).map(m => [m.local!.file, applyStrip(state.editedTrackNames[m.remote.num] ?? m.remote.name)])
         )

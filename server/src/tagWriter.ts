@@ -77,7 +77,7 @@ async function writeSingleTag(
     };
     if ((tags as any).extraTags && typeof (tags as any).extraTags === 'object') {
         for (const [k, v] of Object.entries((tags as any).extraTags as Record<string, string>)) {
-            if (v !== undefined && v !== '') customFields[k] = v;
+            if (v !== undefined) customFields[k] = v;
         }
     }
     logger.info(`[writeSingleTag] ${path.basename(filePath)}: artist="${updatedTags.artist}" album="${updatedTags.album}" year="${updatedTags.year}" genre="${updatedTags.genre}"`);

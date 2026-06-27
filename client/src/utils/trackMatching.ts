@@ -96,3 +96,14 @@ export function parseCompilationTracklist(tracklist: string): { num: string; art
   }
   return tracks;
 }
+
+export function parseSingleArtistTracklist(tracklist: string): { num: string; artist: string; name: string }[] {
+  const lines = tracklist.split('\n');
+  const tracks: { num: string; artist: string; name: string }[] = [];
+  for (const line of lines) {
+    const m = line.trim().match(/^(\d{1,3})[.\s)]+\s*(.+)/);
+    if (!m) continue;
+    tracks.push({ num: m[1]!, artist: '', name: m[2]!.trim() });
+  }
+  return tracks;
+}

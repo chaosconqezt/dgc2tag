@@ -469,7 +469,8 @@ export async function getAlbumDetails(postId: number): Promise<SearchResult | nu
                 }
             } else {
                 const cleanName = trimmed.replace(/[:]+$/, '').trim();
-                if (cleanName && !cleanName.match(/^\d/)) {
+                const isSectionLabel = /^\b(bonus|hidden|secret|interlude|intro|outro|skit|intermission|disc|side|part|cd|track|reprise|remix|demo|live|acoustic|unreleased|pre-|post-|cover|intro\.|outro\.)\b/i.test(cleanName);
+                if (cleanName && !cleanName.match(/^\d/) && !isSectionLabel) {
                     currentSectionArtist = cleanName;
                     lastKnownBandIndex = i;
                     logger.debug(`  section header: artist="${cleanName}" at line ${i}`);
@@ -574,6 +575,7 @@ export async function getBandDiscography(bandId: number): Promise<DiscographyRes
     await ensureTaxonomy();
 
     const allPosts: DgcPost[] = [];
+    const seenIds = new Set<number>();
     let offset = 0;
     let hasMore = true;
     let bandName = '';
@@ -584,9 +586,19 @@ export async function getBandDiscography(bandId: number): Promise<DiscographyRes
         );
         if (!data.band) return null;
         bandName = data.band.name;
-        allPosts.push(...(data.band.discography?.posts || []));
-        hasMore = data.band.discography?.hasMore ?? false;
-        offset = data.band.discography?.offset ?? offset + 1;
+        const posts = data.band.discography?.posts || [];
+
+        let newPosts = 0;
+        for (const p of posts) {
+            if (!seenIds.has(p.postId)) {
+                seenIds.add(p.postId);
+                allPosts.push(p);
+                newPosts++;
+            }
+        }
+
+        hasMore = newPosts > 0 && (data.band.discography?.hasMore ?? false);
+        offset += posts.length || 1;
         if (hasMore) await new Promise(r => setTimeout(r, 1500));
     }
 

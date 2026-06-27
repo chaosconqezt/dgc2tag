@@ -4,7 +4,7 @@ import { AppProvider, useAppContext } from './hooks/useAppContext';
 import * as api from './api';
 import { RefreshCw, Layout, Settings, BookOpen } from 'lucide-react';
 import { FONT, FS, FS_SM, COLORS, ICON_BUTTON } from './components/styles';
-import { parseCompilationTracklist } from './utils';
+import { parseCompilationTracklist, parseSingleArtistTracklist } from './utils';
 import { WebfetchOverlay } from './components/WebfetchOverlay';
 import { SettingsModal } from './components/SettingsModal';
 import { ResultModal } from './components/ResultModal';
@@ -100,6 +100,13 @@ function AppContent() {
     };
   }, []);
 
+  // Refresh library entries when switching to library view
+  useEffect(() => {
+    if (ctx.viewMode === 'library') {
+      ctx.fetchLibraryEntries();
+    }
+  }, [ctx.viewMode]);
+
   return (
     <div className="dashboard" style={{ display: 'flex', height: '100vh', backgroundColor: COLORS.bg, color: COLORS.text, fontFamily: FONT }}>
 
@@ -107,12 +114,14 @@ function AppContent() {
         {/* Library Mode — full width */}
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0, overflow: 'hidden' }}>
           <div style={{ padding: '10px 12px', borderBottom: `1px solid ${COLORS.border}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexShrink: 0, backgroundColor: COLORS.inputBgAlt }}>
-            <h2 style={{ fontSize: FS, fontWeight: '600', margin: 0, letterSpacing: '0.3px', fontFamily: FONT, color: COLORS.text }}>
-              LIBRARY
-            </h2>
-            <button onClick={() => ctx.dispatch({ type: 'SET_VIEW_MODE', payload: 'main' })} className="hover-toolbar" style={{ ...ICON_BUTTON, display: 'flex', borderRadius: '4px', padding: '4px' }}>
-              <Layout size={14} />
-            </button>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <button onClick={() => ctx.dispatch({ type: 'SET_VIEW_MODE', payload: 'main' })} className="hover-toolbar" style={{ ...ICON_BUTTON, display: 'flex', borderRadius: '4px', padding: '4px' }}>
+                <Layout size={14} />
+              </button>
+              <h2 style={{ fontSize: FS, fontWeight: '600', margin: 0, letterSpacing: '0.3px', fontFamily: FONT, color: COLORS.text }}>
+                LIBRARY
+              </h2>
+            </div>
           </div>
           <LibraryView entries={ctx.libraryEntries} />
         </div>
@@ -121,15 +130,17 @@ function AppContent() {
       <div className="sidebar" style={{ display: 'flex', flexDirection: 'column', width: sidebarWidth, flexShrink: 0 }}>
         <div style={{ display: 'flex', flexDirection: 'column', backgroundColor: COLORS.inputBgAlt, overflow: 'hidden', height: '100%' }}>
           <div style={{ padding: '10px 12px', borderBottom: `1px solid ${COLORS.border}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexShrink: 0 }}>
-            <h2 style={{ fontSize: FS, fontWeight: '600', margin: 0, letterSpacing: '0.3px', fontFamily: FONT, color: COLORS.text }}>
-              DGC TAGGER
-            </h2>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <button onClick={() => ctx.dispatch({ type: 'SET_VIEW_MODE', payload: 'library' })} className="hover-toolbar" style={{ ...ICON_BUTTON, display: 'flex', borderRadius: '4px', padding: '4px' }}>
+                <BookOpen size={14} />
+              </button>
+              <h2 style={{ fontSize: FS, fontWeight: '600', margin: 0, letterSpacing: '0.3px', fontFamily: FONT, color: COLORS.text }}>
+                DGC TAGGER
+              </h2>
+            </div>
             <div style={{ display: 'flex', gap: '4px' }}>
               <button onClick={ctx.collapseAll} className="hover-toolbar" style={{ ...ICON_BUTTON, display: 'flex', fontSize: FS, fontWeight: '700', borderRadius: '4px', padding: '4px' }} title="Collapse all">
                 &#9650;
-              </button>
-              <button onClick={() => ctx.dispatch({ type: 'SET_VIEW_MODE', payload: 'library' })} className="hover-toolbar" style={{ ...ICON_BUTTON, display: 'flex', borderRadius: '4px', padding: '4px' }}>
-                <BookOpen size={14} />
               </button>
               <button onClick={() => ctx.dispatch({ type: 'SET_SHOW_SETTINGS', payload: true })} className="hover-toolbar" style={{ ...ICON_BUTTON, display: 'flex', borderRadius: '4px', padding: '4px' }}>
                 <Settings size={14} />
@@ -267,9 +278,10 @@ function AppContent() {
                     if (ctx.albumDetails?.tracklist) {
                       if (enabled) {
                         const parsed = parseCompilationTracklist(ctx.albumDetails.tracklist);
-                        ctx.dispatch({ type: 'SET_ALBUM_DETAILS', payload: { ...ctx.albumDetails, parsedTracks: parsed, compilation: true } });
-                      } else if (ctx.serverParsedTracks) {
-                        ctx.dispatch({ type: 'SET_ALBUM_DETAILS', payload: { ...ctx.albumDetails, parsedTracks: ctx.serverParsedTracks, compilation: false } });
+                        ctx.dispatch({ type: 'SET_ALBUM_DETAILS', payload: { ...ctx.albumDetails, parsedTracks: parsed } });
+                      } else {
+                        const parsed = parseSingleArtistTracklist(ctx.albumDetails.tracklist);
+                        ctx.dispatch({ type: 'SET_ALBUM_DETAILS', payload: { ...ctx.albumDetails, parsedTracks: parsed } });
                       }
                     }
                   }}

@@ -1,5 +1,5 @@
 export { similarity } from './similarity';
-export { parseFilename, matchTracks, parseCompilationTracklist } from './trackMatching';
+export { parseFilename, matchTracks, parseCompilationTracklist, parseSingleArtistTracklist } from './trackMatching';
 import type { AlbumTags, SearchResult } from '../types';
 
 export function stripParentheses(s: string): string {

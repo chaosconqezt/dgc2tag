@@ -1,5 +1,6 @@
 export const FONT = 'Inter, system-ui, sans-serif';
 export const FS = '14px';
+export const FS_L = '16px';
 export const FS_S = '12px';
 export const FS_SM = '11px';
 export const FS_XS = '10px';

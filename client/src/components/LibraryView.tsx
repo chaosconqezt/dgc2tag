@@ -1,5 +1,4 @@
-﻿import { useMemo } from 'react';
-import { FONT, FS, COLORS } from './styles';
+import { useMemo, useRef, useEffect, useState, useCallback } from 'react';
 import type { LibraryAlbum } from '../api';
 
 interface LibraryViewProps {
@@ -12,7 +11,14 @@ interface BandGroup {
   albums: LibraryAlbum[];
 }
 
+const BATCH_SIZE = 20;
+
 export function LibraryView({ entries }: LibraryViewProps) {
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const [visibleCount, setVisibleCount] = useState(BATCH_SIZE);
+  const [activeLetter, setActiveLetter] = useState<string | null>(null);
+  const bandRefs = useRef<Map<string, HTMLDivElement>>(new Map());
+
   const bands = useMemo(() => {
     const map = new Map<number, BandGroup>();
     for (const e of entries) {
@@ -23,106 +29,128 @@ export function LibraryView({ entries }: LibraryViewProps) {
       }
       group.albums.push(e);
     }
-    // Sort albums within each band by year
     for (const group of map.values()) {
       group.albums.sort((a, b) => (a.year ?? '9999').localeCompare(b.year ?? '9999'));
     }
-    // Sort bands by name
     return [...map.values()].sort((a, b) => a.bandName.localeCompare(b.bandName));
   }, [entries]);
 
   const totalOwned = entries.filter(e => e.inLibrary).length;
+  const visibleBands = bands.slice(0, visibleCount);
+
+  const alphaLetters = useMemo(() => {
+    const letters = new Set<string>();
+    for (const b of bands) {
+      const c = b.bandName[0]?.toUpperCase();
+      if (c) letters.add(c);
+    }
+    return [...letters].sort();
+  }, [bands]);
+
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const onScroll = () => {
+      const { scrollTop, scrollHeight, clientHeight } = el;
+      if (scrollTop + clientHeight >= scrollHeight - 200) {
+        setVisibleCount(prev => Math.min(prev + BATCH_SIZE, bands.length));
+      }
+      let current = '';
+      for (const [letter, ref] of bandRefs.current) {
+        if (ref && ref.offsetTop - el.offsetTop <= scrollTop + 100) {
+          current = letter;
+        }
+      }
+      setActiveLetter(current || null);
+    };
+    el.addEventListener('scroll', onScroll, { passive: true });
+    return () => el.removeEventListener('scroll', onScroll);
+  }, [bands.length]);
+
+  const scrollToLetter = useCallback((letter: string) => {
+    const ref = bandRefs.current.get(letter);
+    if (ref) {
+      ref.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  }, []);
 
   if (entries.length === 0) {
     return (
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: COLORS.textInvisible }}>
-        <p style={{ fontSize: FS, fontFamily: FONT }}>Library is empty</p>
-        <p style={{ fontSize: '11px', fontFamily: FONT, marginTop: '4px' }}>Tag an album from DGC to start building your library</p>
+      <div className="library-empty">
+        <p>Library is empty</p>
+        <p className="library-empty-hint">Tag an album from DGC to start building your library</p>
       </div>
     );
   }
 
   return (
-    <div style={{ flex: 1, overflowY: 'auto', padding: '16px 20px' }}>
-      <div style={{ marginBottom: '16px', fontSize: FS, fontFamily: FONT, color: COLORS.textMuted }}>
-        LIBRARY — {bands.length} bands, {entries.length} albums ({totalOwned} owned)
-      </div>
+    <div className="library-layout">
+      <nav className="library-alpha">
+        {alphaLetters.map(letter => (
+          <button
+            key={letter}
+            className={`library-alpha-letter${activeLetter === letter ? ' active' : ''}`}
+            onClick={() => scrollToLetter(letter)}
+          >
+            {letter}
+          </button>
+        ))}
+      </nav>
 
-      {bands.map(group => {
-        const owned = group.albums.filter(a => a.inLibrary).length;
-        return (
-          <div key={group.bandId} style={{ marginBottom: '20px' }}>
-            {/* Band header */}
-            <div style={{
-              display: 'flex', alignItems: 'center', gap: '8px',
-              padding: '6px 10px', marginBottom: '4px',
-              backgroundColor: COLORS.inputBgAlt, borderRadius: '6px',
-              border: `1px solid ${COLORS.border}`,
-            }}>
-              <span style={{ fontSize: FS, fontWeight: '700', fontFamily: FONT, color: COLORS.text }}>
-                {group.bandName}
-              </span>
-              <span style={{ fontSize: '11px', fontFamily: FONT, color: COLORS.textDim }}>
-                {owned}/{group.albums.length}
-              </span>
-            </div>
+      <div ref={scrollRef} className="library-scroll">
+        <div className="library-stats">
+          LIBRARY — {bands.length} bands, {entries.length} albums ({totalOwned} owned)
+        </div>
 
-            {/* Albums */}
-            {group.albums.map(album => (
-              <div
-                key={album.postId}
-                style={{
-                  display: 'flex', alignItems: 'center', gap: '8px',
-                  padding: '4px 10px 4px 24px',
-                  borderLeft: `2px solid ${album.inLibrary ? COLORS.green : COLORS.textInvisible}`,
-                  opacity: album.inLibrary ? 1 : 0.6,
-                }}
-              >
-                {/* Cover thumbnail */}
-                <div style={{
-                  width: '32px', height: '32px', borderRadius: '3px',
-                  overflow: 'hidden', backgroundColor: COLORS.inputBg,
-                  border: `1px solid ${album.inLibrary ? COLORS.green : COLORS.border}`,
-                  flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                }}>
-                  {album.coverUrl ? (
-                    <img
-                      src={`/api/cover/${album.bandId}/${album.postId}`}
-                      alt=""
-                      style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                      onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
-                    />
-                  ) : (
-                    <span style={{ fontSize: '10px', color: COLORS.textInvisible }}>?</span>
-                  )}
-                </div>
-
-                {/* Album info */}
-                <span style={{
-                  fontSize: FS, fontFamily: FONT,
-                  color: album.inLibrary ? COLORS.text : COLORS.textDim,
-                  fontWeight: album.inLibrary ? '600' : '400',
-                }}>
-                  {album.album}
-                </span>
-                <span style={{ fontSize: '11px', fontFamily: FONT, color: COLORS.textFaint }}>
-                  {album.year || '—'}
-                </span>
-                {album.genre && (
-                  <span style={{ fontSize: '11px', fontFamily: FONT, color: COLORS.textInvisible }}>
-                    {album.genre}
-                  </span>
-                )}
-
-                {/* Status indicator */}
-                <span style={{ marginLeft: 'auto', fontSize: '11px', fontFamily: FONT, color: album.inLibrary ? COLORS.green : COLORS.textInvisible }}>
-                  {album.inLibrary ? '✓' : '—'}
-                </span>
+        {visibleBands.map(group => {
+          const owned = group.albums.filter(a => a.inLibrary).length;
+          const letter = group.bandName[0]?.toUpperCase() || '';
+          const prevLetter = visibleBands[visibleBands.indexOf(group) - 1]?.bandName[0]?.toUpperCase() || '';
+          const showAnchor = letter !== prevLetter;
+          return (
+            <div
+              key={group.bandId}
+              ref={(el) => { if (el && showAnchor) bandRefs.current.set(letter, el); }}
+              className="library-band"
+            >
+              <div className="library-band-header">
+                <span className="library-band-name">{group.bandName}</span>
+                <span className="library-band-count">{owned}/{group.albums.length}</span>
               </div>
-            ))}
-          </div>
-        );
-      })}
+
+              <div className="library-albums-grid">
+                {group.albums.map(album => (
+                  <div
+                    key={album.postId}
+                    className={`library-card${album.inLibrary ? ' owned' : ''}`}
+                  >
+                    <div className="library-card-cover">
+                      {album.coverUrl ? (
+                        <img
+                          src={`/api/cover/${album.bandId}/${album.postId}`}
+                          alt=""
+                          loading="lazy"
+                          onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                        />
+                      ) : (
+                        <span className="library-cover-placeholder">?</span>
+                      )}
+                      <div className={`library-card-status${album.inLibrary ? ' owned' : ''}`}>✓</div>
+                    </div>
+                    <div className="library-card-info">
+                      <div className="library-card-title text-ellipsis">{album.album}</div>
+                      <div className="library-card-meta">
+                        <span>{album.year || '—'}</span>
+                        {album.genre && <span>{album.genre}</span>}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }
