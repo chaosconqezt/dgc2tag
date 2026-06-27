@@ -5,7 +5,7 @@ export function parseFilename(f: string): { num: string; name: string } {
   // f can be full path or just filename — extract basename
   const basename = f.split(/[\\/]/).pop() || f;
   const base = basename.replace(/\.mp3$/i, '');
-  const m = base.match(/^(\d{1,3})[.\s_-]+(.+)/);
+  const m = base.match(/^(\d+(?:[.-]\d+)*)[.\s_-]+(.+)/);
   if (m) {
     const rest = m[2].trim();
     const dashIdx = rest.indexOf(' - ');
