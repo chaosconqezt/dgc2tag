@@ -4,9 +4,19 @@ import path from 'path';
 import type { Id3Tags } from './types.js';
 
 export function isInsideMusicRoot(targetPath: string, musicRoot: string): boolean {
-    const resolved = path.resolve(targetPath).toLowerCase();
-    const root = path.resolve(musicRoot).toLowerCase();
-    return resolved === root || resolved.startsWith(root + path.sep.toLowerCase());
+    const isWindows = process.platform === 'win32';
+
+    let resolved = path.resolve(targetPath);
+    let root = path.resolve(musicRoot);
+    let sep = path.sep;
+
+    if (isWindows) {
+        resolved = resolved.toLowerCase();
+        root = root.toLowerCase();
+        sep = sep.toLowerCase();
+    }
+
+    return resolved === root || resolved.startsWith(root + sep);
 }
 
 export function assertInsideMusicRoot(targetPath: string, musicRoot: string): void {

@@ -475,7 +475,7 @@ app.get('/api/directory/children', async (req, res) => {
         const dirs = entries
             .filter(e => e.isDirectory())
             .map(e => ({ name: e.name, path: path.join(absPath, e.name) }))
-            .sort((a, b) => a.name.localeCompare(b.name));
+            .sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true }));
         res.json(dirs);
     } catch (error) {
         res.status(500).json({ error: (error as Error).message });

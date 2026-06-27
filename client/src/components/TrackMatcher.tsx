@@ -62,9 +62,9 @@ export function TrackMatcher({
     return unique.size > 1;
   }, [remoteTracks]);
   const hasMultiArtist = compilation || serverHasMultiArtist;
-  const matched = useMemo(() => matchTracks(remoteTracks, localTags.files, localTags.trackTitles, false, filenameMode), [remoteTracks, localTags.files, localTags.trackTitles, filenameMode]);
+  const matched = useMemo(() => matchTracks(remoteTracks, localTags.files || [], localTags.trackTitles, false, filenameMode), [remoteTracks, localTags.files, localTags.trackTitles, filenameMode]);
 
-  const localCount = localTags.files.length;
+  const localCount = (localTags.files || []).length;
   const remoteCount = remoteTracks.length;
   const countMatch = localCount === remoteCount;
   const exactCount = matched.filter(m => m.sim === 100).length;
