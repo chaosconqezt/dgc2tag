@@ -15,6 +15,72 @@ export interface WriteOptions {
     trackNames?: Record<string, string>;
 }
 
+// ── Diff helpers ──────────────────────────────────────────────
+
+function editScript(a: string, b: string): ('eq' | 'del' | 'ins')[] {
+    const n = a.length, m = b.length;
+    const dp: number[][] = Array.from({ length: n + 1 }, (_, i) => Array(m + 1).fill(0));
+    for (let i = 1; i <= n; i++) dp[i]![0] = i;
+    for (let j = 1; j <= m; j++) dp[0]![j] = j;
+    for (let i = 1; i <= n; i++) {
+        for (let j = 1; j <= m; j++) {
+            dp[i]![j] = a[i - 1] === b[j - 1]
+                ? dp[i - 1]![j - 1]!
+                : 1 + Math.min(dp[i - 1]![j - 1]!, dp[i - 1]![j]!, dp[i]![j - 1]!);
+        }
+    }
+    const ops: ('eq' | 'del' | 'ins')[] = [];
+    let i = n, j = m;
+    while (i > 0 || j > 0) {
+        if (i > 0 && j > 0 && a[i - 1] === b[j - 1]) {
+            ops.push('eq'); i--; j--;
+        } else if (j > 0 && (i === 0 || dp[i]![j - 1]! <= dp[i - 1]![j]!)) {
+            ops.push('ins'); j--;
+        } else {
+            ops.push('del'); i--;
+        }
+    }
+    return ops.reverse();
+}
+
+function colorDiff(a: string, b: string): { a: string; b: string } {
+    const ops = editScript(a, b);
+    let ra = '', rb = '';
+    let ia = 0, ib = 0;
+    for (const op of ops) {
+        if (op === 'eq') {
+            ra += a[ia]; rb += b[ib]; ia++; ib++;
+        } else if (op === 'del') {
+            ra += `\x1b[31m${a[ia]}\x1b[0m`; ia++;
+        } else {
+            rb += `\x1b[32m${b[ib]}\x1b[0m`; ib++;
+        }
+    }
+    return { a: ra, b: rb };
+}
+
+function diffRename(oldName: string, newName: string): string {
+    const oldBase = oldName.replace(/\.[^.]+$/, '');
+    const newBase = newName.replace(/\.[^.]+$/, '');
+    const oldExt = path.extname(oldName);
+    const newExt = path.extname(newName);
+
+    let oldFmt: string, newFmt: string;
+    if (oldBase === newBase) {
+        oldFmt = oldBase; newFmt = newBase;
+    } else {
+        const d = colorDiff(oldBase, newBase);
+        oldFmt = d.a; newFmt = d.b;
+    }
+    if (oldExt !== newExt) {
+        oldFmt += `\x1b[31m${oldExt}\x1b[0m`;
+        newFmt += `\x1b[32m${newExt}\x1b[0m`;
+    } else {
+        oldFmt += oldExt; newFmt += newExt;
+    }
+    return `  \x1b[31m−\x1b[0m ${oldFmt}\n  \x1b[32m+\x1b[0m ${newFmt}`;
+}
+
 // ── Write ID3 tags by full file path ────────────────────────────────
 
 export async function writeTags(options: WriteOptions, musicRoot?: string): Promise<void> {
@@ -170,7 +236,7 @@ export async function renameFilesInPlace(
             const newPath = path.join(folderPath, newName);
             try {
                 await fs.rename(filePath, newPath);
-                logger.info(`renamed: ${file} → ${newName}`);
+                logger.info(`renamed:\n${diffRename(file, newName)}`);
                 renamed.push({ from: file, to: newName });
             } catch (err) {
                 logger.error(`failed to rename ${file}: ${(err as Error).message}`);

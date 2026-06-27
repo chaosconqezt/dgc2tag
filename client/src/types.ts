@@ -71,6 +71,7 @@ export interface MatchResult {
   remote: { num: string; artist: string; name: string; duration?: number };
   local: { num: string; name: string; file: string; artist?: string } | null;
   sim: number;
+  numberMismatch: boolean;
 }
 
 

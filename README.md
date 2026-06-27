@@ -19,17 +19,22 @@ npm run dev
 
 - **4 search sources** — DGC (red), Deezer (green), MusicBrainz (orange), Bandcamp (teal) in parallel
 - **Plugin architecture** — add new sources with 1 file + 1 line in registry
-- **Compilation mode** — auto-detect VA compilations, per-track artist parsing
-- **Local tags editing** — edit tags without search results
-- **Batch tag writing** — write ID3 tags, rename files, move to output folder
-- **Track matching** — prefix/contains matching for files like "Track (Cover)"
+- **Library** — card-based album grid with cover art, band grouping, alphabetical navigation, infinite scroll
+- **Discography** — auto-populates band discography from DGC when tagging (with duplicate-safe pagination)
+- **Compilation / multi-artist toggle** — auto-detects VA compilations, single checkbox to flatten or split tracks
+- **Track matching** — Levenshtein similarity (0–100%), number-first + fuzzy matching
 - **Tag preservation** — IDs preserved across source switches
 - **Extra Tags panel** — editable extra tags with "Clear all" to remove from file
+- **Diff-style rename** — terminal diff output showing exactly what changed in filenames
+- **Batch tag writing** — write ID3 tags, rename files, move to output folder
 - **Progress overlay** — shows operation result (moved/renamed files)
 - **Puppeteer integration** — persistent browser, Cloudflare bypass
-- **Resizable panels** — drag borders to resize library tree / matches / main panel (positions saved to localStorage)
+- **Resizable panels** — drag borders to resize (positions saved to localStorage)
 - **Source toggles** — enable/disable search sources in Settings
 - **Tree badges** — nested dir count; audio file count on selected folder
+- **File operations** — rename, move, delete files with tree refresh
+- **Folder picker** — browse filesystem roots (drives on Windows), expand-to-path
+- **Context menu** — right-click on files/folders for rename/move/delete
 
 ## Architecture
 
@@ -40,6 +45,7 @@ npm run dev
 - **Unified SearchResult** — all sources normalize to common type
 - **Data-driven tags** — `writeUserDefinedText(current, Record<string, string | undefined>)`
 - **Config mutex** — promise-chain lock prevents concurrent config corruption
+- **Library** — filesystem-based (`library/{bandId}/{postId}/album.json` + covers)
 - **npm workspaces** — hoisted to root
 
 ## Configuration
@@ -60,56 +66,66 @@ server/src/
 │   ├── deezer.ts     — wrapper over deezer.ts
 │   ├── musicbrainz.ts — wrapper over musicbrainz.ts
 │   └── bandcamp.ts   — wrapper over bandcamp.ts
-├── scraper.ts        — puppeteer + stealth, DGC API
+├── scraper.ts        — puppeteer + stealth, DGC API, taxonomy, discography
 ├── bandcamp.ts       — Bandcamp search + JSON-LD album parser
 ├── deezer.ts         — Deezer API (axios) with rate limiting
-├── musicbrainz.ts    — MusicBrainz API + Lucene escaping
-├── tagWriter.ts      — ID3 writing (data-driven writeUserDefinedText)
+├── musicbrainz.ts    — MusicBrainz API + Lucene escaping + extra tag extraction
+├── tagWriter.ts      — ID3 writing, diff-style rename, folder move
 ├── tagger.ts         — ID3 reading + music-metadata for duration (single pass)
+├── library.ts        — album JSON storage, cover download, discography population
 ├── scanner.ts        — filesystem traversal (async, lazy + recursive)
 ├── config.ts         — config.json load/save + enabledSources
 ├── cache.ts          — file cache for bands/releases
 ├── logger.ts         — leveled logger (debug/info/warn/error)
-└── trackUtils.ts     — track number extraction, getMp3Files, path validation
+├── trackUtils.ts     — track number extraction, getMp3Files, path validation
+└── types.ts          — AlbumTags, Id3Tags interfaces
 
 client/src/
 ├── main.tsx
-├── App.tsx           — layout + resizable panels + localStorage persistence
-├── api.ts            — axios + interceptors, simple POST for tag updates
-├── types.ts          — SearchResult, AlbumTags, MatchResult, etc.
+├── App.tsx           — layout + resizable panels + library/main view toggle
+├── api.ts            — axios + interceptors, all API functions
+├── types.ts          — FileNode, AlbumTags, SearchResult, MatchResult, DeezerSearchResult
 ├── sourceConfigs.ts  — [{ id, label, color }]
-├── index.css         — CSS variables + hover utility classes
+├── build.ts          — build version constant
+├── index.css         — CSS variables, hover utilities, library view styles
 ├── hooks/
-│   ├── useAppContext.tsx — reducer + composition (useMemo context)
-│   ├── appReducer.ts     — state, actions, reducer
-│   ├── useSearch.ts      — search + select handlers (4 sources)
-│   ├── useLibrary.ts     — library + folder select
+│   ├── useAppContext.tsx — context provider + reducer composition
+│   ├── appReducer.ts     — state (54 fields), actions (40+), reducer
+│   ├── useSearch.ts      — parallel search (4 sources), generation-based cancellation
+│   ├── useLibrary.ts     — tree fetch, folder select (auto-search), file operations
 │   ├── useConfig.ts      — config + cache + enabledSources
-│   ├── useTagActions.ts  — applyTags with simple POST
+│   ├── useTagActions.ts  — build full tag payload, POST, progress overlay
 │   └── useWebfetch.ts    — webfetch overlay (AbortController)
 ├── utils/
 │   ├── index.ts          — stripParentheses, generateParsedTracks
 │   ├── similarity.ts     — Levenshtein distance
-│   └── trackMatching.ts  — matchTracks, parseCompilationTracklist
+│   └── trackMatching.ts  — matchTracks, parseCompilationTracklist, parseSingleArtistTracklist
 └── components/
     ├── styles.ts             — COLORS, FONT, FS, ICON_BUTTON, OVERLAY_BACKDROP, MODAL_PANEL
-    ├── ResultCard.tsx        — 2-line card (cover + artist/year/album/label, lazy images)
-    ├── SearchResults.tsx     — vertical list of 4 source results
+    ├── ResultCard.tsx        — compact card with cover hover preview
+    ├── SearchResults.tsx     — wrapper for 4 source lists with counters
+    ├── DgcResults.tsx        — DGC result list
+    ├── DeezerResults.tsx     — Deezer result list
+    ├── MusicBrainzResults.tsx — MusicBrainz result list
+    ├── BandcampResults.tsx   — Bandcamp result list
     ├── TagComparison.tsx     — file vs catalog tags + Extra Tags (editable)
-    ├── TrackMatcher.tsx      — track matching panel (useMemo, batch toggles)
-    ├── MatchRow.tsx          — single track row (ERR for unknown duration, -:-- for remote)
-    ├── SingleArtistTracks.tsx
-    ├── MultiArtistTracks.tsx
-    ├── TrackArtistField.tsx  — inline artist edit (synced with prop)
+    ├── TrackMatcher.tsx      — track matching controls + multi-artist toggle
+    ├── MatchRow.tsx          — single track row (similarity %, editable name)
+    ├── SingleArtistTracks.tsx — track list for single-artist albums
+    ├── MultiArtistTracks.tsx  — track list for compilations (with artist fields)
+    ├── TrackArtistField.tsx  — inline artist edit
     ├── ApplyPanel.tsx        — WRITE & MOVE / RENAME / WRITE / CANCEL
     ├── ProgressOverlay.tsx   — operation result with auto-scroll log
-    ├── ResultModal.tsx
+    ├── ResultModal.tsx       — success/error modal
     ├── SettingsModal.tsx     — sources toggles + tag defaults
     ├── WebfetchOverlay.tsx   — sandboxed iframe
-    ├── LibraryTree.tsx       — tree with dir count badges (useMemo counts)
-    ├── SearchBar.tsx
-    ├── ErrorBoundary.tsx
-    └── Footer.tsx
+    ├── LibraryTree.tsx       — tree with context menu, inline rename, move dialog
+    ├── LibraryView.tsx       — card grid, alphabetical nav, infinite scroll
+    ├── SearchBar.tsx         — artist + album inputs with enable/disable
+    ├── FolderPicker.tsx      — filesystem browser (drives/roots, expand-to-path)
+    ├── ContextMenu.tsx       — right-click menu
+    ├── ErrorBoundary.tsx     — React error boundary
+    └── Footer.tsx            — paths display + FolderPicker
 ```
 
 ## Adding a New Source
@@ -167,10 +183,18 @@ Routes auto-generated: `POST /api/search-mysource`, `GET /api/mysource/:id`
 | GET | `/api/{sourceId}/:id` | Auto-generated source details |
 | GET | `/api/post/:id` | DGC post details |
 | POST | `/api/tags/update` | Write tags + rename/move, returns JSON result |
-| POST | `/api/cache/clear` | Clear cache |
-| GET | `/api/webfetch?url=` | SSRF-protected page fetch (redirects blocked) |
+| GET | `/api/collection` | All library albums |
+| GET | `/api/collection/:bandId` | Albums for a specific band |
+| GET | `/api/cover/:bandId/:postId` | Serve album cover image |
+| POST | `/api/files/rename` | Rename file/folder |
+| POST | `/api/files/move` | Move file/folder (cross-device) |
+| POST | `/api/files/delete` | Delete file/folder |
+| GET | `/api/directory/roots` | List filesystem roots |
+| GET | `/api/directory/children` | Browse directory |
+| GET | `/api/webfetch?url=` | SSRF-protected page fetch |
 | POST | `/api/parse-genres` | Parse genres from HTML (max 1MB) |
 | GET | `/api/browser/status` | Puppeteer browser status |
+| POST | `/api/cache/clear` | Clear cache |
 
 ### Tag Update Response (`POST /api/tags/update`)
 
@@ -189,7 +213,7 @@ Routes auto-generated: `POST /api/search-mysource`, `GET /api/mysource/:id`
     ▼
 [2] TagComparison.tsx — edit tags (file vs catalog + Extra Tags)
     ▼
-[3] TrackMatcher.tsx — match tracks (prefix/contains)
+[3] TrackMatcher.tsx — match tracks (similarity + number-first)
     ▼
 [4] ApplyPanel.tsx — WRITE & MOVE / RENAME / WRITE / CANCEL
     ▼
@@ -212,10 +236,12 @@ Routes auto-generated: `POST /api/search-mysource`, `GET /api/mysource/:id`
 - **Puppeteer** — persistent browser, `userDataDir` in `user_data/`, shared by DGC + Bandcamp
 - **Cloudflare** — manual challenge on first run
 - **Taxonomy** — genre/type from DGC JS, 7d TTL cache
-- **MusicBrainz** — rate limit 1 req/sec, User-Agent required, Lucene query escaping
+- **MusicBrainz** — rate limit 1 req/sec, User-Agent required, Lucene query escaping, 30+ extra tag mappings
 - **Deezer** — 120ms delay between album detail requests
 - **Bandcamp** — search via Puppeteer (JS challenge), album details via JSON-LD
 - **music-metadata** — single-pass duration detection, ERR shown for undetectable files
+- **Library** — filesystem-based (`library/{bandId}/{postId}/album.json` + cover images), auto-populates discography from DGC API on tag
+- **Discography pagination** — duplicate-safe: tracks seen postIds to avoid infinite loops from DGC API returning stale offsets
 - **CSS hover** — utility classes (hover-bg, hover-toolbar, hover-red, hover-lift) replace JS event handlers
 
 ## Open TODOs
@@ -224,6 +250,7 @@ Routes auto-generated: `POST /api/search-mysource`, `GET /api/mysource/:id`
 - [ ] `isInsideMusicRoot` case sensitivity on Linux
 - [ ] `parseFilename` regex edge cases with dotted track numbers
 - [ ] `localeCompare` numeric sorting for file listing
+- [ ] Album folder conflict resolution: handle case where target folder already exists (merge, skip, or prompt user)
 
 ## License
 

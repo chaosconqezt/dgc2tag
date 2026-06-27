@@ -1,6 +1,14 @@
 import { similarity } from './similarity';
 import type { MatchResult } from '../types';
 
+function stripParens(s: string): string {
+  return s.replace(/\s*\([^)]*\)\s*/g, ' ').replace(/\s+/g, ' ').trim();
+}
+
+function sim(a: string, b: string): number {
+  return Math.max(similarity(a, b), similarity(stripParens(a), stripParens(b)));
+}
+
 export function parseFilename(f: string): { num: string; name: string } {
   // f can be full path or just filename — extract basename
   const basename = f.split(/[\\/]/).pop() || f;
@@ -37,20 +45,22 @@ export function matchTracks(
   });
   const usedLocal = new Set<number>();
 
-  // Pass 1: Match by track number (primary key — handles Part I/II/III correctly)
   const results: MatchResult[] = remote.map(rt => {
     const byNum = localParsed.findIndex(
       (l, i) => !usedLocal.has(i) && l.num && rt.num && parseInt(l.num, 10) === parseInt(rt.num, 10)
     );
     if (byNum >= 0) {
-      usedLocal.add(byNum);
       const comparisonName = matchByFilename ? localParsed[byNum].fileName : localParsed[byNum].name;
-      return { remote: { num: rt.num, artist: rt.artist, name: rt.name, duration: rt.duration }, local: localParsed[byNum], sim: similarity(rt.name, comparisonName) };
+      const s = sim(rt.name, comparisonName);
+      if (s >= 90) {
+        usedLocal.add(byNum);
+        return { remote: { num: rt.num, artist: rt.artist, name: rt.name, duration: rt.duration }, local: localParsed[byNum], sim: s, numberMismatch: false };
+      }
+      return { remote: { num: rt.num, artist: rt.artist, name: rt.name, duration: rt.duration }, local: null, sim: 0, numberMismatch: true };
     }
-    return { remote: { num: rt.num, artist: rt.artist, name: rt.name, duration: rt.duration }, local: null, sim: 0 };
+    return { remote: { num: rt.num, artist: rt.artist, name: rt.name, duration: rt.duration }, local: null, sim: 0, numberMismatch: false };
   });
 
-  // Pass 2: Match remaining by similarity (for tracks without numbers)
   for (const r of results) {
     if (r.local) continue;
     let bestIdx = -1;
@@ -58,10 +68,9 @@ export function matchTracks(
     for (let i = 0; i < localParsed.length; i++) {
       if (usedLocal.has(i)) continue;
       const comparisonName = matchByFilename ? localParsed[i].fileName : localParsed[i].name;
-      const s = similarity(r.remote.name, comparisonName);
+      const s = sim(r.remote.name, comparisonName);
       if (s > bestSim) { bestSim = s; bestIdx = i; }
     }
-    // Also check if remote name is a prefix/substring of local name (e.g. "Track" matches "Track (Cover)")
     if (bestIdx >= 0 && bestSim < 50) {
       const remoteLower = r.remote.name.toLowerCase().replace(/[^a-z0-9]/g, '');
       const localLower = (matchByFilename ? localParsed[bestIdx].fileName : localParsed[bestIdx].name).toLowerCase().replace(/[^a-z0-9]/g, '');

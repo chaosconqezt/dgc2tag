@@ -116,7 +116,7 @@ export function MatchRow({
       </div>
 
       <div style={{ flex: 1, paddingLeft: '4px', minWidth: 0, display: 'flex', alignItems: 'center', gap: '4px' }}>
-        <span style={{ fontSize: FS_S, color: COLORS.textFaint, fontFamily: 'monospace', flexShrink: 0 }}>{m.remote.num}</span>
+        <span style={{ fontSize: FS_S, color: m.numberMismatch ? COLORS.yellow : COLORS.textFaint, fontFamily: 'monospace', flexShrink: 0 }}>{m.remote.num}</span>
         <input
           type="text"
           value={displayName}

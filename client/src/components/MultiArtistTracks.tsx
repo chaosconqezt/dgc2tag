@@ -70,16 +70,17 @@ export function MultiArtistTracks({
               callbacks={callbacks}
             />
 
-            <div style={{ display: 'flex', alignItems: 'center', gap: '4px', paddingLeft: '11px', marginTop: '-1px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginTop: '-1px' }}>
               <span style={{ width: '11px', flexShrink: 0 }} />
-              <div style={{ flex: 1, textAlign: 'left', minWidth: 0 }}>
+              <div style={{ flex: 1, textAlign: 'left', minWidth: 0, paddingLeft: '4px' }}>
+                <span style={{ display: 'inline-block', width: '18px', flexShrink: 0 }} />
                 {m.local ? (
-                  <div title={localTags.trackArtists?.[m.local.file] || ''} className="text-ellipsis" style={{
+                  <span title={localTags.trackArtists?.[m.local.file] || ''} className="text-ellipsis" style={{
                     fontSize: FS, fontFamily: FONT,
                     color: COLORS.textFaint,
                   }}>
                     {localTags.trackArtists?.[m.local.file] || ''}
-                  </div>
+                  </span>
                 ) : (
                   <span style={{ fontSize: FS, color: COLORS.textInvisible }}>&nbsp;</span>
                 )}

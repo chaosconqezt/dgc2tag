@@ -28,11 +28,21 @@ function AppContent() {
     const saved = localStorage.getItem('dgc-tree-height');
     return saved ? Number(saved) : 300;
   });
+  const [cardSize, setCardSize] = useState(() => {
+    const saved = localStorage.getItem('dgc-card-size');
+    return saved ? Number(saved) : 150;
+  });
+  const [minAlbums, setMinAlbums] = useState(() => {
+    const saved = localStorage.getItem('dgc-min-albums');
+    return saved ? Number(saved) : 1;
+  });
   const isResizing = useRef(false);
   const isResizingTree = useRef(false);
 
   const saveWidth = useCallback((w: number) => { setSidebarWidth(w); localStorage.setItem('dgc-sidebar-width', String(w)); }, []);
   const saveTreeHeight = useCallback((h: number) => { setTreeHeightPx(h); localStorage.setItem('dgc-tree-height', String(h)); }, []);
+  const saveCardSize = useCallback((s: number) => { setCardSize(s); localStorage.setItem('dgc-card-size', String(s)); }, []);
+  const saveMinAlbums = useCallback((n: number) => { setMinAlbums(n); localStorage.setItem('dgc-min-albums', String(n)); }, []);
 
   const onResizeStart = useCallback((e: React.MouseEvent) => {
     e.preventDefault();
@@ -113,17 +123,46 @@ function AppContent() {
       {ctx.viewMode === 'library' ? (<>
         {/* Library Mode — full width */}
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0, overflow: 'hidden' }}>
-          <div style={{ padding: '10px 12px', borderBottom: `1px solid ${COLORS.border}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexShrink: 0, backgroundColor: COLORS.inputBgAlt }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+          <div className="library-header">
+            <div className="library-header-left">
               <button onClick={() => ctx.dispatch({ type: 'SET_VIEW_MODE', payload: 'main' })} className="hover-toolbar" style={{ ...ICON_BUTTON, display: 'flex', borderRadius: '4px', padding: '4px' }}>
                 <Layout size={14} />
               </button>
-              <h2 style={{ fontSize: FS, fontWeight: '600', margin: 0, letterSpacing: '0.3px', fontFamily: FONT, color: COLORS.text }}>
+              <h2 className="library-header-title">
                 LIBRARY
               </h2>
             </div>
+            <div className="library-header-controls">
+              <label className="library-control">
+                <span className="library-control-label">Size</span>
+                <input
+                  type="range"
+                  min={100}
+                  max={280}
+                  step={10}
+                  value={cardSize}
+                  onChange={(e) => saveCardSize(Number(e.target.value))}
+                  className="library-range"
+                />
+                <span className="library-control-value">{cardSize}</span>
+              </label>
+              <label className="library-control">
+                <span className="library-control-label">Min albums</span>
+                <div className="library-radio-group">
+                  {[1, 2, 3].map(n => (
+                    <button
+                      key={n}
+                      className={`library-radio-btn${minAlbums === n ? ' active' : ''}`}
+                      onClick={() => saveMinAlbums(n)}
+                    >
+                      {n}
+                    </button>
+                  ))}
+                </div>
+              </label>
+            </div>
           </div>
-          <LibraryView entries={ctx.libraryEntries} />
+          <LibraryView entries={ctx.libraryEntries} cardSize={cardSize} minAlbums={minAlbums} />
         </div>
       </>) : (<>
       {/* Sidebar: Library Tree + Search Results */}

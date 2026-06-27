@@ -241,6 +241,98 @@ a:focus-visible {
   overflow: hidden;
 }
 
+.library-header {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-shrink: 0;
+  background-color: var(--input-bg-alt);
+}
+
+.library-header-left {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.library-header-title {
+  font-size: var(--fs-l);
+  font-weight: 600;
+  margin: 0;
+  letter-spacing: 0.3px;
+  font-family: var(--font);
+  color: var(--text);
+}
+
+.library-header-controls {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.library-control {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.library-control-label {
+  font-size: 12px;
+  font-family: var(--font);
+  color: var(--text-dim);
+  white-space: nowrap;
+}
+
+.library-control-value {
+  font-size: 12px;
+  font-family: var(--font);
+  color: var(--text-muted);
+  min-width: 28px;
+  text-align: right;
+}
+
+.library-range {
+  width: 100px;
+  accent-color: var(--red);
+  cursor: pointer;
+}
+
+.library-radio-group {
+  display: flex;
+  gap: 2px;
+  background: var(--input-bg);
+  border-radius: 4px;
+  padding: 2px;
+}
+
+.library-radio-btn {
+  width: 26px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 3px;
+  background: none;
+  color: var(--text-dim);
+  font-size: 12px;
+  font-family: var(--font);
+  font-weight: 600;
+  cursor: pointer;
+  transition: color 0.15s, background-color 0.15s;
+}
+
+.library-radio-btn:hover {
+  color: var(--text);
+}
+
+.library-radio-btn.active {
+  color: var(--text-bright);
+  background-color: var(--red);
+}
+
 .library-scroll {
   flex: 1;
   overflow-y: auto;
@@ -290,7 +382,7 @@ a:focus-visible {
 }
 
 .library-card {
-  width: 150px;
+  width: var(--card-size, 150px);
   border-radius: 6px;
   overflow: hidden;
   background-color: var(--card-bg);
@@ -304,12 +396,14 @@ a:focus-visible {
 }
 
 .library-card.owned {
-  border-color: var(--red);
+  background-color: #140000;
+  border: 1px solid var(--red);
+  border-radius: 0;
 }
 
 .library-card-cover {
-  width: 150px;
-  height: 150px;
+  width: var(--card-size, 150px);
+  height: var(--card-size, 150px);
   background-color: var(--input-bg);
   display: flex;
   align-items: center;
@@ -321,6 +415,10 @@ a:focus-visible {
   width: 100%;
   height: 100%;
   object-fit: cover;
+}
+
+.library-card-cover img.img-error {
+  display: none;
 }
 
 .library-cover-placeholder {
@@ -353,11 +451,11 @@ a:focus-visible {
 }
 
 .library-card-info {
-  padding: 8px 10px;
+  padding: 10px 12px;
 }
 
 .library-card-title {
-  font-size: 12px;
+  font-size: 18px;
   font-family: var(--font);
   font-weight: 600;
   color: var(--text);
@@ -372,7 +470,7 @@ a:focus-visible {
 .library-card-meta {
   display: flex;
   gap: 6px;
-  font-size: 11px;
+  font-size: 14px;
   font-family: var(--font);
   color: var(--text-faint);
 }
@@ -433,4 +531,75 @@ a:focus-visible {
 .library-alpha-letter.active {
   color: var(--red);
   background-color: rgba(239, 68, 68, 0.1);
+}
+
+/* Genre cloud */
+.genre-cloud {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 10px;
+  margin-bottom: 16px;
+  line-height: 1.4;
+}
+
+.genre-tag {
+  font-family: var(--font);
+  font-weight: 600;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: color 0.15s;
+  white-space: nowrap;
+}
+
+.genre-tag:hover {
+  color: var(--text);
+}
+
+.genre-tag.selected {
+  color: var(--red);
+}
+
+.genre-tag-count {
+  font-size: 9px;
+  font-weight: 400;
+  color: var(--text-faint);
+  margin-left: 2px;
+  vertical-align: super;
+}
+
+.genre-tag.selected .genre-tag-count {
+  color: var(--red);
+  opacity: 0.6;
+}
+
+.genre-filter-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 10px;
+  margin-bottom: 14px;
+  background: var(--input-bg);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  font-size: 12px;
+  font-family: var(--font);
+  color: var(--text-muted);
+}
+
+.genre-filter-bar strong {
+  color: var(--red);
+}
+
+.genre-filter-clear {
+  background: none;
+  border: none;
+  color: var(--text-dim);
+  font-size: 16px;
+  cursor: pointer;
+  padding: 0 4px;
+  line-height: 1;
+}
+
+.genre-filter-clear:hover {
+  color: var(--red);
 }
