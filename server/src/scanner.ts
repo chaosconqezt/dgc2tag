@@ -73,9 +73,6 @@ async function buildDirectory(
     let hasAudioFiles = false;
 
     for (const entry of entries) {
-        // Skip symlinks entirely to prevent infinite loops
-        if (entry.isSymbolicLink()) continue;
-
         const fullPath = path.join(dirPath, entry.name);
 
         if (entry.isDirectory()) {
@@ -84,6 +81,20 @@ async function buildDirectory(
             if (childDir.hasAudioFiles) {
                 hasAudioFiles = true;
             }
+        } else if (entry.isSymbolicLink()) {
+            // Resolve symlink — cycle detection is handled by visited + realpath in buildDirectory
+            try {
+                const target = await fs.realpath(fullPath);
+                const stat = await fs.stat(target);
+                if (stat.isDirectory()) {
+                    const childDir = await buildDirectory(target, visited, maxDepth, currentDepth + 1);
+                    children.push({ ...childDir, name: entry.name, path: fullPath });
+                    if (childDir.hasAudioFiles) hasAudioFiles = true;
+                } else if (stat.isFile() && isAudioFile(entry.name)) {
+                    children.push({ name: entry.name, path: fullPath, type: 'file' });
+                    hasAudioFiles = true;
+                }
+            } catch { /* broken symlink, skip */ }
         } else if (entry.isFile() && isAudioFile(entry.name)) {
             children.push({
                 name: entry.name,

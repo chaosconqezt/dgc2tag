@@ -112,8 +112,7 @@ async function writeSingleTag(
     const resolvedArtist = Array.isArray(tags.artist) ? tags.artist[0] : tags.artist;
     const resolvedAlbumArtist = Array.isArray(tags.albumArtist) ? tags.albumArtist[0] : tags.albumArtist;
 
-    const updatedTags = {
-        ...currentTags,
+    const updatedTags: Record<string, unknown> = {
         artist: perTrackArtist || resolvedArtist || currentTags.artist,
         performerInfo: resolvedAlbumArtist || currentTags.performerInfo,
         album: tags.album || currentTags.album,
@@ -153,12 +152,7 @@ async function writeSingleTag(
         customFields
     );
 
-    let fileBuffer: Buffer;
-    if (currentTags._buffer && typeof currentTags._buffer === 'object' && 'length' in currentTags._buffer) {
-        fileBuffer = Buffer.from(currentTags._buffer as unknown as ArrayBuffer);
-    } else {
-        fileBuffer = await fs.readFile(filePath);
-    }
+    const fileBuffer = await fs.readFile(filePath);
     const updatedBuffer = NodeID3.write(updatedTags as any, fileBuffer);
     if (updatedBuffer && updatedBuffer.length > 0) {
         await fs.writeFile(filePath, updatedBuffer);

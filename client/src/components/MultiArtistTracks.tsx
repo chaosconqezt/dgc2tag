@@ -54,7 +54,7 @@ export function MultiArtistTracks({
         };
 
         return (
-          <div key={m.remote.num}>
+          <div key={m.remote.num} className="track-group">
             <MatchRow
               m={m}
               localTags={localTags}

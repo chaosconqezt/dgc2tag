@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import type { AlbumTags, SearchResult } from '../types';
 import { similarity } from '../utils';
-import { FONT, FS, FS_SM, FS_XS, COLORS, CHECKBOX, PANEL_STYLE, ROW_STYLE } from './styles';
+import { FONT, FS, FS_L, FS_S, FS_SM, FS_XS, COLORS, CHECKBOX, PANEL_STYLE, ROW_STYLE } from './styles';
 
 interface TagComparisonProps {
   selectedResult: SearchResult | null;
@@ -121,10 +121,10 @@ export function TagComparison({
 
   if (!selectedResult && !localTags) {
     return (
-      <div style={{ height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: COLORS.textInvisible, opacity: 0.5 }}>
-        <div style={{ fontSize: '40px', marginBottom: '10px' }}>&#9776;</div>
-        <p style={{ fontWeight: '500', fontSize: FS, fontFamily: FONT }}>Select a folder with MP3 files</p>
-        <p style={{ fontSize: FS_SM, fontFamily: FONT, marginTop: '4px' }}>Click a folder in the tree on the left</p>
+      <div style={{ height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: COLORS.textMuted }}>
+        <div style={{ fontSize: '40px', marginBottom: '8px' }}>&#9776;</div>
+        <p style={{ fontWeight: '600', fontSize: FS_L, fontFamily: FONT }}>Select a folder with MP3 files</p>
+        <p style={{ fontSize: FS, fontFamily: FONT, marginTop: '4px' }}>Click a folder in the tree on the left</p>
       </div>
     );
   }

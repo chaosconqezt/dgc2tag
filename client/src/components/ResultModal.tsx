@@ -1,6 +1,5 @@
 import { useEffect } from 'react';
 import { CheckCircle, XCircle, X } from 'lucide-react';
-import { FONT, FS, COLORS, ICON_BUTTON, OVERLAY_BACKDROP, MODAL_PANEL, MODAL_HEADER } from './styles';
 
 interface ResultModalProps {
   success: boolean;
@@ -17,33 +16,33 @@ export function ResultModal({ success, message, details, onClose }: ResultModalP
   }, [onClose]);
 
   return (
-    <div style={OVERLAY_BACKDROP} onClick={onClose}>
-      <div style={{ ...MODAL_PANEL, width: '600px', maxWidth: '90vw' }} onClick={(e) => e.stopPropagation()}>
-        <div style={MODAL_HEADER}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-            {success ? <CheckCircle size={14} color={COLORS.green} /> : <XCircle size={14} color={COLORS.red} />}
-            <span style={{ fontSize: FS, color: COLORS.textMuted, fontWeight: '500', fontFamily: FONT }}>{success ? 'SUCCESS' : 'ERROR'}</span>
+    <div className="modal-backdrop" onClick={onClose}>
+      <div className="modal-panel" style={{ width: '600px', maxWidth: '90vw' }} onClick={(e) => e.stopPropagation()}>
+        <div className="modal-header">
+          <div className="modal-header-left">
+            {success ? <CheckCircle size={14} className="text-green" /> : <XCircle size={14} className="text-red" />}
+            <span className="modal-header-title">{success ? 'SUCCESS' : 'ERROR'}</span>
           </div>
-          <button onClick={onClose} style={{ ...ICON_BUTTON, padding: '4px' }}>
+          <button onClick={onClose} className="modal-close-btn">
             <X size={14} />
           </button>
         </div>
-        <div style={{ padding: '16px' }}>
-          <div style={{ fontSize: FS, color: success ? COLORS.green : COLORS.red, fontWeight: '600', fontFamily: FONT, marginBottom: details?.length ? '10px' : '0' }}>
+        <div className="modal-content">
+          <div className={`result-modal-message ${success ? 'text-green' : 'text-red'}`}>
             {message}
           </div>
           {details && details.length > 0 && (
-            <div style={{ maxHeight: '400px', overflowY: 'auto', padding: '8px', backgroundColor: COLORS.bg, borderRadius: '6px', border: `1px solid ${COLORS.border}` }}>
+            <div className="result-modal-details">
               {details.map((line, i) => (
-                <div key={i} style={{ fontSize: FS, color: COLORS.textMuted, fontFamily: FONT, padding: '2px 0', borderBottom: i < details.length - 1 ? `1px solid ${COLORS.borderLight}` : 'none' }}>
+                <div key={i} className="result-modal-detail-line" style={{ borderBottom: i < details.length - 1 ? '1px solid var(--border-light)' : 'none' }}>
                   {line}
                 </div>
               ))}
             </div>
           )}
         </div>
-        <div style={{ padding: '10px 14px', borderTop: `1px solid ${COLORS.border}`, display: 'flex', justifyContent: 'flex-end' }}>
-          <button onClick={onClose} style={{ padding: '6px 16px', background: success ? COLORS.green : COLORS.red, color: COLORS.textBright, border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: '600', fontSize: FS, fontFamily: FONT }}>
+        <div className="modal-footer">
+          <button onClick={onClose} className={`modal-btn ${success ? 'success' : 'danger'}`}>
             OK
           </button>
         </div>

@@ -35,7 +35,7 @@ export function createApplyTags(
     if (!state.selectedFolder || (!state.selectedResult && !state.localTags)) return;
 
     const sr = state.selectedResult;
-    const tagsToApply: Record<string, string> = {};
+    const tagsToApply: Record<string, unknown> = {};
     const applyStrip = (v: string): string => state.stripRemoteParentheses ? stripParentheses(v) : v;
 
     const srcArtist = sr ? applyStrip(sr.artist) : (state.localTags?.artists?.[0] || state.localTags?.artist || '');

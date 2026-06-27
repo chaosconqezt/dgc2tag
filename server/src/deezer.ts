@@ -57,9 +57,16 @@ export async function searchDeezer(artist?: string, album?: string): Promise<Dee
 
     logger.info(`search: "${query}"`);
 
-    const { data } = await axios.get(`${DEEZER_BASE}/search/album`, {
-        params: { q: query, limit: 10 },
-    });
+    let data;
+    try {
+        const res = await axios.get(`${DEEZER_BASE}/search/album`, {
+            params: { q: query, limit: 10 },
+        });
+        data = res.data;
+    } catch (err) {
+        logger.error(`deezer search error: ${(err as Error).message}`);
+        return [];
+    }
 
     if (!data?.data?.length) {
         logger.info('0 results');

@@ -62,7 +62,7 @@ export function TrackMatcher({
     return unique.size > 1;
   }, [remoteTracks]);
   const hasMultiArtist = compilation || serverHasMultiArtist;
-  const matched = useMemo(() => matchTracks(remoteTracks, localTags.files, localTags.trackTitles, false, filenameMode), [remoteTracks, localTags.files, localTags.trackTitles, filenameMode]);
+  const matched = useMemo(() => matchTracks(remoteTracks, localTags.files ?? [], localTags.trackTitles, false, filenameMode), [remoteTracks, localTags.files, localTags.trackTitles, filenameMode]);
 
   const localCount = localTags.files.length;
   const remoteCount = remoteTracks.length;
@@ -157,7 +157,7 @@ export function TrackMatcher({
           matched={matched} localTags={localTags} writeTrackNames={writeTrackNames} writeTrackArtists={writeTrackArtists}
           trackNameEnabled={trackNameEnabled} trackArtistsEnabled={trackArtistsEnabled} editedTrackNames={editedTrackNames} editedTrackArtists={editedTrackArtists}
           stripRemoteParentheses={stripRemoteParentheses} display={display}
-          onWriteTrackNamesChange={onWriteTrackNamesChange} onWriteTrackArtistsChange={onWriteTrackArtistsChange}
+          onWriteTrackNamesChange={onWriteTrackNamesChange}
           onTrackNameEnabledChange={onTrackNameEnabledChange} onTrackArtistsEnabledChange={onTrackArtistsEnabledChange}
           onEditedTrackNameChange={onEditedTrackNameChange} onEditedTrackArtistChange={onEditedTrackArtistChange}
         />

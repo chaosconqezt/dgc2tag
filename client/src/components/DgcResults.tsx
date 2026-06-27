@@ -26,7 +26,6 @@ export function DgcResults({ results, loading, selectedResult, onSelectResult }:
           genres={[]}
           releaseType={res.releaseType}
           url={res.url}
-          urlTitle="Open on DGC"
             accentColor={COLORS.red}
           selected={selectedResult?.postId === res.postId}
           onClick={() => onSelectResult(res)}

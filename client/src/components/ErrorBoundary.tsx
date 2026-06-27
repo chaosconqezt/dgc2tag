@@ -1,5 +1,4 @@
 import React, { Component, type ErrorInfo, type ReactNode } from 'react';
-import { FONT, FS, COLORS } from './styles';
 
 interface Props {
   children: ReactNode;
@@ -11,36 +10,13 @@ interface State {
 }
 
 const FALLBACK_CONTENT = (
-  <div style={{
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    justifyContent: 'center',
-    height: '100%',
-    padding: '32px',
-    color: COLORS.textMuted,
-    fontFamily: FONT,
-  }}>
-    <div style={{ fontSize: '48px', marginBottom: '16px' }}>⚠️</div>
-    <h2 style={{ margin: '0 0 8px', color: COLORS.text, fontSize: FS, fontWeight: '600', fontFamily: FONT }}>
-      Что-то пошло не так
-    </h2>
-    <p style={{ margin: '0 0 20px', textAlign: 'center', maxWidth: '400px', lineHeight: '1.5' }}>
-      Произошла ошибка в приложении. Попробуйте перезагрузить страницу.
-    </p>
+  <div className="error-boundary">
+    <div className="error-boundary-icon">⚠️</div>
+    <h2 className="error-boundary-title">Что-то пошло не так</h2>
+    <p className="error-boundary-desc">Произошла ошибка в приложении. Попробуйте перезагрузить страницу.</p>
     <button
       onClick={() => window.location.reload()}
-      style={{
-        padding: '8px 20px',
-        background: COLORS.purple,
-        color: COLORS.textBright,
-        border: 'none',
-        borderRadius: '6px',
-        cursor: 'pointer',
-        fontWeight: '500',
-        fontSize: FS,
-        fontFamily: FONT,
-      }}
+      className="error-boundary-btn"
     >
       Перезагрузить
     </button>

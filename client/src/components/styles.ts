@@ -40,30 +40,6 @@ export const CHECKBOX = {
   cursor: 'pointer' as const,
 };
 
-export const CELL_STYLE = {
-  padding: '3px 6px',
-  borderRadius: '3px',
-  fontSize: FS,
-  border: `1px solid ${COLORS.borderLight}`,
-  backgroundColor: COLORS.inputBg,
-  overflow: 'hidden',
-  textOverflow: 'ellipsis',
-  whiteSpace: 'nowrap' as const,
-  fontFamily: FONT,
-};
-
-export const INPUT_STYLE = {
-  padding: '3px 6px',
-  borderRadius: '3px',
-  fontSize: FS,
-  overflow: 'hidden',
-  textOverflow: 'ellipsis',
-  whiteSpace: 'nowrap' as const,
-  width: '100%',
-  boxSizing: 'border-box' as const,
-  fontFamily: FONT,
-};
-
 export const PERCENT_STYLE = {
   textAlign: 'center' as const,
   fontSize: FS,
@@ -80,13 +56,6 @@ export const PANEL_STYLE = {
   borderRadius: '8px',
   border: `1px solid ${COLORS.border}`,
   marginBottom: '10px',
-};
-
-export const GRID_STYLE = {
-  display: 'grid',
-  gridTemplateColumns: '11px 1fr 40px 1fr',
-  gap: '4px',
-  alignItems: 'center',
 };
 
 export const ROW_STYLE = (enabled: boolean) => ({

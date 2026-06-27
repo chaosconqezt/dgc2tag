@@ -4,30 +4,15 @@
 
 ### 1. Относительные пути `./user_data` → абсолютные
 **Файлы:** `server/src/scraper.ts:15-16, 216`
-**Что:** `userDataDir: './user_data'` и `path.join('./user_data', ...)` зависят от CWD.
-**Как чинить:** 
-- Заменить `'./user_data'` на `path.join(__dirname, '../../user_data')` в `launchBrowser()`
-- Заменить `path.join('./user_data', 'DevToolsActivePort')` на путь от `__dirname` в `findRunningBrowserWs()`
-- Проверка: `findRunningBrowserWs` должен находить порт при запуске из любой директории
-- Тест: `cd server && tsx src/index.ts` и `cd .. && tsx server/src/index.ts`
+**Статус:** ✅ Сделано
 
 ### 2. Спред `currentTags` тащит `_buffer` и служебные поля
 **Файл:** `server/src/tagWriter.ts:115-124`
-**Что:** `{ ...currentTags }` копирует `_buffer` и др. внутренние поля в `updatedTags`, что ломает `NodeID3.write()`.
-**Как чинить:**
-- Вместо `{ ...currentTags }` собрать `updatedTags` вручную из известных полей
-- Список безопасных полей: `artist`, `performerInfo`, `album`, `year`, `genre`, `publisher`, `title`, `userDefinedText`
-- Игнорировать `_buffer`, `TLEN`, `recordingTime`, `notes`, `bitrate`, `audioFormat` и т.д.
-- **Никогда не передавать `_buffer` из read обратно в write**
+**Статус:** ✅ Сделано
 
 ### 3. Небезопасное `Buffer.from(_buffer as unknown as ArrayBuffer)`
 **Файл:** `server/src/tagWriter.ts:156-161`
-**Что:** Приведение типа ломает при отсутствии/невалидности `_buffer`. Файл читается с диска, но без учёта изменений `userDefinedText`.
-**Как чинить:**
-- Убрать блок с `_buffer` целиком
-- Всегда читать файл с диска: `const fileBuffer = await fs.readFile(filePath);`
-- `NodeID3.write()` сам наложит изменения из `updatedTags` на сырой буфер
-- Тест: запись тегов в файл, где NodeID3 возвращает `_buffer`
+**Статус:** ✅ Сделано
 
 ### 4. `page.goto()` блокирует запуск сервера на 60s
 **Файл:** `server/src/scraper.ts:229`
@@ -38,22 +23,11 @@
 - В `index.ts` убрать `await ensureTaxonomy()` из стартового блока, запустить fire-and-forget
 - Добавить повторную попытку при ошибке загрузки страницы
 
-### 5. `getAllLibraryAlbums()` — последовательное чтение
-**Файл:** `server/src/library.ts:192-221`
-**Что:** Для каждой группы читаются альбомы по одному — медленно при сотнях групп.
-**Как чинить:**
-- Заменить последовательный обход на параллельное чтение с `Promise.all()`
-- Читать альбомы каждой группы параллельно
-- Ограничить concurrency до ~10 групп одновременно (чтобы не убить диск)
+
 
 ## 🟡 Высокий приоритет
 
-### 6. Несоответствие `SERVER_PORT` vs `PORT`
-**Файл:** `server/src/config.ts:60-70`
-**Что:** `.env.example` определяет `SERVER_PORT`, а код читает `process.env.PORT`.
-**Как чинить:**
-- В `DEFAULTS` читать `process.env.SERVER_PORT ?? process.env.PORT ?? '3000'`
-- Обновить `config.default.json` и `.env.example` для единообразия
+
 
 ### 7. Жёстко заданные диски C:-J: для Windows
 **Файл:** `server/src/index.ts:441`
@@ -63,12 +37,8 @@
 - Или захардкодить `'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('')` + проверка `fs.access()`
 
 ### 8. Запросы к источникам не отменяются при новом поиске
-**Файл:** `client/src/hooks/useSearch.ts:82-109`
-**Что:** Старые поисковые запросы продолжают выполняться. Для Deezer с rate limiting может быть блокировка.
-**Как чинить:**
-- Сохранять `AbortController` для каждого источника при начале поиска
-- При новом поиске отменять старые контроллеры
-- Передавать `signal` в API-функции (они принимают `AbortSignal` через axios interceptor или параметр)
+**Файл:** `client/src/hooks/useSearch.ts:47-48`
+**Статус:** ✅ Сделано
 
 ### 9. Симлинки игнорируются сканером
 **Файл:** `server/src/scanner.ts:77`

@@ -1,6 +1,5 @@
 import { useState, useRef } from 'react';
 import { Disc3, ExternalLink, Music2 } from 'lucide-react';
-import { FONT, FS, COLORS } from './styles';
 
 interface ResultCardProps {
   coverUrl: string | null;
@@ -44,17 +43,10 @@ export function ResultCard({
   return (
     <div
       onClick={onClick}
+      className="result-card"
       style={{
-        display: 'flex',
-        gap: '8px',
-        padding: '5px',
-        border: `1px solid ${selected ? accentColor : COLORS.borderLight}`,
-        borderRadius: '6px',
-        cursor: 'pointer',
-        transition: 'border-color 0.15s, background-color 0.15s',
+        border: `1px solid ${selected ? accentColor : 'var(--border-light)'}`,
         backgroundColor: selected ? `${accentColor}15` : 'transparent',
-        width: '100%',
-        boxSizing: 'border-box',
       }}
     >
       {/* Cover */}
@@ -62,37 +54,26 @@ export function ResultCard({
         ref={imgRef}
         onMouseEnter={handleEnter}
         onMouseLeave={() => setPreview(null)}
-        style={{
-          width: '40px',
-          height: '40px',
-          borderRadius: '4px',
-          overflow: 'hidden',
-          backgroundColor: COLORS.bg,
-          border: `1px solid ${COLORS.border}`,
-          flexShrink: 0,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-        }}
+        className="result-card-cover"
       >
         {coverUrl ? (
-          <img src={coverUrl} alt="" loading="lazy" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+          <img src={coverUrl} alt="" loading="lazy" />
         ) : (
-          <Disc3 size={16} color={COLORS.textInvisible} />
+          <Disc3 size={16} color="var(--text-invisible)" />
         )}
       </div>
 
       {/* Info — 2 lines */}
-      <div style={{ minWidth: 0, flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: '1px', overflow: 'hidden' }}>
+      <div className="result-card-info">
         {/* Line 1: Artist · Year · Label · link */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '4px', minWidth: 0 }}>
+        <div className="result-card-line">
           <span
             className="text-ellipsis"
             style={{
-              fontWeight: '600',
-              fontSize: FS,
+              fontWeight: 600,
+              fontSize: '14px',
               color: accentColor,
-              fontFamily: FONT,
+              fontFamily: 'var(--font)',
               flex: 1,
               minWidth: 0,
             }}
@@ -103,22 +84,20 @@ export function ResultCard({
             href={url}
             target="_blank"
             onClick={(e) => e.stopPropagation()}
-            onMouseEnter={(e) => (e.currentTarget.style.color = COLORS.text)}
-            onMouseLeave={(e) => (e.currentTarget.style.color = COLORS.textInvisible)}
-            style={{ color: COLORS.textInvisible, flexShrink: 0, display: 'flex', transition: 'color 0.15s' }}
+            className="result-card-link"
           >
             <ExternalLink size={11} />
           </a>
         </div>
 
         {/* Line 2: Album · Label · track count */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', minWidth: 0 }}>
+        <div className="result-card-line2">
           <span
             className="text-ellipsis"
             style={{
-              fontSize: FS,
-              color: COLORS.textMuted,
-              fontFamily: FONT,
+              fontSize: '14px',
+              color: 'var(--text-muted)',
+              fontFamily: 'var(--font)',
               flex: 1,
               minWidth: 0,
             }}
@@ -126,12 +105,12 @@ export function ResultCard({
             {albumName}
           </span>
           {label && (
-            <span className="text-ellipsis" style={{ fontSize: FS, color: COLORS.textFaint, fontFamily: FONT, flexShrink: 0 }}>
+            <span className="text-ellipsis result-card-label">
               {label}
             </span>
           )}
           {trackCount != null && (
-            <span style={{ display: 'flex', alignItems: 'center', gap: '2px', fontSize: FS, color: COLORS.textFaint, fontFamily: FONT, flexShrink: 0 }}>
+            <span className="result-card-trackcount">
               <Music2 size={10} />
               {trackCount}
             </span>
@@ -144,18 +123,10 @@ export function ResultCard({
         <img
           src={coverUrl}
           alt=""
+          className="result-card-preview"
           style={{
-            position: 'fixed',
             left: preview.x,
             top: preview.y,
-            transform: 'translate(-50%, 8px)',
-            maxWidth: '300px',
-            maxHeight: '300px',
-            borderRadius: '6px',
-            border: `1px solid ${COLORS.border}`,
-            boxShadow: '0 8px 24px rgba(0,0,0,0.6)',
-            pointerEvents: 'none',
-            zIndex: 9999,
           }}
         />
       )}

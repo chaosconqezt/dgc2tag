@@ -6,7 +6,7 @@ export type AppDispatch = React.Dispatch<{ type: string; payload?: unknown }>;
 
 export interface SearchRefs {
   searchInProgress: React.MutableRefObject<boolean>;
-  loadAlbumDetailsId: React.MutableRefObject<number | null>;
+  loadAlbumDetailsId: React.MutableRefObject<number | string | null>;
   searchGeneration: React.MutableRefObject<number>;
 }
 
@@ -45,7 +45,8 @@ export function createSearchActions(
 
   return {
     handleSearch: async (artist?: string, album?: string, artistEnabled?: boolean, albumEnabled?: boolean) => {
-      if (searchInProgressRef.current) return;
+      // Cancel any in-flight searches to avoid abusing APIs
+      api.cancelActiveRequests();
 
       const a = artistEnabled ?? state.searchArtistEnabled;
       const b = albumEnabled ?? state.searchAlbumEnabled;
@@ -138,6 +139,7 @@ export function createSearchActions(
 
       const syntheticResult: SearchResult = {
         source: 'deezer',
+        id: 'deezer-' + dz.albumId,
         postId: -dz.albumId,
         albumName: dz.albumName,
         artist: dz.artist,
@@ -162,24 +164,26 @@ export function createSearchActions(
       clearSelectionState();
 
       const baseResult: SearchResult = {
+        id: 'mbrainz-' + mb.releaseId,
+        source: 'musicbrainz',
         postId: 0,
         albumName: mb.title,
         artist: mb.artist,
         albumArtist: mb.artist,
         coverUrl: null,
-        country: mb.country,
-        year: mb.year,
-        label: mb.label,
+        country: mb.country ?? null,
+        year: mb.year ?? null,
+        label: mb.label ?? null,
         genres: [],
-        releaseType: mb.releaseType,
+        releaseType: mb.releaseType ?? null,
         url: mb.url,
         parsedTracks: [],
         musicbrainzReleaseId: mb.releaseId,
-        musicbrainzArtistId: mb.artistId,
-        musicbrainzReleaseGroupId: mb.releaseGroupId,
-        catalogNumber: mb.catalogNumber,
-        discId: mb.discId,
-        originalYear: mb.originalYear,
+        musicbrainzArtistId: mb.artistId ?? undefined,
+        musicbrainzReleaseGroupId: mb.releaseGroupId ?? undefined,
+        catalogNumber: mb.catalogNumber ?? undefined,
+        discId: mb.discId ?? undefined,
+        originalYear: mb.originalYear ?? undefined,
         extraTags: mb.extraTags || {},
       };
 
@@ -203,7 +207,7 @@ export function createSearchActions(
         const fullResult: SearchResult = {
           ...baseResult,
           parsedTracks,
-          musicbrainzReleaseTrackIds: fullRelease.tracks.map(t => t.recordingId).filter(Boolean) as string[],
+          musicbrainzReleaseTrackIds: fullRelease.tracks.map(t => t.recordingId).filter((id): id is string => Boolean(id)),
         };
 
         dispatch({ type: 'SET_ALBUM_DETAILS', payload: fullResult });

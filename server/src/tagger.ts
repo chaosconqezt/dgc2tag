@@ -137,7 +137,11 @@ export async function getTags(folderPath: string): Promise<AlbumTags> {
         } else {
             // Extract year from full date like "2024-03-15" or "20240315"
             const m = rawYear.match(/(\d{4})/);
-            if (m?.[1]) year = m[1];
+            const extracted = m?.[1];
+            if (extracted) {
+                const n = Number(extracted);
+                if (n >= 1900 && n <= 2099) year = extracted;
+            }
         }
     }
 

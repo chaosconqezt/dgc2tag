@@ -438,18 +438,20 @@ app.get('/api/directory/roots', async (_req, res) => {
         const roots: { name: string; path: string }[] = [];
 
         if (process.platform === 'win32') {
-            // List drive letters
-            for (const letter of 'CDEFGHIJ'.split('')) {
-                const drivePath = `${letter}:\\`;
-                try {
-                    await fs.access(drivePath);
-                    roots.push({ name: `${letter}:\\`, path: drivePath });
-                } catch { /* drive not accessible */ }
+            // Scan all drive letters A-Z
+            const letters = [];
+            for (let i = 0; i < 26; i++) {
+                letters.push(String.fromCharCode(65 + i)); // A=65, Z=90
             }
-            // Also add music root's drive if not already listed
-            const musicDrive = cfg.musicRoot.substring(0, 3);
-            if (!roots.some(r => r.path === musicDrive)) {
-                roots.push({ name: musicDrive, path: musicDrive });
+            const results = await Promise.allSettled(
+                letters.map(async letter => {
+                    const drivePath = `${letter}:\\`;
+                    await fs.access(drivePath);
+                    return { name: `${letter}:\\`, path: drivePath };
+                })
+            );
+            for (const r of results) {
+                if (r.status === 'fulfilled') roots.push(r.value);
             }
         } else {
             // Unix: start from /
