@@ -16,6 +16,8 @@ export const COLORS = {
   textDim: 'var(--text-dim)',
   textFaint: 'var(--text-faint)',
   textInvisible: 'var(--text-invisible)',
+  text95: 'var(--text-95)',
+  text90: 'var(--text-90)',
   green: 'var(--green)',
   yellow: 'var(--yellow)',
   red: 'var(--red)',

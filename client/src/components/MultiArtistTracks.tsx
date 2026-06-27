@@ -1,6 +1,5 @@
 import type { AlbumTags } from '../types';
 import { matchTracks, stripParentheses } from '../utils';
-import { FONT, FS, COLORS, simColor } from './styles';
 import { MatchRow, type TrackDisplayConfig, type TrackCallbacks } from './MatchRow';
 import { TrackArtistField } from './TrackArtistField';
 
@@ -38,7 +37,7 @@ export function MultiArtistTracks({
   onEditedTrackArtistChange: (num: string, value: string) => void;
 }) {
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+    <div className="track-list">
       {matched.map((m) => {
         const nameEnabled = writeTrackNames && (trackNameEnabled[m.remote.num] !== false);
         const artistEnabled = writeTrackArtists && (trackArtistsEnabled[m.remote.num] === true);
@@ -55,7 +54,7 @@ export function MultiArtistTracks({
         };
 
         return (
-          <div key={m.remote.num} style={{ opacity: nameEnabled ? 1 : 0.95 }}>
+          <div key={m.remote.num}>
             <MatchRow
               m={m}
               localTags={localTags}
@@ -65,30 +64,28 @@ export function MultiArtistTracks({
                 isNameEdited: m.remote.name !== displayName,
                 isUnmatched: !m.local,
                 displayName,
-                sc: simColor(m.sim),
+                simClass: m.sim === 100 ? 'green' : m.sim >= 80 ? 'yellow' : 'red',
               }}
               callbacks={callbacks}
             />
 
-            <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginTop: '-1px' }}>
-              <span style={{ width: '11px', flexShrink: 0 }} />
-              <div style={{ flex: 1, textAlign: 'left', minWidth: 0, paddingLeft: '4px' }}>
-                <span style={{ display: 'inline-block', width: '18px', flexShrink: 0 }} />
+            <div className="track-artist-row">
+              <span />
+              <span />
+              <div className="track-artist-cell">
                 {m.local ? (
-                  <span title={localTags.trackArtists?.[m.local.file] || ''} className="text-ellipsis" style={{
-                    fontSize: FS, fontFamily: FONT,
-                    color: COLORS.textFaint,
-                  }}>
+                  <span title={localTags.trackArtists?.[m.local.file] || ''}>
                     {localTags.trackArtists?.[m.local.file] || ''}
                   </span>
                 ) : (
-                  <span style={{ fontSize: FS, color: COLORS.textInvisible }}>&nbsp;</span>
+                  <span className="track-artist-spacer">&nbsp;</span>
                 )}
               </div>
-              <span style={{ width: '36px', flexShrink: 0 }} />
-              <span style={{ width: '40px', flexShrink: 0 }} />
-              <span style={{ width: '36px', flexShrink: 0 }} />
-              <div style={{ flex: 1, paddingLeft: '4px', minWidth: 0 }}>
+              <span />
+              <span />
+              <span />
+              <span />
+              <div className="track-artist-cell right">
                 <TrackArtistField
                   value={displayArtist}
                   onChange={(v) => {

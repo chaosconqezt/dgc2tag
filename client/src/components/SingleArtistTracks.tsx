@@ -1,6 +1,5 @@
 import type { AlbumTags } from '../types';
 import { matchTracks } from '../utils';
-import { simColor } from './styles';
 import { MatchRow, type TrackDisplayConfig, type TrackCallbacks } from './MatchRow';
 
 export function SingleArtistTracks({
@@ -28,7 +27,7 @@ export function SingleArtistTracks({
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '1px' }}>
+    <div className="track-list">
       {matched.map((m) => {
         const nameEnabled = writeTrackNames && (trackNameEnabled[m.remote.num] !== false);
         const displayName = editedTrackNames[m.remote.num] ?? m.remote.name;
@@ -44,7 +43,7 @@ export function SingleArtistTracks({
               isNameEdited: m.remote.name !== displayName,
               isUnmatched: !m.local,
               displayName,
-              sc: simColor(m.sim),
+              simClass: m.sim === 100 ? 'green' : m.sim >= 80 ? 'yellow' : 'red',
             }}
             callbacks={callbacks}
           />
