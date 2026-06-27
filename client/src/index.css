@@ -3,7 +3,7 @@
   --font: 'Inter', system-ui, -apple-system, sans-serif;
   --fs-l: 16px;
   --fs-s: 13px;
-  --bg: #09090b;
+  --bg: #0d0d0d;
   --panel-bg: #0c0c0e;
   --card-bg: #111114;
   --input-bg: #18181b;
@@ -86,6 +86,7 @@ body {
   align-items: center;
   gap: 8px;
   border-radius: 4px;
+  border: 1px solid transparent;
 }
 
 .tree-item:hover {
@@ -93,8 +94,9 @@ body {
 }
 
 .tree-item.selected {
-  background-color: var(--text-invisible);
+  background-color: rgba(239, 68, 68, 0.1);
   color: var(--red);
+  border-color: rgba(239, 68, 68, 0.2);
 }
 
 .btn-primary {
@@ -391,17 +393,23 @@ a:focus-visible {
   background-color: var(--card-bg);
   border: 1px solid var(--border);
   cursor: default;
-  transition: border-color 0.15s;
+  transition: border-color 0.15s, transform 0.15s, box-shadow 0.15s;
 }
 
 .library-card:hover {
-  border-color: var(--text-invisible);
+  border-color: var(--text-faint);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
 }
 
 .library-card.owned {
-  background-color: #140000;
-  border: 1px solid var(--red);
-  border-radius: 0;
+  border-color: var(--red);
+  background-color: rgba(239, 68, 68, 0.03);
+}
+
+.library-card.owned:hover {
+  border-color: var(--red);
+  box-shadow: 0 4px 16px rgba(239, 68, 68, 0.15);
 }
 
 .library-card-cover {
@@ -431,26 +439,26 @@ a:focus-visible {
 
 .library-card-status {
   position: absolute;
-  bottom: 4px;
+  top: 4px;
   right: 4px;
-  width: 20px;
-  height: 20px;
+  width: 22px;
+  height: 22px;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 700;
   background-color: rgba(0, 0, 0, 0.6);
-  color: var(--text-invisible);
+  color: transparent;
   opacity: 0;
-  transition: opacity 0.15s;
+  transition: opacity 0.15s, color 0.15s, background-color 0.15s;
 }
 
 .library-card.owned .library-card-status {
   opacity: 1;
-  color: var(--red);
-  background-color: rgba(0, 0, 0, 0.8);
+  color: #fff;
+  background-color: var(--red);
 }
 
 .library-card-info {
@@ -466,8 +474,7 @@ a:focus-visible {
 }
 
 .library-card:not(.owned) .library-card-title {
-  color: var(--text-dim);
-  font-weight: 400;
+  color: var(--text-muted);
 }
 
 .library-card-meta {
@@ -503,10 +510,10 @@ a:focus-visible {
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: center;
   gap: 1px;
-  padding: 8px 6px;
+  padding: 8px 4px;
   flex-shrink: 0;
-  overflow-y: auto;
 }
 
 .library-alpha-letter {
@@ -540,7 +547,7 @@ a:focus-visible {
 .genre-cloud {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px 10px;
+  gap: 8px;
   margin-bottom: 16px;
   line-height: 1.4;
 }
@@ -550,29 +557,22 @@ a:focus-visible {
   font-weight: 600;
   color: var(--text-muted);
   cursor: pointer;
-  transition: color 0.15s;
+  transition: all 0.15s;
   white-space: nowrap;
+  display: inline-block;
+  padding: 0.15em 0.7em;
+  border-radius: 1em;
+  transform: scale(1);
 }
 
 .genre-tag:hover {
   color: var(--text);
+  background-color: var(--input-bg);
+  transform: scale(1.12);
 }
 
 .genre-tag.selected {
   color: var(--red);
-}
-
-.genre-tag-count {
-  font-size: 9px;
-  font-weight: 400;
-  color: var(--text-faint);
-  margin-left: 2px;
-  vertical-align: super;
-}
-
-.genre-tag.selected .genre-tag-count {
-  color: var(--red);
-  opacity: 0.6;
 }
 
 .genre-filter-bar {
@@ -613,8 +613,6 @@ a:focus-visible {
   display: flex;
   align-items: center;
   margin-bottom: 8px;
-  padding-bottom: 6px;
-  border-bottom: 1px solid var(--border-light);
 }
 
 .tag-header-label {
@@ -638,6 +636,12 @@ a:focus-visible {
   grid-template-columns: 24px 1fr 44px 1fr;
   gap: 4px;
   align-items: center;
+  padding: 4px 0;
+  transition: background-color 0.1s;
+}
+
+.tag-row:hover {
+  background-color: var(--input-bg);
 }
 
 .tag-cell {
@@ -713,6 +717,12 @@ a:focus-visible {
   grid-template-columns: 24px 1fr 44px 1fr;
   gap: 4px;
   align-items: center;
+  padding: 4px 0;
+  transition: background-color 0.1s;
+}
+
+.tag-ids-row:hover {
+  background-color: var(--input-bg);
 }
 
 .tag-id-cell {
@@ -925,13 +935,14 @@ a:focus-visible {
 }
 
 .track-chk input {
+  accent-color: var(--red);
   cursor: pointer;
 }
 
 .track-num {
   font-size: var(--fs-s);
-  font-family: 'SF Mono', 'Cascadia Code', 'Consolas', monospace;
-  color: var(--text-faint);
+  font-family: monospace;
+  color: var(--text-muted);
   text-align: center;
   padding: 0 4px;
 }
@@ -970,7 +981,7 @@ a:focus-visible {
 
 .track-dur {
   font-size: var(--fs-s);
-  font-family: 'SF Mono', 'Cascadia Code', 'Consolas', monospace;
+  font-family: monospace;
   color: var(--text-muted);
   text-align: center;
   padding: 0 4px;
@@ -981,7 +992,7 @@ a:focus-visible {
 }
 
 .track-sim {
-  font-size: var(--fs-s);
+  font-size: 14px;
   font-weight: 600;
   font-family: 'SF Mono', 'Cascadia Code', 'Consolas', monospace;
   text-align: center;
@@ -1013,22 +1024,17 @@ a:focus-visible {
   min-width: 0;
   font-size: 14px;
   font-family: var(--font);
-  background: transparent;
-  border: 1px solid transparent;
+  background: var(--input-bg);
+  border: 1px solid var(--border-light);
   border-radius: 3px;
-  padding: 2px 6px;
+  padding: 3px 6px;
   color: var(--text-95);
   outline: none;
-  transition: border-color 0.15s, background-color 0.15s;
-}
-
-.track-input:hover {
-  border-color: var(--border-light);
+  transition: border-color 0.15s, background-color 0.15s, color 0.15s;
 }
 
 .track-input:focus {
   border-color: var(--red);
-  background: var(--input-bg);
 }
 
 .track-input.edited {
@@ -1049,7 +1055,7 @@ a:focus-visible {
   display: grid;
   grid-template-columns: 24px 28px 1fr 44px 44px 44px 28px 1fr;
   align-items: center;
-  padding: 1px 0 3px;
+  padding: 3px 0;
   border-bottom: 1px solid var(--border-light);
 }
 
@@ -1069,7 +1075,7 @@ a:focus-visible {
 }
 
 .track-artist-cell.right {
-  padding-left: 12px;
+  padding: 0 6px;
 }
 
 .track-artist-spacer {
@@ -1080,7 +1086,7 @@ a:focus-visible {
 .track-artist-field {
   display: block;
   cursor: pointer;
-  color: var(--text-dim);
+  color: var(--text-90);
 }
 
 .track-artist-field.dim {
@@ -1088,13 +1094,18 @@ a:focus-visible {
 }
 
 .track-artist-field-input {
-  background: transparent;
-  border: none;
-  color: var(--text-muted);
-  padding: 0;
+  background: var(--input-bg);
+  border: 1px solid var(--border-light);
+  border-radius: 3px;
+  color: var(--text-90);
+  padding: 2px 6px;
   width: 100%;
   min-width: 30px;
   font-size: 14px;
   font-family: var(--font);
   outline: none;
+}
+
+.track-artist-field-input:focus {
+  border-color: var(--red);
 }

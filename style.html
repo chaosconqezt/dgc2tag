@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DGC Tagger</title>
+  
+  <!-- Стили оставлены без изменений, они отличные -->
+  <style type="text/css">
+    :root {
+      color-scheme: dark;
+      --font: 'Inter', system-ui, -apple-system, sans-serif;
+      --fs-l: 16px;
+      --fs-s: 13px;
+      --bg: #09090b;
+      --panel-bg: #0c0c0e;
+      --card-bg: #111114;
+      --input-bg: #18181b;
+      --input-bg-alt: #0c0c0e;
+      --border: #27272a;
+      --border-light: #1f1f23;
+      --text: #f4f4f5;
+      --text-bright: #fff;
+      --text-muted: #a1a1aa;
+      --text-dim: #71717a;
+      --text-faint: #52525b;
+      --text-invisible: #3f3f46;
+      --red: #ef4444;
+      --green: #4ade80;
+      --yellow: #fbbf24;
+      --mbrainz: #f97316;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; }
+    
+    body {
+      margin: 0;
+      font-family: var(--font);
+      font-size: 14px;
+      background-color: var(--bg);
+      color: var(--text);
+    }
+
+    /* Основная сетка */
+    .dashboard { display: flex; height: 100vh; overflow: hidden; }
+    .sidebar { width: 350px; flex-shrink: 0; background-color: var(--card-bg); border-right: 1px solid var(--border); display: flex; flex-direction: column; }
+    .main-content { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+    
+    /* Списки и деревья */
+    .tree-scroll { flex: 1; overflow-y: auto; padding: 8px; border-bottom: 1px solid var(--border); }
+    .tree-item { padding: 4px 8px; cursor: pointer; display: flex; align-items: center; gap: 8px; border-radius: 4px; border: 1px solid transparent; }
+    .tree-item:hover { background-color: var(--input-bg); }
+    .tree-item.selected { background-color: rgba(239, 68, 68, 0.1); color: var(--red); border-color: rgba(239, 68, 68, 0.2); }
+    
+    /* Панели */
+    .diff-panel { flex: 1; background-color: var(--panel-bg); padding: 20px; overflow-y: auto; }
+    .panel-section { padding: 10px; background: var(--bg); border-radius: 8px; border: 1px solid var(--border); margin-bottom: 10px; }
+    
+    /* Кнопки */
+    .btn-group { display: flex; gap: 8px; margin-bottom: 12px; }
+    .btn-move, .btn-rename, .btn-write, .btn-cancel {
+      display: inline-flex; align-items: center; justify-content: center; gap: 5px; flex: 1;
+      height: 32px; padding: 0 12px; font-weight: 600; border-radius: 5px; cursor: pointer;
+      transition: background 0.15s, transform 0.15s; border: 1px solid transparent; color: #fff;
+    }
+    .btn-move { background: #132940; color: #7dadd4; border-color: #1e3d5f; }
+    .btn-move:hover { background: #1a3a5c; transform: translateY(-1px); }
+    
+    .btn-rename { background: #1f1730; color: #a892c4; border-color: #2e2444; }
+    .btn-rename:hover { background: #2a1f3d; transform: translateY(-1px); }
+    
+    .btn-write { background: #2c1717; color: #c49292; border-color: #3f2424; }
+    .btn-write:hover { background: #3a1f1f; transform: translateY(-1px); }
+    
+    .btn-cancel { background: transparent; color: var(--text-dim); border-color: var(--border); }
+    .btn-cancel:hover { background: var(--input-bg); transform: translateY(-1px); }
+
+    /* Таблицы тегов и треков */
+    .tag-row, .track-row { display: grid; align-items: center; gap: 8px; padding: 4px 0; border-bottom: 1px solid var(--border-light); }
+    .tag-row { grid-template-columns: 24px 1fr 44px 1fr; }
+    .track-row { grid-template-columns: 24px 28px 1fr 44px 44px 44px 28px 1fr; }
+    .track-row:hover, .tag-row:hover { background-color: var(--input-bg); }
+    
+    .track-chk input { accent-color: var(--red); cursor: pointer; }
+    .track-num, .track-dur, .tag-percent { font-family: monospace; color: var(--text-muted); text-align: center; }
+    .track-sim.green { color: var(--green); font-weight: 600; }
+    
+    .tag-input, .track-input {
+      width: 100%; background: var(--input-bg); border: 1px solid var(--border-light);
+      border-radius: 3px; padding: 4px 8px; color: var(--text); outline: none;
+    }
+    .tag-input:focus, .track-input:focus { border-color: var(--red); }
+    
+    /* Утилиты */
+    .text-ellipsis { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .flex-center { display: flex; align-items: center; gap: 6px; }
+    .footer-bar { border-top: 1px solid var(--border); padding: 6px 12px; background-color: var(--input-bg-alt); display: flex; gap: 16px; font-size: 11px; color: var(--text-dim); }
+  </style>
+</head>
+<body>
+  <div id="root">
+    <div class="dashboard">
+      
+      <!-- ЛЕВАЯ ПАНЕЛЬ (Дерево файлов) -->
+      <div class="sidebar">
+        <!-- Шапка сайдбара -->
+        <div class="library-header">
+          <div class="library-header-left">
+            <h2 class="library-header-title">DGC TAGGER</h2>
+          </div>
+        </div>
+
+        <!-- Дерево папок -->
+        <div class="tree-scroll">
+          <div class="tree-item">
+            <span class="text-ellipsis">Cock And Ball Torture _ Disgorge</span>
+          </div>
+          <div class="tree-item selected">
+            <span class="text-ellipsis">Ripping Organs _ Pornocaust</span>
+          </div>
+          <div class="tree-item">
+            <span class="text-ellipsis">Trafficcancer</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- РАЗДЕЛИТЕЛЬ -->
+      <div class="hover-red" style="width: 4px; cursor: col-resize;"></div>
+
+      <!-- ПРАВАЯ ПАНЕЛЬ (Основной контент) -->
+      <div class="main-content">
+        <div class="diff-panel">
+          
+          <!-- Панель управления действиями -->
+          <div class="btn-group">
+            <button class="btn-move">WRITE & MOVE</button>
+            <button class="btn-rename">WRITE & RENAME</button>
+            <button class="btn-write">WRITE</button>
+            <button class="btn-cancel">CANCEL</button>
+          </div>
+
+          <!-- Секция тегов альбома -->
+          <div class="panel-section">
+            <div class="tag-row" style="font-weight: 600; color: var(--text-dim); border-bottom: none;">
+              <div></div>
+              <div>FILE TAGS</div>
+              <div class="tag-percent">%</div>
+              <div>CATALOG</div>
+            </div>
+            
+            <div class="tag-row">
+              <div class="track-chk"><input type="checkbox" checked></div>
+              <div class="text-ellipsis">Cock And Ball Torture</div>
+              <div class="tag-percent">69%</div>
+              <div><input class="tag-input" type="text" value="Cock And Ball Torture / Disgorge"></div>
+            </div>
+            
+            <div class="tag-row">
+              <div class="track-chk"><input type="checkbox" checked></div>
+              <div class="text-ellipsis">Barefoot & Hungry</div>
+              <div class="tag-percent">100%</div>
+              <div><input class="tag-input" type="text" value="Barefoot & Hungry / Goremassacre Perversity"></div>
+            </div>
+            
+            <div class="tag-row">
+              <div class="track-chk"><input type="checkbox" checked></div>
+              <div class="text-ellipsis">2001</div>
+              <div class="tag-percent">100%</div>
+              <div><input class="tag-input" type="text" value="2001"></div>
+            </div>
+          </div>
+
+          <!-- Секция треков -->
+          <div class="panel-section">
+            <div class="track-row">
+              <div class="track-chk"><input type="checkbox" checked></div>
+              <div class="track-num">01</div>
+              <div class="text-ellipsis">Titty Torture Bondage Boys</div>
+              <div class="track-dur">2:36</div>
+              <div class="track-sim green">100%</div>
+              <div class="track-dur">-:-</div>
+              <div class="track-num">01</div>
+              <div><input class="track-input" type="text" value="Titty Torture Bondage Boys"></div>
+            </div>
+            
+            <div class="track-row">
+              <div class="track-chk"><input type="checkbox" checked></div>
+              <div class="track-num">02</div>
+              <div class="text-ellipsis">Poontang Clan</div>
+              <div class="track-dur">3:25</div>
+              <div class="track-sim green">100%</div>
+              <div class="track-dur">-:-</div>
+              <div class="track-num">02</div>
+              <div><input class="track-input" type="text" value="Poontang Clan"></div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Подвал (Footer) -->
+        <div class="footer-bar">
+          <div class="flex-center">
+            <span>SRC:</span>
+            <span style="font-family: monospace;">c:\vibecode\dgc2tag\music</span>
+          </div>
+          <span>|</span>
+          <div class="flex-center">
+            <span>OUT:</span>
+            <span style="font-family: monospace;">c:\vibecode\dgc2tag\music\tag</span>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</body>
+</html>
