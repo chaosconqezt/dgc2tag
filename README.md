@@ -17,6 +17,7 @@ npm run dev
 
 ## Features
 
+- **Library (Collection)** — track albums you've tagged from DGC, save covers and metadata, compare owned vs. unowned albums in the band's discography.
 - **4 search sources** — DGC (red), Deezer (green), MusicBrainz (orange), Bandcamp (teal) in parallel
 - **Plugin architecture** — add new sources with 1 file + 1 line in registry
 - **Compilation mode** — auto-detect VA compilations, per-track artist parsing
@@ -67,6 +68,7 @@ server/src/
 ├── tagWriter.ts      — ID3 writing (data-driven writeUserDefinedText)
 ├── tagger.ts         — ID3 reading + music-metadata for duration (single pass)
 ├── scanner.ts        — filesystem traversal (async, lazy + recursive)
+│   ├── library.ts        — CRUD for library entries (album.json + cover) and automatic discography fetch
 ├── config.ts         — config.json load/save + enabledSources
 ├── cache.ts          — file cache for bands/releases
 ├── logger.ts         — leveled logger (debug/info/warn/error)
@@ -107,10 +109,19 @@ client/src/
     ├── SettingsModal.tsx     — sources toggles + tag defaults
     ├── WebfetchOverlay.tsx   — sandboxed iframe
     ├── LibraryTree.tsx       — tree with dir count badges (useMemo counts)
+│   ├── LibraryView.tsx       — displays tagged library albums and discography
     ├── SearchBar.tsx
     ├── ErrorBoundary.tsx
     └── Footer.tsx
 ```
+
+## Library Architecture
+
+Albums are automatically tracked when you apply tags from DGC.
+
+- **Storage** — stored in a `library/{bandId}/{postId}/` folder structure containing `album.json` (metadata) and `cover.jpg/webp`.
+- **Discography Fetch** — automatically retrieves the full band's discography from DGC using Puppeteer to identify unowned albums.
+- **Collection Comparison** — `LibraryView` visualizes albums you've tagged vs unowned albums to complete your discography collection.
 
 ## Adding a New Source
 
@@ -161,6 +172,9 @@ Routes auto-generated: `POST /api/search-mysource`, `GET /api/mysource/:id`
 | POST | `/api/config/write-track-artists` | Toggle track artist writing |
 | GET | `/api/library` | Library tree |
 | GET | `/api/library/children?dirPath=` | Lazy-load directory children |
+| GET | `/api/collection` | Get all owned and unowned albums in library |
+| GET | `/api/collection/:bandId` | Get band's full library discography |
+| GET | `/api/cover/:bandId/:postId` | Get album cover from library |
 | GET | `/api/tags?folderPath=` | AlbumTags from folder |
 | POST | `/api/search` | DGC search (compatibility) |
 | POST | `/api/search-{sourceId}` | Auto-generated source search |
