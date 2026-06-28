@@ -53,7 +53,7 @@ export function MatchRow({
   const displayDuration = localDuration !== undefined ? localDuration : null;
 
   return (
-    <div className={`track-row${nameEnabled ? '' : ' disabled'}`}>
+    <div className={`data-row track-grid track-row${nameEnabled ? '' : ' disabled'}`}>
       <div className="track-chk">
         <input
           type="checkbox"

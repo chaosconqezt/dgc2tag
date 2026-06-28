@@ -42,8 +42,8 @@ export function ProgressOverlay({ phase, current, total, log, done, success, mes
               <span className="text-muted">{current} / {total}</span>
               <span className="text-dim">{pct}%</span>
             </div>
-            <div className="progress-bar-wrap">
-              <div className="progress-bar-fill" style={{ width: `${pct}%` }} />
+            <div className="progress-bar-wrap" style={{ '--progress-width': `${pct}%` } as React.CSSProperties}>
+              <div className="progress-bar-fill" />
             </div>
           </div>
         )}
