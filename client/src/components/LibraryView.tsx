@@ -22,10 +22,6 @@ function firstLetter(name: string): string {
   return (name[0] ?? '').toUpperCase();
 }
 
-const handleImgError = (e: React.SyntheticEvent<HTMLImageElement>) => {
-  e.currentTarget.classList.add('img-error');
-};
-
 export function LibraryView({ entries, cardSize, minAlbums }: LibraryViewProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const bandSectionRefs = useRef<Map<string, HTMLDivElement>>(new Map());
@@ -71,34 +67,7 @@ export function LibraryView({ entries, cardSize, minAlbums }: LibraryViewProps) 
     return result.sort((a, b) => compareNames(a.bandName, b.bandName));
   }, [entries, minAlbums, selectedGenre]);
 
-  const totalOwned = useMemo(() => entries.filter(e => e.inLibrary).length, [entries]);
-
-  const genreCloudItems = useMemo(() => {
-    if (genreCounts.length === 0) return [];
-    const maxCount = genreCounts[0][1];
-    const items = genreCounts.map(([genre, count]) => {
-      const ratio = count / maxCount;
-      return { genre, size: 10 + ratio * 16 };
-    });
-    // Reorder: largest in center, smallest at edges
-    const result = new Array(items.length);
-    const mid = Math.floor(items.length / 2);
-    if (items.length % 2 === 0) {
-      result[mid - 1] = items[0];
-      result[mid] = items[1];
-    } else {
-      result[mid] = items[0];
-    }
-    let leftPos = mid - 1;
-    let rightPos = mid + 1;
-    let idx = items.length % 2 === 0 ? 2 : 1;
-    while (idx < items.length) {
-      if (leftPos >= 0) { result[leftPos] = items[idx++]; leftPos--; }
-      if (idx < items.length && rightPos < items.length) { result[rightPos] = items[idx++]; rightPos++; }
-    }
-    return result;
-  }, [genreCounts]);
-
+  const totalOwned = entries.filter(e => e.inLibrary).length;
   const visibleBands = bands.slice(0, visibleCount);
 
   const alphaLetters = useMemo(() => {
@@ -109,20 +78,18 @@ export function LibraryView({ entries, cardSize, minAlbums }: LibraryViewProps) 
     return [...seen].sort((a, b) => compareNames(a, b));
   }, [bands]);
 
-  const bandLetters = useMemo(() => bands.map(b => firstLetter(b.bandName)), [bands]);
-
   const letterFirstIndex = useMemo(() => {
     const map = new Map<string, number>();
     let last = '';
     for (let i = 0; i < bands.length; i++) {
-      const l = bandLetters[i];
+      const l = firstLetter(bands[i].bandName);
       if (l !== last) {
         map.set(l, i);
         last = l;
       }
     }
     return map;
-  }, [bandLetters]);
+  }, [bands]);
 
   useEffect(() => {
     const el = scrollRef.current;
@@ -189,22 +156,30 @@ export function LibraryView({ entries, cardSize, minAlbums }: LibraryViewProps) 
         ))}
       </nav>
 
-      <div ref={scrollRef} className="library-scroll">
+      <div ref={scrollRef} className="library-scroll" style={{ '--card-size': `${cardSize}px` } as React.CSSProperties}>
         <div className="library-stats">
           LIBRARY — {bands.length} bands, {entries.length} albums ({totalOwned} owned)
         </div>
 
-        {genreCloudItems.length > 0 && (
+        {genreCounts.length > 0 && (
           <div className="genre-cloud">
-            {genreCloudItems.map(({ genre, size }) => (
-              <span
-                key={genre}
-                className={`genre-tag${selectedGenre === genre ? ' selected' : ''}`}
-                onClick={() => setSelectedGenre(prev => prev === genre ? null : genre)}
-              >
-                {genre}
-              </span>
-            ))}
+            {genreCounts.map(([genre, count]) => {
+              const maxCount = genreCounts[0][1];
+              const ratio = count / maxCount;
+              const size = 11 + ratio * 11;
+              const opacity = 0.45 + ratio * 0.55;
+              return (
+                <span
+                  key={genre}
+                  className={`genre-tag${selectedGenre === genre ? ' selected' : ''}`}
+                  style={{ fontSize: `${size}px`, opacity }}
+                  onClick={() => setSelectedGenre(prev => prev === genre ? null : genre)}
+                >
+                  {genre}
+                  <span className="genre-tag-count">{count}</span>
+                </span>
+              );
+            })}
           </div>
         )}
 
@@ -217,9 +192,9 @@ export function LibraryView({ entries, cardSize, minAlbums }: LibraryViewProps) 
 
         {visibleBands.map((group, i) => {
           const owned = group.albums.filter(a => a.inLibrary).length;
-          const letter = bandLetters[i];
+          const letter = firstLetter(group.bandName);
           const prevGroup = visibleBands[i - 1];
-          const showAnchor = !prevGroup || bandLetters[i - 1] !== letter;
+          const showAnchor = !prevGroup || firstLetter(prevGroup.bandName) !== letter;
           return (
             <div
               key={group.bandId}
@@ -243,7 +218,7 @@ export function LibraryView({ entries, cardSize, minAlbums }: LibraryViewProps) 
                           src={`/api/cover/${album.bandId}/${album.postId}`}
                           alt=""
                           loading="lazy"
-                          onError={handleImgError}
+                          onError={(e) => { (e.target as HTMLImageElement).classList.add('img-error'); }}
                         />
                       ) : (
                         <span className="library-cover-placeholder">?</span>

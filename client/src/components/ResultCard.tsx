@@ -1,5 +1,6 @@
 import { useState, useRef } from 'react';
 import { Disc3, ExternalLink, Music2 } from 'lucide-react';
+import { FONT, FS, COLORS } from './styles';
 
 interface ResultCardProps {
   coverUrl: string | null;
@@ -12,7 +13,7 @@ interface ResultCardProps {
   releaseType?: string | null;
   trackCount?: number;
   url: string;
-  sourceId: string;
+  accentColor: string;
   selected?: boolean;
   onClick?: () => void;
 }
@@ -25,7 +26,7 @@ export function ResultCard({
   label,
   trackCount,
   url,
-  sourceId,
+  accentColor,
   selected,
   onClick,
 }: ResultCardProps) {
@@ -43,28 +44,58 @@ export function ResultCard({
   return (
     <div
       onClick={onClick}
-      className={`result-card accent-${sourceId}${selected ? ' selected' : ''}`}
+      style={{
+        display: 'flex',
+        gap: '8px',
+        padding: '5px',
+        border: `1px solid ${selected ? accentColor : COLORS.borderLight}`,
+        borderRadius: '6px',
+        cursor: 'pointer',
+        transition: 'border-color 0.15s, background-color 0.15s',
+        backgroundColor: selected ? `${accentColor}15` : 'transparent',
+        width: '100%',
+        boxSizing: 'border-box',
+      }}
     >
       {/* Cover */}
       <div
         ref={imgRef}
         onMouseEnter={handleEnter}
         onMouseLeave={() => setPreview(null)}
-        className="result-card-cover"
+        style={{
+          width: '40px',
+          height: '40px',
+          borderRadius: '4px',
+          overflow: 'hidden',
+          backgroundColor: COLORS.bg,
+          border: `1px solid ${COLORS.border}`,
+          flexShrink: 0,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
       >
         {coverUrl ? (
-          <img src={coverUrl} alt="" loading="lazy" />
+          <img src={coverUrl} alt="" loading="lazy" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
         ) : (
-          <Disc3 size={16} color="var(--text-invisible)" />
+          <Disc3 size={16} color={COLORS.textInvisible} />
         )}
       </div>
 
       {/* Info — 2 lines */}
-      <div className="result-card-info">
+      <div style={{ minWidth: 0, flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: '1px', overflow: 'hidden' }}>
         {/* Line 1: Artist · Year · Label · link */}
-        <div className="result-card-line">
+        <div style={{ display: 'flex', alignItems: 'center', gap: '4px', minWidth: 0 }}>
           <span
             className="text-ellipsis"
+            style={{
+              fontWeight: '600',
+              fontSize: FS,
+              color: accentColor,
+              fontFamily: FONT,
+              flex: 1,
+              minWidth: 0,
+            }}
           >
             {meta1 || '—'}
           </span>
@@ -72,26 +103,35 @@ export function ResultCard({
             href={url}
             target="_blank"
             onClick={(e) => e.stopPropagation()}
-            className="result-card-link"
+            onMouseEnter={(e) => (e.currentTarget.style.color = COLORS.text)}
+            onMouseLeave={(e) => (e.currentTarget.style.color = COLORS.textInvisible)}
+            style={{ color: COLORS.textInvisible, flexShrink: 0, display: 'flex', transition: 'color 0.15s' }}
           >
             <ExternalLink size={11} />
           </a>
         </div>
 
         {/* Line 2: Album · Label · track count */}
-        <div className="result-card-line2">
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', minWidth: 0 }}>
           <span
             className="text-ellipsis"
+            style={{
+              fontSize: FS,
+              color: COLORS.textMuted,
+              fontFamily: FONT,
+              flex: 1,
+              minWidth: 0,
+            }}
           >
             {albumName}
           </span>
           {label && (
-            <span className="text-ellipsis result-card-label">
+            <span className="text-ellipsis" style={{ fontSize: FS, color: COLORS.textFaint, fontFamily: FONT, flexShrink: 0 }}>
               {label}
             </span>
           )}
           {trackCount != null && (
-            <span className="result-card-trackcount">
+            <span style={{ display: 'flex', alignItems: 'center', gap: '2px', fontSize: FS, color: COLORS.textFaint, fontFamily: FONT, flexShrink: 0 }}>
               <Music2 size={10} />
               {trackCount}
             </span>
@@ -104,7 +144,19 @@ export function ResultCard({
         <img
           src={coverUrl}
           alt=""
-          className="result-card-preview"
+          style={{
+            position: 'fixed',
+            left: preview.x,
+            top: preview.y,
+            transform: 'translate(-50%, 8px)',
+            maxWidth: '300px',
+            maxHeight: '300px',
+            borderRadius: '6px',
+            border: `1px solid ${COLORS.border}`,
+            boxShadow: '0 8px 24px rgba(0,0,0,0.6)',
+            pointerEvents: 'none',
+            zIndex: 9999,
+          }}
         />
       )}
     </div>

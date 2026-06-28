@@ -1,4 +1,5 @@
 import type { MusicBrainzSearchResult } from '../api';
+import { COLORS } from './styles';
 import { ResultCard } from './ResultCard';
 
 interface MusicBrainzResultsProps {
@@ -25,7 +26,7 @@ export function MusicBrainzResults({ results, loading, selectedId, onSelect }: M
           releaseType={mb.releaseType}
           trackCount={mb.trackCount}
           url={mb.url}
-          sourceId="mbrainz"
+          accentColor={COLORS.mbrainz}
           selected={selectedId === mb.releaseId}
           onClick={() => onSelect(mb)}
         />

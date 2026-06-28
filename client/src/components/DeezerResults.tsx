@@ -1,4 +1,5 @@
 import type { DeezerSearchResult } from '../types';
+import { COLORS } from './styles';
 import { ResultCard } from './ResultCard';
 
 interface DeezerResultsProps {
@@ -25,7 +26,8 @@ export function DeezerResults({ results, loading, selectedId, onSelect }: Deezer
           releaseType={dz.releaseType}
           trackCount={dz.trackCount}
           url={dz.url}
-            sourceId="deezer"
+          urlTitle="Open on Deezer"
+            accentColor={COLORS.green}
           selected={selectedId === dz.albumId}
           onClick={() => onSelect(dz)}
         />

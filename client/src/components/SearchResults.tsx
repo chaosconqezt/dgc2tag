@@ -1,6 +1,7 @@
 import { RefreshCw, AlertCircle, Clock } from 'lucide-react';
 import type { SearchResult, DeezerSearchResult } from '../types';
 import type { MusicBrainzSearchResult } from '../api';
+import { FONT, FS, FS_XS, FS_S, COLORS } from './styles';
 import { DgcResults } from './DgcResults';
 import { DeezerResults } from './DeezerResults';
 import { MusicBrainzResults } from './MusicBrainzResults';
@@ -29,48 +30,50 @@ export function SearchResults({ results, deezerResults, mbrainzResults, bandcamp
   const anyLoading = dgcLoading || deezerLoading || mbrainzLoading || bandcampLoading;
 
   return (
-    <div className="search-results-section">
-      <div className="search-results-header">
-        <div className="search-results-badges">
+    <div style={{ marginBottom: '8px', borderBottom: `1px solid ${COLORS.border}`, paddingBottom: '8px', overflow: 'hidden', minWidth: 0, width: '100%' }}>
+      <div style={{ display: 'flex', alignItems: 'center', marginBottom: '6px', position: 'relative' }}>
+        <div style={{ display: 'flex', gap: '8px', position: 'absolute', left: 0 }}>
           {results.length > 0 && (
-            <span className="search-results-badge text-red">
+            <span style={{ fontSize: FS_XS, color: COLORS.red, fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.5px', fontFamily: FONT }}>
               DGC · {dgcLoading ? '...' : results.length}
             </span>
           )}
           {deezerResults.length > 0 && (
-            <span className="search-results-badge text-green">
+            <span style={{ fontSize: FS_XS, color: COLORS.green, fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.5px', fontFamily: FONT }}>
               DEEZER · {deezerLoading ? '...' : deezerResults.length}
             </span>
           )}
           {mbrainzResults.length > 0 && (
-            <span className="search-results-badge text-mbrainz">
+            <span style={{ fontSize: FS_XS, color: COLORS.mbrainz, fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.5px', fontFamily: FONT }}>
               MBRAINZ · {mbrainzLoading ? '...' : mbrainzResults.length}
             </span>
           )}
           {bandcampResults.length > 0 && (
-            <span className="search-results-badge text-bandcamp">
+            <span style={{ fontSize: FS_XS, color: COLORS.bandcamp, fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.5px', fontFamily: FONT }}>
               BANDCAMP · {bandcampLoading ? '...' : bandcampResults.length}
             </span>
           )}
         </div>
-        <span className="search-results-center">MATCHES</span>
-        <div className="search-results-right">
-          {anyLoading && <RefreshCw size={10} className="animate-spin text-red" />}
+        <span style={{ fontSize: FS, fontWeight: '700', color: COLORS.textDim, textTransform: 'uppercase', letterSpacing: '1px', fontFamily: FONT, width: '100%', textAlign: 'center' }}>MATCHES</span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', position: 'absolute', right: 0 }}>
+          {anyLoading && <RefreshCw size={10} color={COLORS.red} className="animate-spin" />}
           {!anyLoading && searchTimeMs !== null && (
-            <span className="search-results-timing">
+            <span style={{ fontSize: FS_S, color: COLORS.textDim, fontFamily: FONT, display: 'flex', alignItems: 'center', gap: '2px' }}>
               <Clock size={9} />{(searchTimeMs / 1000).toFixed(1)}s
             </span>
           )}
-          <span className="search-results-count">{totalCount}</span>
+          <span style={{ fontSize: FS, background: COLORS.inputBg, padding: '1px 5px', borderRadius: '8px', color: COLORS.textDim, fontFamily: FONT }}>{totalCount}</span>
         </div>
       </div>
       {!anyLoading && totalCount === 0 && !dgcLoading && !deezerLoading && !mbrainzLoading && !bandcampLoading ? (
-        <div className="search-results-empty">
-          <AlertCircle size={14} />
-          <span className="search-results-empty-text">No matches</span>
+        <div style={{ display: 'flex', alignItems: 'center', padding: '8px', color: COLORS.textInvisible, gap: '6px' }}>
+          <AlertCircle size={14} style={{ opacity: 0.3 }} />
+          <span style={{ fontSize: FS, fontFamily: FONT }}>No matches</span>
         </div>
       ) : (
-        <div className="search-results-list">
+        <div
+          style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}
+        >
           <DgcResults results={results} loading={dgcLoading} selectedResult={selectedResult} onSelectResult={onSelectResult} />
           <DeezerResults results={deezerResults} loading={deezerLoading} selectedId={selectedDeezerId} onSelect={onSelectDeezer} />
           <MusicBrainzResults results={mbrainzResults} loading={mbrainzLoading} selectedId={selectedMbrainzId} onSelect={onSelectMbrainz} />

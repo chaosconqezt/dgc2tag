@@ -13,6 +13,7 @@ export interface WriteOptions {
     // ALL keys = FULL FILE PATHS (immutable identifiers)
     trackArtists?: Record<string, string>;
     trackNames?: Record<string, string>;
+    trackNumbers?: Record<string, string>;
 }
 
 // ── Diff helpers ──────────────────────────────────────────────
@@ -84,13 +85,13 @@ function diffRename(oldName: string, newName: string): string {
 // ── Write ID3 tags by full file path ────────────────────────────────
 
 export async function writeTags(options: WriteOptions, musicRoot?: string): Promise<void> {
-    const { folderPath, tags, trackArtists, trackNames } = options;
+    const { folderPath, tags, trackArtists, trackNames, trackNumbers } = options;
     if (musicRoot) assertInsideMusicRoot(folderPath, musicRoot);
     const mp3Files = await getMp3Files(folderPath);
 
     for (const file of mp3Files) {
         const filePath = path.join(folderPath, file);
-        await writeSingleTag(filePath, tags, trackArtists, trackNames);
+        await writeSingleTag(filePath, tags, trackArtists, trackNames, trackNumbers);
     }
 }
 
@@ -99,12 +100,14 @@ async function writeSingleTag(
     tags: AlbumTags,
     trackArtists?: Record<string, string>,
     trackNames?: Record<string, string>,
+    trackNumbers?: Record<string, string>,
 ): Promise<void> {
     const currentTags = NodeID3.read(filePath) as unknown as Id3Tags;
 
     // Key by FULL PATH — this never changes
     const perTrackArtist = trackArtists?.[filePath];
     const perTrackName = trackNames?.[filePath];
+    const perTrackNumber = trackNumbers?.[filePath];
 
     const rawYear = tags.year || currentTags.year;
     const validYear = rawYear && /^\d{4}$/.test(rawYear) ? String(rawYear) : currentTags.year;
@@ -112,7 +115,8 @@ async function writeSingleTag(
     const resolvedArtist = Array.isArray(tags.artist) ? tags.artist[0] : tags.artist;
     const resolvedAlbumArtist = Array.isArray(tags.albumArtist) ? tags.albumArtist[0] : tags.albumArtist;
 
-    const updatedTags: Record<string, unknown> = {
+    const updatedTags = {
+        ...currentTags,
         artist: perTrackArtist || resolvedArtist || currentTags.artist,
         performerInfo: resolvedAlbumArtist || currentTags.performerInfo,
         album: tags.album || currentTags.album,
@@ -120,6 +124,7 @@ async function writeSingleTag(
         recordingTime: undefined,
         genre: tags.genre || currentTags.genre,
         publisher: tags.label || currentTags.publisher,
+        trackNumber: perTrackNumber || currentTags.trackNumber,
     };
 
     if (perTrackName !== undefined) {
@@ -152,7 +157,12 @@ async function writeSingleTag(
         customFields
     );
 
-    const fileBuffer = await fs.readFile(filePath);
+    let fileBuffer: Buffer;
+    if (currentTags._buffer && typeof currentTags._buffer === 'object' && 'length' in currentTags._buffer) {
+        fileBuffer = Buffer.from(currentTags._buffer as unknown as ArrayBuffer);
+    } else {
+        fileBuffer = await fs.readFile(filePath);
+    }
     const updatedBuffer = NodeID3.write(updatedTags as any, fileBuffer);
     if (updatedBuffer && updatedBuffer.length > 0) {
         await fs.writeFile(filePath, updatedBuffer);

@@ -35,7 +35,7 @@ export function createApplyTags(
     if (!state.selectedFolder || (!state.selectedResult && !state.localTags)) return;
 
     const sr = state.selectedResult;
-    const tagsToApply: Record<string, unknown> = {};
+    const tagsToApply: Record<string, string> = {};
     const applyStrip = (v: string): string => state.stripRemoteParentheses ? stripParentheses(v) : v;
 
     const srcArtist = sr ? applyStrip(sr.artist) : (state.localTags?.artists?.[0] || state.localTags?.artist || '');
@@ -114,6 +114,12 @@ export function createApplyTags(
         )
       : undefined;
 
+    const trackNumbers: Record<string, string> | undefined = matched.filter(m => m.local).length > 0
+      ? Object.fromEntries(
+          matched.filter(m => m.local).map(m => [m.local!.file, m.remote.num])
+        )
+      : undefined;
+
     // Show progress overlay
     dispatch({ type: 'SET_PROGRESS', payload: { active: true, phase: 'Processing...', current: 0, total: 0, log: [], done: false, success: false, message: '' } });
 
@@ -123,6 +129,7 @@ export function createApplyTags(
         tags: tagsToApply as AlbumTags,
         trackArtists,
         trackNames,
+        trackNumbers,
         moveFiles: mode === 'move',
         renameFiles: mode === 'rename' || mode === 'move',
         coverUrl: sr?.coverUrl ?? null,

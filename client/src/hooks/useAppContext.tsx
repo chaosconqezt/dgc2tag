@@ -50,26 +50,26 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const { handleSearch, loadAlbumDetails, handleSelectResult, handleSelectDeezer, handleSelectMbrainz } = useMemo(
     () => createSearchActions(
       { searchArtist: state.searchArtist, searchAlbum: state.searchAlbum, searchArtistEnabled: state.searchArtistEnabled, searchAlbumEnabled: state.searchAlbumEnabled, selectedResult: state.selectedResult, selectedDeezer: state.selectedDeezer, tagEnabled: state.tagEnabled, enabledSources: state.enabledSources },
-      dispatch as any, clearSelectionState,
+      dispatch, clearSelectionState,
       { searchInProgress: searchInProgressRef, loadAlbumDetailsId: loadAlbumDetailsIdRef, searchGeneration: searchGenerationRef },
     ),
     [state.searchArtist, state.searchAlbum, state.searchArtistEnabled, state.searchAlbumEnabled, state.selectedResult, state.selectedDeezer, state.tagEnabled, state.enabledSources, dispatch, clearSelectionState],
   );
 
   const { fetchLibrary, toggleNode, collapseAll, dirHasAudioFiles, handleFolderSelect, renameNode, deleteNode, moveNode } = useMemo(
-    () => createLibraryActions({ tree: state.tree, selectedFolder: state.selectedFolder }, dispatch as any, clearSelectionState, handleSearch),
+    () => createLibraryActions({ tree: state.tree, selectedFolder: state.selectedFolder }, dispatch, clearSelectionState, handleSearch),
     [state.tree, state.selectedFolder, dispatch, clearSelectionState, handleSearch],
   );
 
   const { fetchConfig, saveConfig, clearCache } = createConfigActions(
     { configMusicRoot: state.configMusicRoot, configOutputFolder: state.configOutputFolder, configOutputMode: state.configOutputMode, tagEnabled: state.tagEnabled, enabledSources: state.enabledSources, cleanupIgnorePatterns: state.cleanupIgnorePatterns },
-    dispatch as any, fetchLibrary,
+    dispatch, fetchLibrary,
   );
 
-  const { handleWebfetch, closeWebfetch } = createWebfetchActions(dispatch as any);
+  const { handleWebfetch, closeWebfetch } = createWebfetchActions(dispatch);
 
   const applyTags = useCallback(
-    createApplyTags(state, dispatch as any, clearSelectionState, fetchLibrary),
+    createApplyTags(state, dispatch, clearSelectionState, fetchLibrary),
     [state, clearSelectionState, fetchLibrary],
   );
 

@@ -58,7 +58,7 @@ export function createConfigActions(
         await fetchLibrary();
       } catch (err) {
         if (import.meta.env.DEV) console.error('Failed to save config', err);
-        dispatch({ type: 'SET_RESULT_MODAL', payload: { success: false, message: 'Failed to save config' } });
+        alert('Failed to save config');
       } finally {
         dispatch({ type: 'SET_CONFIG_SAVING', payload: false });
       }
@@ -68,10 +68,10 @@ export function createConfigActions(
       dispatch({ type: 'SET_CLEARING_CACHE', payload: true });
       try {
         const result = await api.clearCache();
-        dispatch({ type: 'SET_RESULT_MODAL', payload: { success: true, message: `Cache cleared! ${result.cleared} files removed.` } });
+        alert(`Cache cleared! ${result.cleared} files removed.`);
       } catch (err) {
         if (import.meta.env.DEV) console.error('Failed to clear cache', err);
-        dispatch({ type: 'SET_RESULT_MODAL', payload: { success: false, message: 'Failed to clear cache' } });
+        alert('Failed to clear cache');
       } finally {
         dispatch({ type: 'SET_CLEARING_CACHE', payload: false });
       }

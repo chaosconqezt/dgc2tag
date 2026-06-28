@@ -1,4 +1,5 @@
 import { Search } from 'lucide-react';
+import { FONT, FS, COLORS } from './styles';
 
 interface SearchBarProps {
   artist: string;
@@ -23,14 +24,25 @@ export function SearchBar({
   };
 
   return (
-    <div className="search-bar">
-      <label className="search-check-label">
+    <div style={{
+      display: 'flex',
+      alignItems: 'center',
+      gap: '6px',
+      marginBottom: '12px',
+      flexShrink: 0,
+    }}>
+      {/* Artist group */}
+      <label style={{
+        display: 'flex', alignItems: 'center', gap: '4px',
+        cursor: 'pointer', flexShrink: 0, userSelect: 'none',
+      }}>
         <input
           type="checkbox"
           checked={artistEnabled}
           onChange={(e) => onArtistEnabledChange(e.target.checked)}
+          style={{ accentColor: COLORS.red, margin: 0 }}
         />
-        <span className="search-check-text">Artist</span>
+        <span style={{ fontSize: FS, color: COLORS.textDim, fontFamily: FONT }}>Artist</span>
       </label>
       <input
         type="text"
@@ -38,16 +50,26 @@ export function SearchBar({
         onChange={(e) => onArtistChange(e.target.value)}
         placeholder="Artist..."
         onKeyDown={handleKey}
-        className="search-input"
+        style={{
+          flex: '1 1 0', minWidth: 0, boxSizing: 'border-box',
+          background: COLORS.inputBg, border: `1px solid ${COLORS.textInvisible}`,
+          borderRadius: '6px', padding: '6px 10px', color: COLORS.text,
+          fontSize: FS, fontFamily: FONT,
+        }}
       />
 
-      <label className="search-check-label">
+      {/* Album group */}
+      <label style={{
+        display: 'flex', alignItems: 'center', gap: '4px',
+        cursor: 'pointer', flexShrink: 0, userSelect: 'none',
+      }}>
         <input
           type="checkbox"
           checked={albumEnabled}
           onChange={(e) => onAlbumEnabledChange(e.target.checked)}
+          style={{ accentColor: COLORS.red, margin: 0 }}
         />
-        <span className="search-check-text">Album</span>
+        <span style={{ fontSize: FS, color: COLORS.textDim, fontFamily: FONT }}>Album</span>
       </label>
       <input
         type="text"
@@ -55,10 +77,20 @@ export function SearchBar({
         onChange={(e) => onAlbumChange(e.target.value)}
         placeholder="Album..."
         onKeyDown={handleKey}
-        className="search-input"
+        style={{
+          flex: '1 1 0', minWidth: 0, boxSizing: 'border-box',
+          background: COLORS.inputBg, border: `1px solid ${COLORS.textInvisible}`,
+          borderRadius: '6px', padding: '6px 10px', color: COLORS.text,
+          fontSize: FS, fontFamily: FONT,
+        }}
       />
 
-      <button onClick={onSearch} className="btn-primary search-btn">
+      {/* Search button */}
+      <button
+        onClick={onSearch}
+        className="btn-primary"
+        style={{ flexShrink: 0, padding: '6px 14px', borderRadius: '6px', display: 'flex', alignItems: 'center' }}
+      >
         <Search size={16} />
       </button>
     </div>

@@ -7,13 +7,12 @@ import { fileURLToPath } from 'url';
 import { logger } from './logger.js';
 
 const __dirname = fileURLToPath(new URL('.', import.meta.url));
-const USER_DATA_DIR = path.join(__dirname, '../../user_data');
 
 (puppeteer as any).use(StealthPlugin());
 
 async function findRunningBrowserWs(): Promise<string | null> {
     try {
-        const portFile = path.join(USER_DATA_DIR, 'DevToolsActivePort');
+        const portFile = path.join('./user_data', 'DevToolsActivePort');
         if (fsSync.existsSync(portFile)) {
             const content = fsSync.readFileSync(portFile, 'utf-8').trim();
             const lines = content.split('\n');
@@ -89,8 +88,7 @@ async function loadTaxonomyFromFile(): Promise<boolean> {
             logger.info(`loaded from cache (${ageDays}d old): ${Object.keys(genreMap).length} genres, ${Object.keys(typeMap).length} types`);
             return true;
         }
-        const ageDays = Math.floor((Date.now() - cache.updatedAt) / (24 * 60 * 60 * 1000));
-        logger.info(`taxonomy cache expired (${ageDays}d old, max 7d). fetching fresh data from deathgrind.club... this may take a moment`);
+        logger.info('cache expired, will refresh');
     } catch (e) { logger.info(`loadTaxonomyFromFile: ${(e as Error).message}`); }
     return false;
 }
@@ -215,7 +213,7 @@ async function launchBrowser(): Promise<any> {
             headless: process.env.NODE_ENV === 'production' || process.env.HEADLESS === 'true',
             defaultViewport: null,
             pipe: false,
-            userDataDir: USER_DATA_DIR,
+            userDataDir: './user_data',
             args: [
                 '--window-size=900,700',
                 '--no-sandbox',

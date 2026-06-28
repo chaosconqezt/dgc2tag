@@ -252,7 +252,7 @@ export function appReducer(state: AppState, action: Action): AppState {
     case 'SET_LIBRARY_ENTRIES': return { ...state, libraryEntries: action.payload };
     case 'SET_VIEW_MODE': return { ...state, viewMode: action.payload };
     default:
-      if (import.meta.env.DEV) console.warn(`[reducer] unknown action: ${(action as Action).type}`);
+      if (import.meta.env.DEV) console.warn(`[reducer] unknown action: ${action.type}`);
       return state;
   }
 }

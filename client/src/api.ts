@@ -31,12 +31,11 @@ const api = axios.create({
 
 // Request interceptor: attach AbortController
 api.interceptors.request.use((config) => {
-  const c = config as unknown as Record<string, unknown>;
-  if (!c.signal) {
+  if (!(config as Record<string, unknown>).signal) {
     const controller = new AbortController();
     const requestId = createRequestId();
-    c.signal = controller.signal;
-    c._requestId = requestId;
+    (config as Record<string, unknown>).signal = controller.signal;
+    (config as Record<string, unknown>)._requestId = requestId;
     activeControllers.set(requestId, controller);
   }
   return config;
@@ -45,13 +44,13 @@ api.interceptors.request.use((config) => {
 // Response interceptor: cleanup controller + handle errors
 api.interceptors.response.use(
   (response) => {
-    const requestId = (response.config as unknown as Record<string, unknown>)._requestId as string;
+    const requestId = (response.config as Record<string, unknown>)._requestId as string;
     if (requestId) activeControllers.delete(requestId);
     return response;
   },
   (error) => {
     // Cleanup controller on error too
-    const requestId = (error.config as unknown as Record<string, unknown>)?._requestId as string;
+    const requestId = (error.config as Record<string, unknown>)?._requestId as string;
     if (requestId) activeControllers.delete(requestId);
 
     // If cancelled due to unmount, don't log as error
@@ -75,7 +74,7 @@ api.interceptors.response.use(
   }
 );
 
-export async function fetchConfig(): Promise<{   musicRoot: string; port: number; tagDefaults: Record<string, boolean>; writeTrackNames: boolean; writeTrackArtists: boolean; outputFolder: string; outputMode: 'subfolder' | 'absolute'; enabledSources?: Record<string, boolean>; cleanupIgnorePatterns: string[] }> {
+export async function fetchConfig(): Promise<{ musicRoot: string; port: number; tagDefaults: Record<string, boolean>; writeTrackNames: boolean; writeTrackArtists: boolean; outputFolder: string; outputMode: 'subfolder' | 'absolute'; cleanupIgnorePatterns: string[] }> {
   const res = await api.get('/config');
   return res.data;
 }
@@ -132,6 +131,7 @@ export async function updateTags(
     tags: AlbumTags;
     trackArtists?: Record<string, string>;
     trackNames?: Record<string, string>;
+    trackNumbers?: Record<string, string>;
     moveFiles: boolean;
     renameFiles?: boolean;
     coverUrl?: string | null;

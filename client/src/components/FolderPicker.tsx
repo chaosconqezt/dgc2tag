@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { ChevronRight, ChevronDown, Folder, HardDrive } from 'lucide-react';
+import { FONT, FS, FS_SM, COLORS, OVERLAY_BACKDROP, MODAL_PANEL, MODAL_HEADER, ICON_BUTTON } from './styles';
 import { fetchDirectoryRoots, browseDirectory } from '../api';
 
 interface FolderPickerProps {
@@ -34,6 +35,7 @@ export function FolderPicker({ initialPath, onSelect, onClose }: FolderPickerPro
 
   const expandToPath = async (targetPath: string) => {
     const parts = targetPath.split(/[\\/]/).filter(Boolean);
+    // On Windows, first part is like "C:" so we need "C:\\"
     const isWin = /^[A-Z]:$/i.test(parts[0] ?? '');
     let currentPath = isWin ? parts[0] + '\\' : '/' + (parts[1] ?? '');
     const newTree: TreeNode[] = roots.map(r => ({
@@ -44,6 +46,7 @@ export function FolderPicker({ initialPath, onSelect, onClose }: FolderPickerPro
 
     if (newTree.length === 0) return;
 
+    // Find the root that contains the target
     const root = newTree.find(n => targetPath.startsWith(n.path));
     if (!root) {
       setTree(newTree);
@@ -53,6 +56,7 @@ export function FolderPicker({ initialPath, onSelect, onClose }: FolderPickerPro
     root.expanded = true;
     let current = root;
 
+    // Walk down the path, expanding each level
     const pathParts = targetPath.replace(root.path, '').split(/[\\/]/).filter(Boolean);
     for (const part of pathParts) {
       try {
@@ -112,19 +116,33 @@ export function FolderPicker({ initialPath, onSelect, onClose }: FolderPickerPro
         <div
           onClick={() => { setSelectedPath(node.path); if (!node.children) toggleNode(node); }}
           onDoubleClick={() => toggleNode(node)}
-          className="folder-tree-node"
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '4px',
+            padding: '4px 8px',
+            paddingLeft: (indent + 8) + 'px',
+            cursor: 'pointer',
+            borderRadius: '4px',
+            backgroundColor: isSelected ? `${COLORS.red}20` : 'transparent',
+            color: isSelected ? COLORS.red : COLORS.text,
+            fontSize: FS,
+            fontFamily: FONT,
+          }}
+          onMouseEnter={(e) => { if (!isSelected) e.currentTarget.style.backgroundColor = COLORS.borderLight; }}
+          onMouseLeave={(e) => { if (!isSelected) e.currentTarget.style.backgroundColor = 'transparent'; }}
         >
           {node.children ? (
-            node.expanded ? <ChevronDown size={12} className="icon-dim" /> : <ChevronRight size={12} className="icon-dim" />
+            node.expanded ? <ChevronDown size={12} color={COLORS.textDim} /> : <ChevronRight size={12} color={COLORS.textDim} />
           ) : (
-            <span className="folder-node-spacer" />
+            <span style={{ width: 12 }} />
           )}
           {node.path.endsWith('\\') || node.path === '/' ? (
-            <HardDrive size={14} className="icon-dim" />
+            <HardDrive size={14} color={COLORS.textDim} />
           ) : (
-            <Folder size={14} className="icon-dim" />
+            <Folder size={14} color={COLORS.textDim} />
           )}
-          <span className="text-ellipsis folder-node-name">{node.name}</span>
+          <span className="text-ellipsis" style={{ flex: 1 }}>{node.name}</span>
         </div>
         {node.expanded && node.children && (
           <div>
@@ -136,32 +154,78 @@ export function FolderPicker({ initialPath, onSelect, onClose }: FolderPickerPro
   };
 
   return (
-    <div className="modal-backdrop" onClick={onClose}>
-      <div className="modal-panel" onClick={(e) => e.stopPropagation()}>
-        <div className="modal-header">
-          <span className="modal-header-title">Select folder</span>
-          <button onClick={onClose} className="modal-close-btn">&times;</button>
+    <div style={OVERLAY_BACKDROP} onClick={onClose}>
+      <div style={{ ...MODAL_PANEL, width: '420px', maxHeight: '70vh' }} onClick={(e) => e.stopPropagation()}>
+        <div style={MODAL_HEADER}>
+          <span style={{ fontSize: FS, color: COLORS.textMuted, fontWeight: '600', fontFamily: FONT }}>Select folder</span>
+          <button onClick={onClose} style={{ ...ICON_BUTTON, padding: '4px' }}>
+                    <span style={{ fontSize: FS_SM }}>&times;</span>
+          </button>
         </div>
 
-        <div className="folder-picker-path">
+        {/* Current path display */}
+        <div style={{ padding: '8px 14px', borderBottom: `1px solid ${COLORS.border}` }}>
           <input
             type="text"
             value={selectedPath}
             onChange={(e) => setSelectedPath(e.target.value)}
-            className="folder-picker-input"
+            style={{
+              width: '100%',
+              boxSizing: 'border-box',
+              background: COLORS.bg,
+              border: `1px solid ${COLORS.textInvisible}`,
+              borderRadius: '6px',
+              padding: '6px 10px',
+              color: COLORS.text,
+              fontSize: FS,
+              fontFamily: 'monospace',
+            }}
           />
         </div>
 
-        <div className="folder-picker-tree">
+        {/* Tree */}
+        <div style={{ flex: 1, overflowY: 'auto', padding: '8px 0', minHeight: '200px', maxHeight: '400px' }}>
           {tree.map(node => renderNode(node, 0))}
           {loading && (
-            <div className="folder-picker-loading">Loading...</div>
+            <div style={{ padding: '8px 14px', color: COLORS.textInvisible, fontSize: FS, fontFamily: FONT }}>
+              Loading...
+            </div>
           )}
         </div>
 
-        <div className="modal-footer">
-          <button onClick={onClose} className="modal-btn secondary">Cancel</button>
-          <button onClick={() => onSelect(selectedPath)} className="modal-btn primary">Select</button>
+        {/* Actions */}
+        <div style={{ padding: '10px 14px', borderTop: `1px solid ${COLORS.border}`, display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
+          <button
+            onClick={onClose}
+            style={{
+              padding: '6px 14px',
+              background: 'none',
+              border: `1px solid ${COLORS.border}`,
+              borderRadius: '6px',
+              cursor: 'pointer',
+              fontSize: FS,
+              fontFamily: FONT,
+              color: COLORS.textMuted,
+            }}
+          >
+            Cancel
+          </button>
+          <button
+            onClick={() => onSelect(selectedPath)}
+            style={{
+              padding: '6px 14px',
+              background: COLORS.red,
+              color: COLORS.textBright,
+              border: 'none',
+              borderRadius: '6px',
+              cursor: 'pointer',
+              fontSize: FS,
+              fontFamily: FONT,
+              fontWeight: '600',
+            }}
+          >
+            Select
+          </button>
         </div>
       </div>
     </div>

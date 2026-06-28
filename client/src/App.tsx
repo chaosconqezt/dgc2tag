@@ -3,6 +3,7 @@ import ErrorBoundary from './components/ErrorBoundary';
 import { AppProvider, useAppContext } from './hooks/useAppContext';
 import * as api from './api';
 import { RefreshCw, Layout, Settings, BookOpen } from 'lucide-react';
+import { FONT, FS, FS_SM, COLORS, ICON_BUTTON } from './components/styles';
 import { parseCompilationTracklist, parseSingleArtistTracklist } from './utils';
 import { WebfetchOverlay } from './components/WebfetchOverlay';
 import { SettingsModal } from './components/SettingsModal';
@@ -38,9 +39,9 @@ function AppContent() {
   const isResizing = useRef(false);
   const isResizingTree = useRef(false);
 
-  const saveWidth = useCallback((w: number) => { setSidebarWidth(w); localStorage.setItem('dgc-sidebar-width', String(w)); document.documentElement.style.setProperty('--sidebar-width', w + 'px'); }, []);
-  const saveTreeHeight = useCallback((h: number) => { setTreeHeightPx(h); localStorage.setItem('dgc-tree-height', String(h)); document.documentElement.style.setProperty('--tree-height', h + 'px'); }, []);
-  const saveCardSize = useCallback((s: number) => { setCardSize(s); localStorage.setItem('dgc-card-size', String(s)); document.documentElement.style.setProperty('--card-size', s + 'px'); }, []);
+  const saveWidth = useCallback((w: number) => { setSidebarWidth(w); localStorage.setItem('dgc-sidebar-width', String(w)); }, []);
+  const saveTreeHeight = useCallback((h: number) => { setTreeHeightPx(h); localStorage.setItem('dgc-tree-height', String(h)); }, []);
+  const saveCardSize = useCallback((s: number) => { setCardSize(s); localStorage.setItem('dgc-card-size', String(s)); }, []);
   const saveMinAlbums = useCallback((n: number) => { setMinAlbums(n); localStorage.setItem('dgc-min-albums', String(n)); }, []);
 
   const onResizeStart = useCallback((e: React.MouseEvent) => {
@@ -97,13 +98,6 @@ function AppContent() {
     document.addEventListener('mouseup', onMouseUp);
   }, [treeHeightPx]);
 
-  // Initialize CSS variables from saved state
-  useEffect(() => {
-    document.documentElement.style.setProperty('--sidebar-width', sidebarWidth + 'px');
-    document.documentElement.style.setProperty('--tree-height', treeHeightPx + 'px');
-    document.documentElement.style.setProperty('--card-size', cardSize + 'px');
-  }, []);
-
   // Initialize on mount
   useEffect(() => {
     const init = async () => {
@@ -124,14 +118,14 @@ function AppContent() {
   }, [ctx.viewMode]);
 
   return (
-    <div className="dashboard">
+    <div className="dashboard" style={{ display: 'flex', height: '100vh', backgroundColor: COLORS.bg, color: COLORS.text, fontFamily: FONT }}>
 
       {ctx.viewMode === 'library' ? (<>
         {/* Library Mode — full width */}
-        <div className="main-content">
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0, overflow: 'hidden' }}>
           <div className="library-header">
             <div className="library-header-left">
-              <button onClick={() => ctx.dispatch({ type: 'SET_VIEW_MODE', payload: 'main' })} className="toolbar-btn">
+              <button onClick={() => ctx.dispatch({ type: 'SET_VIEW_MODE', payload: 'main' })} className="hover-toolbar" style={{ ...ICON_BUTTON, display: 'flex', borderRadius: '4px', padding: '4px' }}>
                 <Layout size={14} />
               </button>
               <h2 className="library-header-title">
@@ -172,30 +166,30 @@ function AppContent() {
         </div>
       </>) : (<>
       {/* Sidebar: Library Tree + Search Results */}
-      <div className="sidebar">
-        <div className="sidebar-inner">
-          <div className="library-header">
-            <div className="library-header-left">
-              <button onClick={() => ctx.dispatch({ type: 'SET_VIEW_MODE', payload: 'library' })} className="toolbar-btn">
+      <div className="sidebar" style={{ display: 'flex', flexDirection: 'column', width: sidebarWidth, flexShrink: 0 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', backgroundColor: COLORS.inputBgAlt, overflow: 'hidden', height: '100%' }}>
+          <div style={{ padding: '10px 12px', borderBottom: `1px solid ${COLORS.border}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexShrink: 0 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <button onClick={() => ctx.dispatch({ type: 'SET_VIEW_MODE', payload: 'library' })} className="hover-toolbar" style={{ ...ICON_BUTTON, display: 'flex', borderRadius: '4px', padding: '4px' }}>
                 <BookOpen size={14} />
               </button>
-              <h2>
+              <h2 style={{ fontSize: FS, fontWeight: '600', margin: 0, letterSpacing: '0.3px', fontFamily: FONT, color: COLORS.text }}>
                 DGC TAGGER
               </h2>
             </div>
-            <div className="sidebar-controls">
-              <button onClick={ctx.collapseAll} className="toolbar-btn collapse-btn" title="Collapse all">
+            <div style={{ display: 'flex', gap: '4px' }}>
+              <button onClick={ctx.collapseAll} className="hover-toolbar" style={{ ...ICON_BUTTON, display: 'flex', fontSize: FS, fontWeight: '700', borderRadius: '4px', padding: '4px' }} title="Collapse all">
                 &#9650;
               </button>
-              <button onClick={() => ctx.dispatch({ type: 'SET_SHOW_SETTINGS', payload: true })} className="toolbar-btn">
+              <button onClick={() => ctx.dispatch({ type: 'SET_SHOW_SETTINGS', payload: true })} className="hover-toolbar" style={{ ...ICON_BUTTON, display: 'flex', borderRadius: '4px', padding: '4px' }}>
                 <Settings size={14} />
               </button>
-              <button onClick={ctx.fetchLibrary} className="toolbar-btn">
+              <button onClick={ctx.fetchLibrary} className="hover-toolbar" style={{ ...ICON_BUTTON, display: 'flex', borderRadius: '4px', padding: '4px' }}>
                 <RefreshCw size={14} className={ctx.loading ? 'animate-spin' : ''} />
               </button>
             </div>
           </div>
-          <div className="sidebar-tree">
+          <div style={{ height: treeHeightPx, flexShrink: 0 }}>
             <LibraryTree
               tree={ctx.tree}
               selectedFolder={ctx.selectedFolder}
@@ -211,11 +205,16 @@ function AppContent() {
           {/* Resize handle: tree ↔ matches */}
           <div
             onMouseDown={onResizeTreeStart}
-            className="resize-handle row"
+            className="hover-red"
+            style={{
+              height: '4px',
+              cursor: 'row-resize',
+              flexShrink: 0,
+            }}
           />
 
           {/* Search Results — vertical list */}
-          <div className="sidebar-results">
+          <div style={{ flex: 1, overflowY: 'auto', borderTop: `1px solid ${COLORS.border}` }}>
             <SearchResults
               results={ctx.searchResults}
               deezerResults={ctx.deezerResults}
@@ -240,17 +239,23 @@ function AppContent() {
       {/* Resize handle */}
       <div
         onMouseDown={onResizeStart}
-        className="resize-handle col"
+        className="hover-red"
+        style={{
+          width: '4px',
+          cursor: 'col-resize',
+          backgroundColor: 'transparent',
+          flexShrink: 0,
+        }}
       />
 
       {/* Main Content Area */}
-      <div className="main-content">
+      <div className="main-content" style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0, overflow: 'hidden' }}>
 
         {/* Content Split: Comparison Panel */}
-        <div className="bottom-panels">
+        <div className="bottom-panels" style={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
 
           {/* Comparison Panel */}
-          <div className="diff-panel">
+          <div className="diff-panel" style={{ flex: 1, padding: '16px 20px', backgroundColor: COLORS.inputBgAlt, overflowY: 'auto', overflowX: 'hidden', minWidth: 0 }}>
 
             {/* Search bar */}
             <SearchBar
@@ -272,7 +277,7 @@ function AppContent() {
             />
 
             {(ctx.selectedResult || ctx.localTags) ? (
-              <div>
+              <div style={{ display: 'flex', flexDirection: 'column' }}>
                 <TagComparison
                   selectedResult={ctx.selectedResult}
                   localTags={ctx.localTags}
@@ -322,17 +327,17 @@ function AppContent() {
                 />
 
                 {ctx.albumDetails?.notes && (
-                  <div className="notes-panel">
-                    <div className="notes-label">NOTES</div>
-                    <p className="notes-text">{ctx.albumDetails.notes}</p>
+                  <div style={{ marginTop: '10px', padding: '10px', background: COLORS.bg, borderRadius: '8px', border: `1px solid ${COLORS.border}` }}>
+                    <div style={{ fontSize: FS, color: COLORS.textDim, fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '6px', fontFamily: FONT }}>NOTES</div>
+                    <p style={{ fontSize: FS, color: COLORS.textMuted, margin: 0, lineHeight: '1.5', fontFamily: FONT }}>{ctx.albumDetails.notes}</p>
                   </div>
                 )}
               </div>
             ) : (
-              <div className="empty-state">
-                <Layout size={40} />
-                <p>Select a folder with MP3 files</p>
-                <p className="empty-state-hint">Click a folder in the tree on the left</p>
+              <div style={{ height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: COLORS.textInvisible, opacity: 0.5 }}>
+                <Layout size={40} style={{ marginBottom: '10px' }} />
+                <p style={{ fontWeight: '500', fontSize: FS, fontFamily: FONT }}>Select a folder with MP3 files</p>
+                <p style={{ fontSize: FS_SM, fontFamily: FONT, marginTop: '4px' }}>Click a folder in the tree on the left</p>
               </div>
             )}
           </div>
