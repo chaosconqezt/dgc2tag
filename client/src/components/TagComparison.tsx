@@ -177,7 +177,7 @@ export function TagComparison({
 
           return (
             <div key={f.key} className="hover-bg">
-              <div className="tag-row">
+              <div className="data-row tag-grid tag-row">
                 <div className="track-chk">
                   <input
                     type="checkbox"
@@ -210,7 +210,7 @@ export function TagComparison({
 
         {/* IDs row */}
         <div className="hover-bg">
-          <div className="tag-ids-row">
+          <div className="data-row tag-grid tag-ids-row">
             <div className="track-chk">
               <input type="checkbox" checked disabled readOnly />
             </div>

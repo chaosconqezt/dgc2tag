@@ -19,7 +19,7 @@ export function createWebfetchActions(dispatch: AppDispatch) {
       } catch (err: any) {
         if (err?.name === 'CanceledError' || err?.name === 'AbortError') return;
         if (import.meta.env.DEV) console.error('[client] webfetch error:', err);
-        dispatch({ type: 'SET_WEBFETCH_CONTENT', payload: '<p style="color:#ef4444">Failed to load page</p>' });
+        dispatch({ type: 'SET_WEBFETCH_CONTENT', payload: '<p class="text-red">Failed to load page</p>' });
       } finally {
         if (webfetchController === controller) webfetchController = null;
         dispatch({ type: 'SET_WEBFETCH_LOADING', payload: false });

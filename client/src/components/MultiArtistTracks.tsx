@@ -69,7 +69,7 @@ export function MultiArtistTracks({
               callbacks={callbacks}
             />
 
-            <div className="track-artist-row">
+            <div className="data-row track-grid track-artist-row">
               <span />
               <span />
               <div className="track-artist-cell">

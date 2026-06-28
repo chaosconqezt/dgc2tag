@@ -73,6 +73,7 @@ textarea:focus-visible {
 body {
   margin: 0;
   font-family: var(--font);
+  font-size: var(--fs);
   font-weight: var(--fw);
   font-optical-sizing: auto;
  
@@ -164,7 +165,7 @@ body {
 
 /* ── Progress overlay ── */
 .progress-bar-wrap { background: var(--bg); border-radius: var(--radius-sm); height: 4px; overflow: hidden; }
-.progress-bar-fill { height: 100%; background: var(--red); transition: width 0.3s; }
+.progress-bar-fill { height: 100%; background: var(--red); width: var(--progress-width, 0%); transition: width 0.2s; }
 .progress-stats { display: flex; gap: var(--gap-lg); }
 .progress-content { padding: 12px 14px; display: flex; flex-direction: column; gap: var(--gap-md); }
 .progress-log { max-height: 200px; overflow-y: auto; padding: var(--gap-md); margin: 0 14px 14px; background: var(--bg); border-radius: var(--radius-sm); border: 1px solid var(--border); font-family: var(--font-mono); }
@@ -265,10 +266,11 @@ body {
 .tag-header-label { flex: 1; text-align: center; color: var(--text-dim); font-weight: var(--fw-bold); letter-spacing: 0.3px; }
 .tag-header-label.center { flex: none; padding: 0 var(--gap-lg); color: var(--text); }
 
-.tag-row,
-.tag-ids-row { display: grid; grid-template-columns: 24px 1fr 44px 1fr; gap: 4px; align-items: center; padding: 2px 0; transition: background-color 0.1s; }
-.tag-row:hover,
-.tag-ids-row:hover { background: var(--input-bg); }
+/* Unified data row system (used by TagComparison and TrackMatcher) */
+.data-row { display: grid; align-items: center; transition: background-color 0.1s; }
+.data-row:hover { background: var(--input-bg); }
+.data-row.tag-grid { grid-template-columns: 24px 1fr 44px 1fr; gap: 4px; padding: 2px 0; }
+.data-row.track-grid { grid-template-columns: 24px 28px 1fr 44px 44px 44px 28px 1fr; gap: 0; padding: 3px 0; }
 
 .tag-cell { display: flex; align-items: center; padding: 3px 6px; border-radius: var(--radius-sm); border: 1px solid var(--border-light); background: var(--input-bg); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .tag-cell-label { color: var(--text-faint); opacity: 0.5; margin-left: var(--gap-sm); flex-shrink: 0; }
@@ -314,11 +316,8 @@ body {
 .track-bitrate { margin-left: auto; color: var(--text-faint); font-family: var(--font-mono); }
 
 .track-list { display: flex; flex-direction: column; gap: 3px; }
-.track-row,
-.track-artist-row { display: grid; grid-template-columns: 24px 28px 1fr 44px 44px 44px 28px 1fr; align-items: center; gap: 0; padding: 3px 0; transition: background-color 0.1s; }
+
 .track-group + .track-group { border-top: 1px solid var(--border-light); padding-top: 1px; margin-top: 1px; }
-.track-row:hover,
-.track-artist-row:hover { background: var(--input-bg); }
 .track-row.disabled { opacity: 0.4; }
 
 .track-chk { display: flex; align-items: center; justify-content: center; }
