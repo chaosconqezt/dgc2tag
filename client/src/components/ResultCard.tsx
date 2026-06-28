@@ -12,7 +12,7 @@ interface ResultCardProps {
   releaseType?: string | null;
   trackCount?: number;
   url: string;
-  accentColor: string;
+  sourceId: string;
   selected?: boolean;
   onClick?: () => void;
 }
@@ -25,7 +25,7 @@ export function ResultCard({
   label,
   trackCount,
   url,
-  accentColor,
+  sourceId,
   selected,
   onClick,
 }: ResultCardProps) {
@@ -43,11 +43,7 @@ export function ResultCard({
   return (
     <div
       onClick={onClick}
-      className="result-card"
-      style={{
-        border: `1px solid ${selected ? accentColor : 'var(--border-light)'}`,
-        backgroundColor: selected ? `${accentColor}15` : 'transparent',
-      }}
+      className={`result-card accent-${sourceId}${selected ? ' selected' : ''}`}
     >
       {/* Cover */}
       <div
@@ -69,14 +65,6 @@ export function ResultCard({
         <div className="result-card-line">
           <span
             className="text-ellipsis"
-            style={{
-              fontWeight: 600,
-              fontSize: '14px',
-              color: accentColor,
-              fontFamily: 'var(--font)',
-              flex: 1,
-              minWidth: 0,
-            }}
           >
             {meta1 || '—'}
           </span>
@@ -94,13 +82,6 @@ export function ResultCard({
         <div className="result-card-line2">
           <span
             className="text-ellipsis"
-            style={{
-              fontSize: '14px',
-              color: 'var(--text-muted)',
-              fontFamily: 'var(--font)',
-              flex: 1,
-              minWidth: 0,
-            }}
           >
             {albumName}
           </span>
@@ -124,10 +105,6 @@ export function ResultCard({
           src={coverUrl}
           alt=""
           className="result-card-preview"
-          style={{
-            left: preview.x,
-            top: preview.y,
-          }}
         />
       )}
     </div>

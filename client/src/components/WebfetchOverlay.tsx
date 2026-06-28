@@ -17,7 +17,7 @@ export function WebfetchOverlay({ url, content, loading, onClose }: WebfetchOver
 
   return (
     <div className="modal-backdrop" onClick={onClose}>
-      <div className="modal-panel" style={{ width: '90vw', height: '85vh' }} onClick={(e) => e.stopPropagation()}>
+      <div className="modal-panel" onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
           <div className="modal-header-left">
             <Globe size={12} className="text-red" />
@@ -27,14 +27,14 @@ export function WebfetchOverlay({ url, content, loading, onClose }: WebfetchOver
             <X size={14} />
           </button>
         </div>
-        <div style={{ flex: 1, overflow: 'auto', padding: 0 }}>
+        <div>
           {loading ? (
             <div className="modal-loading">
               <RefreshCw className="animate-spin" size={20} />
               <span>Loading preview...</span>
             </div>
           ) : (
-            <iframe srcDoc={content || ''} sandbox="" style={{ width: '100%', height: '100%', border: 'none', backgroundColor: '#fff' }} title="DGC Preview" />
+            <iframe srcDoc={content || ''} sandbox="" title="DGC Preview" />
           )}
         </div>
       </div>

@@ -1,7 +1,6 @@
 import { useMemo, useState } from 'react';
 import type { AlbumTags, SearchResult } from '../types';
 import { similarity } from '../utils';
-import { FONT, FS, FS_L, FS_S, FS_SM, FS_XS, COLORS, CHECKBOX, PANEL_STYLE, ROW_STYLE } from './styles';
 
 interface TagComparisonProps {
   selectedResult: SearchResult | null;
@@ -32,8 +31,8 @@ function ExtraTagsSection({ sourceTags, outputTags, onOutputChange, onClearAll }
   };
 
   return (
-    <div style={{ marginTop: '4px' }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+    <div>
+      <div>
         <button className="tag-extra-toggle" onClick={() => setExpanded(!expanded)}>
           <span className={`tag-extra-arrow${expanded ? ' open' : ''}`}>&#9654;</span>
           {allKeys.length > 0 ? `${allKeys.length} extra tag${allKeys.length > 1 ? 's' : ''}` : 'extra tags'}
@@ -41,7 +40,7 @@ function ExtraTagsSection({ sourceTags, outputTags, onOutputChange, onClearAll }
         <button className="tag-extra-clear" onClick={handleClearAll}>Clear all</button>
       </div>
       {expanded && (
-        <div style={{ marginTop: '4px' }}>
+        <div>
           <div className="tag-extra-header">
             <span>Tag</span>
             <span>Current</span>
@@ -49,14 +48,13 @@ function ExtraTagsSection({ sourceTags, outputTags, onOutputChange, onClearAll }
           </div>
           {allKeys.map(key => (
             <div key={key} className="tag-extra-row">
-              <div className="tag-cell" style={{ textAlign: 'right', color: COLORS.textDim, fontSize: FS_S }}>{key}</div>
-              <div className="tag-cell" style={{ color: COLORS.text90, fontSize: FS_S }}>{sourceTags[key] || <span style={{ color: COLORS.textInvisible }}>—</span>}</div>
+              <div className="tag-cell">{key}</div>
+              <div className="tag-cell">{sourceTags[key] || <span>—</span>}</div>
               <input
                 type="text"
                 value={outputTags[key] ?? ''}
                 onChange={(e) => onOutputChange(key, e.target.value)}
                 className="tag-input edited"
-                style={{ fontSize: FS_S }}
               />
             </div>
           ))}
@@ -121,10 +119,10 @@ export function TagComparison({
 
   if (!selectedResult && !localTags) {
     return (
-      <div style={{ height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: COLORS.textMuted }}>
-        <div style={{ fontSize: '40px', marginBottom: '8px' }}>&#9776;</div>
-        <p style={{ fontWeight: '600', fontSize: FS_L, fontFamily: FONT }}>Select a folder with MP3 files</p>
-        <p style={{ fontSize: FS, fontFamily: FONT, marginTop: '4px' }}>Click a folder in the tree on the left</p>
+      <div>
+        <div>&#9776;</div>
+        <p>Select a folder with MP3 files</p>
+        <p>Click a folder in the tree on the left</p>
       </div>
     );
   }
@@ -136,32 +134,28 @@ export function TagComparison({
 
   const renderLocalValue = (file: string[] | string | null | undefined, key: string) => {
     if (key === 'artist' && Array.isArray(file)) {
-      if (file.length === 0) return <span style={{ color: COLORS.textInvisible }}>—</span>;
+      if (file.length === 0) return <span>—</span>;
       if (file.length === 1) return (
-        <div className="text-ellipsis" style={{ fontSize: FS, color: COLORS.text90, fontFamily: FONT }}>
+        <div className="text-ellipsis">
           {file[0]}
         </div>
       );
       return (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '1px' }}>
-          {file.map((val, i) => (
-            <div key={i} className="text-ellipsis" style={{ fontSize: FS, color: COLORS.text90, fontFamily: FONT }}>
-              {val}
-            </div>
-          ))}
+        <div className="text-ellipsis">
+          {file.join(' / ')}
         </div>
       );
     }
-    if (!file) return <span style={{ color: COLORS.textInvisible }}>—</span>;
+    if (!file) return <span>—</span>;
     return (
-      <div className="text-ellipsis" style={{ fontSize: FS, color: COLORS.text90, fontFamily: FONT }}>
+      <div className="text-ellipsis">
         {String(file)}
       </div>
     );
   };
 
   return (
-    <div style={PANEL_STYLE}>
+    <div>
       <div className="tag-header">
         <span className="tag-header-label">FILE</span>
         <span className="tag-header-label center">TAGS</span>
@@ -174,13 +168,15 @@ export function TagComparison({
           const siteVal = f.key === 'releaseType' ? formatReleaseType(rawSiteVal) : rawSiteVal;
           const sim = fieldSims[f.key];
           const isDifferent = f.key === 'artist' && Array.isArray(f.file)
-            ? true
+            ? false
             : String(f.file) !== rawSiteVal;
           const enabled = tagEnabled[f.key] !== false;
           const readonly = 'readonly' in f && (f as { readonly?: boolean }).readonly === true;
+          const hasData = Boolean(f.file) && Boolean(f.site);
+          const simClass = readonly ? '' : !hasData ? '' : sim === 100 ? 'green' : sim >= 80 ? 'yellow' : 'red';
 
           return (
-            <div key={f.key} style={ROW_STYLE(enabled)} className="hover-bg">
+            <div key={f.key} className="hover-bg">
               <div className="tag-row">
                 <div className="track-chk">
                   <input
@@ -189,7 +185,6 @@ export function TagComparison({
                     disabled={readonly}
                     onChange={(e) => onTagEnabledChange(f.key, e.target.checked)}
                     title={readonly ? `${f.label} — read only` : (enabled ? `Writing ${f.label} tag — click to skip` : `Skipping ${f.label} tag — click to include`)}
-                    style={{ ...CHECKBOX, opacity: readonly ? 0.3 : 1 }}
                   />
                 </div>
                 <div className="tag-cell">
@@ -198,8 +193,8 @@ export function TagComparison({
                   </span>
                   <span className="tag-cell-label">{f.label}</span>
                 </div>
-                <div className="tag-percent">
-                  {readonly ? '' : `${sim}%`}
+                <div className={`tag-percent${simClass ? ' ' + simClass : ''}`}>
+                  {readonly ? '' : hasData ? `${sim}%` : '—'}
                 </div>
                 <input
                   type="text"
@@ -214,32 +209,32 @@ export function TagComparison({
         })}
 
         {/* IDs row */}
-        <div style={ROW_STYLE(true)} className="hover-bg">
+        <div className="hover-bg">
           <div className="tag-ids-row">
             <div className="track-chk">
-              <input type="checkbox" checked disabled readOnly style={{ ...CHECKBOX, opacity: 0.3 }} />
+              <input type="checkbox" checked disabled readOnly />
             </div>
             <div className="tag-id-cell">
-              <span style={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', gap: '4px' }}>
+              <span>
                 <span className="tag-id-label">DGC</span>
-                <span className="text-ellipsis tag-id-value">{dgcPostId || <span style={{ color: COLORS.textInvisible }}>—</span>}</span>
+                <span className="text-ellipsis tag-id-value">{dgcPostId || <span>—</span>}</span>
               </span>
               <span className="tag-id-divider" />
-              <span style={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', gap: '4px' }}>
+              <span>
                 <span className="tag-id-label">DZ</span>
-                <span className="text-ellipsis tag-id-value">{dzDeezerId || <span style={{ color: COLORS.textInvisible }}>—</span>}</span>
+                <span className="text-ellipsis tag-id-value">{dzDeezerId || <span>—</span>}</span>
               </span>
             </div>
             <div className="tag-percent" />
             <div className="tag-id-cell">
-              <span style={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', gap: '4px' }}>
+              <span>
                 <span className="tag-id-label">DGC</span>
-                <span className="text-ellipsis tag-id-value">{siteDgcId || <span style={{ color: COLORS.textInvisible }}>—</span>}</span>
+                <span className="text-ellipsis tag-id-value">{siteDgcId || <span>—</span>}</span>
               </span>
               <span className="tag-id-divider" />
-              <span style={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', gap: '4px' }}>
+              <span>
                 <span className="tag-id-label">DZ</span>
-                <span className="text-ellipsis tag-id-value">{siteDeezerId || <span style={{ color: COLORS.textInvisible }}>—</span>}</span>
+                <span className="text-ellipsis tag-id-value">{siteDeezerId || <span>—</span>}</span>
               </span>
             </div>
           </div>

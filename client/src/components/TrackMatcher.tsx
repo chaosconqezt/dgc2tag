@@ -1,7 +1,6 @@
 import { useMemo, useState } from 'react';
 import type { AlbumTags, SearchResult } from '../types';
 import { matchTracks, generateParsedTracks } from '../utils';
-import { CHECKBOX, PANEL_STYLE } from './styles';
 import { SingleArtistTracks } from './SingleArtistTracks';
 import { MultiArtistTracks } from './MultiArtistTracks';
 import type { TrackDisplayConfig } from './MatchRow';
@@ -86,15 +85,15 @@ export function TrackMatcher({
   const display: TrackDisplayConfig = { filenameMode, showFilenamePreviews };
 
   return (
-    <div style={PANEL_STYLE}>
+    <div>
       <div className="track-toolbar">
         <div className="track-toolbar-group">
           <label className="label-inline">
-            <input type="checkbox" checked={writeTrackNames} onChange={(e) => handleTitlesToggle(e.target.checked)} style={CHECKBOX} />
+            <input type="checkbox" checked={writeTrackNames} onChange={(e) => handleTitlesToggle(e.target.checked)} />
             write titles
           </label>
           <label className={`label-inline${hasAnyTags ? '' : ' dim'}`}>
-            <input type="checkbox" checked={showFilenamePreviews} onChange={(e) => setShowFilenamePreviews(e.target.checked)} disabled={!hasAnyTags} style={CHECKBOX} />
+            <input type="checkbox" checked={showFilenamePreviews} onChange={(e) => setShowFilenamePreviews(e.target.checked)} disabled={!hasAnyTags} />
             filenames
           </label>
         </div>
@@ -117,11 +116,11 @@ export function TrackMatcher({
 
         <div className="track-toolbar-group">
           <label className="label-inline">
-            <input type="radio" name="filenameMode" checked={filenameMode === 'id3'} onChange={() => setFilenameMode('id3')} style={CHECKBOX} />
+            <input type="radio" name="filenameMode" checked={filenameMode === 'id3'} onChange={() => setFilenameMode('id3')} />
             ID3
           </label>
           <label className="label-inline">
-            <input type="radio" name="filenameMode" checked={filenameMode === 'filename'} onChange={() => setFilenameMode('filename')} style={CHECKBOX} />
+            <input type="radio" name="filenameMode" checked={filenameMode === 'filename'} onChange={() => setFilenameMode('filename')} />
             filename
           </label>
         </div>
@@ -130,16 +129,16 @@ export function TrackMatcher({
 
         <div className="track-toolbar-group">
           <label className="label-inline">
-            <input type="checkbox" checked={hasMultiArtist} onChange={(e) => onCompilationChange(e.target.checked)} style={CHECKBOX} />
+            <input type="checkbox" checked={hasMultiArtist} onChange={(e) => onCompilationChange(e.target.checked)} />
             multi-artist
           </label>
           <label className="label-inline">
-            <input type="checkbox" checked={stripRemoteParentheses} onChange={(e) => onStripRemoteParenthesesChange(e.target.checked)} style={CHECKBOX} />
+            <input type="checkbox" checked={stripRemoteParentheses} onChange={(e) => onStripRemoteParenthesesChange(e.target.checked)} />
             strip parens
           </label>
           {hasMultiArtist && (
             <label className="label-inline">
-              <input type="checkbox" checked={writeTrackArtists} onChange={(e) => handleArtistsToggle(e.target.checked)} style={CHECKBOX} />
+              <input type="checkbox" checked={writeTrackArtists} onChange={(e) => handleArtistsToggle(e.target.checked)} />
               artists
             </label>
           )}

@@ -11,28 +11,28 @@ export function ApplyPanel({ onApplyTags, onCancel }: ApplyPanelProps) {
       <button
         onClick={() => onApplyTags('move')}
         title="Write tags, rename files, and move to output folder"
-        className="btn-move apply-btn"
+        className="btn-action move"
       >
         <ArrowRightLeft size={11} /> WRITE & MOVE
       </button>
       <button
         onClick={() => onApplyTags('rename')}
         title="Write tags and rename files to 'Track. Artist - Title.ext'"
-        className="btn-rename apply-btn"
+        className="btn-action rename"
       >
         <FileEdit size={11} /> WRITE & RENAME
       </button>
       <button
         onClick={() => onApplyTags('write')}
         title="Write tags only, do not rename or move files"
-        className="btn-write apply-btn"
+        className="btn-action write"
       >
         <Check size={11} /> WRITE
       </button>
       <button
         onClick={onCancel}
         title="Deselect current result"
-        className="apply-btn cancel"
+        className="btn-action cancel"
       >
         <X size={11} /> CANCEL
       </button>

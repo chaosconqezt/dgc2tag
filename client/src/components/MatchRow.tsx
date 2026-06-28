@@ -1,6 +1,5 @@
 import type { AlbumTags } from '../types';
 import { matchTracks } from '../utils';
-import { CHECKBOX } from './styles';
 
 function formatDuration(seconds?: number | null, fallback?: string): string {
   if (seconds === undefined || seconds === null) return fallback ?? '';
@@ -61,7 +60,6 @@ export function MatchRow({
           checked={nameEnabled}
           onChange={(e) => onPerTrackNameToggle(m.remote.num, e.target.checked)}
           title={nameEnabled ? 'Writing — click to skip' : 'Skipping — click to include'}
-          style={CHECKBOX}
         />
       </div>
 

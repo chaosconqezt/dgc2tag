@@ -38,9 +38,9 @@ function AppContent() {
   const isResizing = useRef(false);
   const isResizingTree = useRef(false);
 
-  const saveWidth = useCallback((w: number) => { setSidebarWidth(w); localStorage.setItem('dgc-sidebar-width', String(w)); }, []);
-  const saveTreeHeight = useCallback((h: number) => { setTreeHeightPx(h); localStorage.setItem('dgc-tree-height', String(h)); }, []);
-  const saveCardSize = useCallback((s: number) => { setCardSize(s); localStorage.setItem('dgc-card-size', String(s)); }, []);
+  const saveWidth = useCallback((w: number) => { setSidebarWidth(w); localStorage.setItem('dgc-sidebar-width', String(w)); document.documentElement.style.setProperty('--sidebar-width', w + 'px'); }, []);
+  const saveTreeHeight = useCallback((h: number) => { setTreeHeightPx(h); localStorage.setItem('dgc-tree-height', String(h)); document.documentElement.style.setProperty('--tree-height', h + 'px'); }, []);
+  const saveCardSize = useCallback((s: number) => { setCardSize(s); localStorage.setItem('dgc-card-size', String(s)); document.documentElement.style.setProperty('--card-size', s + 'px'); }, []);
   const saveMinAlbums = useCallback((n: number) => { setMinAlbums(n); localStorage.setItem('dgc-min-albums', String(n)); }, []);
 
   const onResizeStart = useCallback((e: React.MouseEvent) => {
@@ -96,6 +96,13 @@ function AppContent() {
     document.addEventListener('mousemove', onMouseMove);
     document.addEventListener('mouseup', onMouseUp);
   }, [treeHeightPx]);
+
+  // Initialize CSS variables from saved state
+  useEffect(() => {
+    document.documentElement.style.setProperty('--sidebar-width', sidebarWidth + 'px');
+    document.documentElement.style.setProperty('--tree-height', treeHeightPx + 'px');
+    document.documentElement.style.setProperty('--card-size', cardSize + 'px');
+  }, []);
 
   // Initialize on mount
   useEffect(() => {
@@ -165,19 +172,19 @@ function AppContent() {
         </div>
       </>) : (<>
       {/* Sidebar: Library Tree + Search Results */}
-      <div className="sidebar" style={{ width: sidebarWidth }}>
+      <div className="sidebar">
         <div className="sidebar-inner">
           <div className="library-header">
             <div className="library-header-left">
               <button onClick={() => ctx.dispatch({ type: 'SET_VIEW_MODE', payload: 'library' })} className="toolbar-btn">
                 <BookOpen size={14} />
               </button>
-              <h2 style={{ fontSize: '14px', letterSpacing: '0.3px' }}>
+              <h2>
                 DGC TAGGER
               </h2>
             </div>
             <div className="sidebar-controls">
-              <button onClick={ctx.collapseAll} className="toolbar-btn" style={{ fontSize: '14px', fontWeight: '700' }} title="Collapse all">
+              <button onClick={ctx.collapseAll} className="toolbar-btn collapse-btn" title="Collapse all">
                 &#9650;
               </button>
               <button onClick={() => ctx.dispatch({ type: 'SET_SHOW_SETTINGS', payload: true })} className="toolbar-btn">
@@ -188,7 +195,7 @@ function AppContent() {
               </button>
             </div>
           </div>
-          <div style={{ height: treeHeightPx, flexShrink: 0 }}>
+          <div className="sidebar-tree">
             <LibraryTree
               tree={ctx.tree}
               selectedFolder={ctx.selectedFolder}
@@ -208,7 +215,7 @@ function AppContent() {
           />
 
           {/* Search Results — vertical list */}
-          <div style={{ flex: 1, overflowY: 'auto', borderTop: '1px solid var(--border)' }}>
+          <div className="sidebar-results">
             <SearchResults
               results={ctx.searchResults}
               deezerResults={ctx.deezerResults}
@@ -243,7 +250,7 @@ function AppContent() {
         <div className="bottom-panels">
 
           {/* Comparison Panel */}
-          <div className="diff-panel" style={{ padding: '16px 20px', backgroundColor: 'var(--input-bg-alt)' }}>
+          <div className="diff-panel">
 
             {/* Search bar */}
             <SearchBar
@@ -265,7 +272,7 @@ function AppContent() {
             />
 
             {(ctx.selectedResult || ctx.localTags) ? (
-              <div style={{ display: 'flex', flexDirection: 'column' }}>
+              <div>
                 <TagComparison
                   selectedResult={ctx.selectedResult}
                   localTags={ctx.localTags}
@@ -323,7 +330,7 @@ function AppContent() {
               </div>
             ) : (
               <div className="empty-state">
-                <Layout size={40} style={{ marginBottom: '10px' }} />
+                <Layout size={40} />
                 <p>Select a folder with MP3 files</p>
                 <p className="empty-state-hint">Click a folder in the tree on the left</p>
               </div>

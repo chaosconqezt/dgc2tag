@@ -189,7 +189,7 @@ export function LibraryView({ entries, cardSize, minAlbums }: LibraryViewProps) 
         ))}
       </nav>
 
-      <div ref={scrollRef} className="library-scroll" style={{ '--card-size': `${cardSize}px` } as React.CSSProperties}>
+      <div ref={scrollRef} className="library-scroll">
         <div className="library-stats">
           LIBRARY — {bands.length} bands, {entries.length} albums ({totalOwned} owned)
         </div>
@@ -200,7 +200,6 @@ export function LibraryView({ entries, cardSize, minAlbums }: LibraryViewProps) 
               <span
                 key={genre}
                 className={`genre-tag${selectedGenre === genre ? ' selected' : ''}`}
-                style={{ fontSize: `${size}px` }}
                 onClick={() => setSelectedGenre(prev => prev === genre ? null : genre)}
               >
                 {genre}

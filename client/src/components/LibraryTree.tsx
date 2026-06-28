@@ -1,6 +1,5 @@
 import { useMemo, useState, useCallback, useRef } from 'react';
 import type { FileNode } from '../types';
-import { FS, COLORS } from './styles';
 import { ContextMenu, type ContextMenuItem } from './ContextMenu';
 
 interface LibraryTreeProps {
@@ -15,9 +14,6 @@ interface LibraryTreeProps {
 }
 
 export function LibraryTree({ tree, selectedFolder, expandedNodes, onToggleNode, onSelectFolder, onRename, onDelete, onMove }: LibraryTreeProps) {
-  const ARROW_W = 6;
-  const INDENT = 5;
-
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number; node: FileNode } | null>(null);
   const [renamingPath, setRenamingPath] = useState<string | null>(null);
   const [renameValue, setRenameValue] = useState('');
@@ -141,7 +137,6 @@ export function LibraryTree({ tree, selectedFolder, expandedNodes, onToggleNode,
       const isExpanded = isDir && expandedNodes.has(node.path);
       const children = node.children || [];
       const hasKids = children.length > 0;
-      const indent = depth * INDENT;
       const isSelected = selectedFolder === node.path;
       const dirCount = isDir ? (dirCountMap.get(node.path) ?? 0) : 0;
       const audioCount = isDir && isSelected && node.hasAudioFiles ? (audioCountMap.get(node.path) ?? 0) : 0;
@@ -151,13 +146,6 @@ export function LibraryTree({ tree, selectedFolder, expandedNodes, onToggleNode,
         <div key={node.path}>
           <div
             className={`tree-item ${isSelected ? 'selected' : ''}`}
-            style={{
-              paddingLeft: (indent + 4) + 'px',
-              paddingRight: '4px',
-              paddingTop: '1px',
-              paddingBottom: '1px',
-              marginBottom: '0px',
-            }}
             title={node.name}
             onClick={() => {
               if (isDir) {
@@ -167,28 +155,13 @@ export function LibraryTree({ tree, selectedFolder, expandedNodes, onToggleNode,
             }}
             onContextMenu={(e) => handleContextMenu(e, node)}
           >
-            <span style={{
-              display: 'inline-flex',
-              width: ARROW_W + 'px',
-              height: ARROW_W + 'px',
-              alignItems: 'center',
-              justifyContent: 'center',
-              flexShrink: 0,
-              marginRight: '1px',
-            }}>
+            <span>
               {isDir ? (
-                <span style={{
-                  fontSize: ARROW_W + 'px',
-                  fontWeight: '700',
-                  color: 'var(--text-faint)',
-                  transform: isExpanded ? 'rotate(90deg)' : 'rotate(0deg)',
-                  transition: 'transform 0.1s',
-                  lineHeight: 1,
-                }}>
+                <span className={`tree-arrow${isExpanded ? ' open' : ''}`}>
                   &#9654;
                 </span>
               ) : (
-                <span style={{ fontSize: FS, color: 'var(--border)' }}>&bull;</span>
+                <span className="tree-dot">&bull;</span>
               )}
             </span>
             {isRenaming ? (
@@ -206,26 +179,18 @@ export function LibraryTree({ tree, selectedFolder, expandedNodes, onToggleNode,
                 className="tree-renaming-input"
               />
             ) : (
-              <span className="text-ellipsis" style={{
-                fontSize: FS,
-                fontWeight: isDir ? '600' : '400',
-                flex: 1,
-                minWidth: 0,
-              }}>
+              <span className="text-ellipsis">
                 {node.name}
               </span>
             )}
             {isDir && (dirCount > 0 || audioCount > 0) && !isRenaming && (
-              <span className="tree-badge" style={{
-                color: audioCount > 0 ? 'var(--green)' : 'var(--text-faint)',
-                opacity: audioCount > 0 ? 1 : 0.6,
-              }}>
+              <span className="tree-badge">
                 {audioCount > 0 ? audioCount : dirCount}
               </span>
             )}
           </div>
           {isExpanded && hasKids && (
-            <div style={{ borderLeft: '1px solid var(--border)', marginLeft: (indent + 4) + 'px' }}>
+            <div className="tree-children">
               {renderTree(children, depth + 1)}
             </div>
           )}
@@ -238,7 +203,7 @@ export function LibraryTree({ tree, selectedFolder, expandedNodes, onToggleNode,
 
   const safeTree = Array.isArray(tree) ? tree : [];
   return (
-    <div style={{ height: '100%', overflowY: 'auto', padding: '8px' }}>
+    <div>
       {safeTree.length > 0
         ? renderTree(safeTree, 0)
         : <div className="tree-loading">Loading library...</div>

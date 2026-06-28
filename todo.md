@@ -1,138 +1,196 @@
-# dgc2tag — План исправлений
+# TODO: Unification of styles (стилизация)
 
-## 🔴 Критические (делать в первую очередь)
+## Full Audit (20.06.2026)
 
-### 1. Относительные пути `./user_data` → абсолютные
-**Файлы:** `server/src/scraper.ts:15-16, 216`
-**Статус:** ✅ Сделано
+---
 
-### 2. Спред `currentTags` тащит `_buffer` и служебные поля
-**Файл:** `server/src/tagWriter.ts:115-124`
-**Статус:** ✅ Сделано
+### 1. Типографика — размазана по трём системам
 
-### 3. Небезопасное `Buffer.from(_buffer as unknown as ArrayBuffer)`
-**Файл:** `server/src/tagWriter.ts:156-161`
-**Статус:** ✅ Сделано
+#### 1a. TS-константы (client/src/components/styles.ts)
 
-### 4. `page.goto()` блокирует запуск сервера на 60s
-**Файл:** `server/src/scraper.ts:229`
-**Что:** `launchBrowser()` вызывает `page.goto(...)` с таймаутом 60s перед тем, как сервер начнёт слушать порт.
-**Как чинить:**
-- Уменьшить таймаут до 15-20s
-- Запускать `ensureTaxonomy()` и инициализацию браузера в фоне (без `await`), не блокируя `app.listen()`
-- В `index.ts` убрать `await ensureTaxonomy()` из стартового блока, запустить fire-and-forget
-- Добавить повторную попытку при ошибке загрузки страницы
+| Константа | Значение | Используется в |
+|-----------|----------|----------------|
+| `FS` | `'14px'` | TagComparison, SettingsModal, LibraryTree, inline styles |
+| `FS_L` | `'16px'` | TagComparison (уже добавлен) |
+| `FS_S` | `'12px'` | TagComparison |
+| `FS_SM` | `'11px'` | TagComparison |
+| `FS_XS` | `'10px'` | нигде не используется |
 
+#### 1b. CSS-переменные (client/src/index.css :root)
 
+| Переменная | Значение | Комментарий |
+|------------|----------|-------------|
+| `--fs-l` | `16px` | совпадает с `FS_L` |
+| `--fs-s` | `13px` | НЕ СОВПАДАЕТ с `FS_S` (12px) |
 
-## 🟡 Высокий приоритет
+#### 1c. Хардкод fontSize в JSX (не через константы)
 
+| Файл | Строка | Значение | Должно быть |
+|------|--------|----------|-------------|
+| App.tsx:175 | `<h2 style={{ fontSize: '14px' }}>` | `'14px'` | `FS` |
+| App.tsx:180 | `<button style={{ fontSize: '14px' }}>` | `'14px'` | `FS` |
+| ResultCard.tsx:74 | `fontSize: '14px'` | `'14px'` | `FS` |
+| ResultCard.tsx:98 | `fontSize: '14px'` | `'14px'` | `FS` |
+| ProgressOverlay.tsx:29 | `fontSize: '14px'` | `'14px'` | `FS` |
+| ProgressOverlay.tsx:33 | `fontSize: '14px'` | `'14px'` | `FS` |
+| ProgressOverlay.tsx:41 | `fontSize: '12px'` | `'12px'` | `FS_S` |
+| ProgressOverlay.tsx:53 | `fontSize: '12px'` | `'12px'` | `FS_S` |
+| ProgressOverlay.tsx:56 | `fontSize: '12px'` | `'12px'` | `FS_S` |
+| ProgressOverlay.tsx:65 | `fontSize: '12px'` | `'12px'` | `FS_S` |
+| ProgressOverlay.tsx:75 | `fontSize: '14px'` | `'14px'` | `FS` |
+| LibraryTree.tsx:181 | `fontSize: ARROW_W + 'px'` | динамика | ОК |
+| LibraryView.tsx:203 | `fontSize: `${size}px`` | динамика | ОК |
 
+#### 1d. Хардкод fontSize в CSS
 
-### 7. Жёстко заданные диски C:-J: для Windows
-**Файл:** `server/src/index.ts:441`
-**Что:** Обход только дисков C:-J:. Диски A:-B: и K:+ недоступны.
-**Как чинить:**
-- Использовать `fs.readdir('/')` на Windows или `DriveType === 3` (fixed/removable)
-- Или захардкодить `'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('')` + проверка `fs.access()`
+| Файл:строка | Селектор | Значение |
+|-------------|----------|----------|
+| index.css:207 | `.empty-state-hint` | `font-size: 11px !important` |
+| index.css:210 | `.empty-state-hint` | `margin-top: 4px !important` |
+| index.css:1360 | `.library-empty-hint` | `font-size: 11px !important` |
+| index.css:1363 | `.library-empty-hint` | `margin-top: 4px !important` |
 
-### 8. Запросы к источникам не отменяются при новом поиске
-**Файл:** `client/src/hooks/useSearch.ts:47-48`
-**Статус:** ✅ Сделано
+---
 
-### 9. Симлинки игнорируются сканером
-**Файл:** `server/src/scanner.ts:77`
-**Что:** `if (entry.isSymbolicLink()) continue;` — симлинки не видны.
-**Как чинить:**
-- Разрешить симлинки, но добавить защиту от циклов (уже есть через `visited` + `realpath`)
-- Опция: добавить флаг `followSymlinks` в конфиг
+### 2. Цвета — продублированы, есть хардкод
 
-### 10. `alert()` вместо ResultModal
-**Файл:** `client/src/hooks/useConfig.ts:61,71,73`
-**Что:** Ошибки сохраняются и очистка кеша используют нативный `alert()`.
-**Как чинить:**
-- Заменить `alert()` на диспатч `SET_RESULT_MODAL` с соответствующим сообщением
-- Импортировать `dispatch` в функции (уже доступен)
+#### 2a. COLORS объект (styles.ts) ссылается на CSS-переменные — ОК
 
-## 🔵 Средний приоритет
+Все 24 ключа в COLORS используют `'var(--...)'`. Это правильно, дублирования нет.
 
-### 11. Deezer search — нет try-catch на первый запрос
-**Файл:** `server/src/deezer.ts:60-62`
-**Как чинить:** Обернуть `axios.get(...)` в try-catch, при ошибке → `return []`
+#### 2b. Хардкод hex-цветов в CSS
 
-### 12. Извлечение года — первое `\d{4}` ненадёжно
-**Файл:** `server/src/tagger.ts:132-142`
-**Как чинить:** Уже относительно надёжно (поле year обычно содержит только год/дату). Добавить проверку, что год в разумном диапазоне (1900-2099).
+| Строка | Правило | Цвета |
+|--------|---------|-------|
+| index.css:6-31 | `:root` | 30 переменных — базовые цвета, ок |
+| index.css:115 | `.btn-primary:hover` | `#dc2626` (должно быть через `var(--red)` с фильтром) |
+| index.css:1063-1089 | `.btn-move`, `.btn-rename`, `.btn-write` | 12 хардкодных цветов |
 
-### 13. `cancelActiveRequests` не отменяет запросы с внешним signal
-**Файл:** `client/src/api.ts:19`
-**Как чинить:** В `createRequestId` и interceptor уже есть корректная обработка. Проблема только в `webfetchPage`, где signal передаётся отдельно. Ничего не менять — это intentional API.
+#### 2c. Хардкод hex-цветов в TS
 
-### 14. Нет `getDetails` для Deezer, но в api.ts есть функция
-**Файл:** `client/src/api.ts`
-**Как чинить:** Удалить неиспользуемую функцию `searchAlbumsDeezer` и `fetchDeezerAlbum` (или добавить соответствующий source handler на сервере).
+| Файл:строка | hex | Примечание |
+|-------------|-----|------------|
+| sourceConfigs.ts:2-5 | `#ef4444`, `#4ade80`, `#f97316`, `#629aa9` | дублируют CSS-переменные `--red`, `--green`, `--mbrainz`, `--bandcamp` |
 
-### 15. `parseGenresFromPage` — сырой regex
-**Файл:** `server/src/scraper.ts:492-526`
-**Как чинить:** Заменить на более точный парсинг, но низкий приоритет — функция не критична.
+---
 
-### 16. Path traversal в `/api/cover/:bandId/:postId`
-**Файл:** `server/src/index.ts:311`
-**Что:** `bandId` и `postId` не валидируются на path traversal (`../../etc`), хотя они приводятся к числу — защищены через `parseInt()`.
+### 3. index.css — 1975 строк, много дублирования
 
-### 17. `getBandDiscography` не сохраняет offset при ошибке
-**Файл:** `server/src/scraper.ts:583-603`
-**Как чинить:** Если fetch упал, offset не меняется, запрос повторяется с тем же offset — вечный цикл. Добавить retry с экспоненциальной задержкой.
+#### 3a. Классы, которые дублируют друг друга
 
-## 🟢 Низкий приоритет / рефакторинг
+| Селектор | Дублирует |
+|----------|-----------|
+| `.empty-state p` (lines 201-206) | почти то же, что `.modal-header-title` |
+| `.folder-tree-node` (lines 371-380) | почти то же, что `.tree-item` + инлайн в LibraryTree |
+| `.tag-row` (lines 1491-1498) | `.track-row` (lines 1776-1783) — разные grid |
 
-### 18. `as any` для puppeteer
-**Файл:** `server/src/scraper.ts`
-**Как чинить:** Добавить declare module для puppeteer-extra или использовать типы из `@types/puppeteer`
+#### 3b. !important — 4 штуки
 
-### 19. Неизвестные action тихо игнорируются в production
-**Файл:** `client/src/hooks/appReducer.ts:255`
-**Как чинить:** Убрать guard `import.meta.env.DEV` или добавить в production логгер
+Все в `.empty-state-hint` и `.library-empty-hint`. Должны быть заменены на нормальную специфичность.
 
-### 20. `sanitize()` — коллизия имён
-**Файл:** `server/src/tagWriter.ts:340-341`
-**Как чинить:** Добавить постфиксные дублирующие суффиксы (как уже сделано для `moveProcessedFiles` через `(counter)`)
+#### 3c. Повторяющиеся паттерны
 
-### 21. Жёстко заданная локаль `'ru'`
-**Файл:** `client/src/components/LibraryView.tsx:17`
-**Как чинить:** Вынести в конфиг или определять из `navigator.language`
+- `font-family: var(--font)` — повторён в ~30 селекторах
+- `border: 1px solid var(--border)` — повторён в ~15 селекторах
+- `padding: 8px 10px; border-radius: 6px; background: var(--bg); border: 1px solid var(--text-invisible)` — паттерн инпута скопирован 5+ раз
 
-### 22. `extractTrackNumber` не обрабатывает multi-disc
-**Файл:** `server/src/trackUtils.ts`
-**Как чинить:** Добавить поддержку паттернов `2-01`, `1/12`, `CD1-01` — извлекать последнюю часть как номер трека
+---
 
-### 23. `SearchSource` неединообразные параметры
-**Файл:** `server/src/sources/types.ts`
-**Как чинить:** Унифицировать сигнатуру: `search(artist?: string, album?: string, query?: string)` — уже так и есть, но dgc использует только query, остальные — artist/album. Добавить JSDoc.
+### 4. Шрифт Inter нигде не подключен
 
-## Структура для новой сессии
+`index.html` (client/index.html) — нет `<link>` на Google Fonts.
+А везде стоит `font-family: 'Inter', system-ui, ...`.
+
+---
+
+### 5. Неиспользуемые/мёртвые константы
+
+| Константа | Где | Статус |
+|-----------|-----|--------|
+| `FS_XS` | styles.ts:6 | Нигде не используется |
+| `simColor` | styles.ts:51 | Нигде не используется |
+| `.result-card-meta` | index.css:604-609 | Нигде не используется |
+
+---
+
+### 6. Расхождение сеток
+
+| Компонент | grid-template-columns | Примечание |
+|-----------|----------------------|------------|
+| `.tag-row` | `24px 1fr 44px 1fr` | tag comparison |
+| `.track-row` | `24px 28px 1fr 44px 44px 44px 28px 1fr` | track matcher |
+| `.track-artist-row` | `24px 28px 1fr 44px 44px 44px 28px 1fr` | track artists |
+
+Возможно, норм — разные компоненты. Но стоит проверить визуальную консистентность.
+
+---
+
+## План унификации
+
+### Шаг 1: Согласовать шкалу размеров
+
+Выбрать единую шкалу. Предлагаю:
 
 ```
-session-1/     # 🔴 Пп. 1-5 (критические)
-  - scraper.ts paths fix
-  - tagWriter.ts safe fields
-  - tagWriter.ts buffer fix
-  - scraper.ts async init + server startup
-  - library.ts parallel read
-
-session-2/     # 🟡 Пп. 6-10 (высокие)
-  - config.ts env fix
-  - index.ts drive letters
-  - useSearch.ts AbortController
-  - scanner.ts symlinks
-  - useConfig.ts ResultModal
-
-session-3/     # 🔵 Пп. 11-17 (средние)
-  - deezer.ts try-catch
-  - api.ts cleanup
-  - scraper.ts pagination fix
-  - остальные средние
-
-session-4/     # 🟢 Пп. 18-23 (улучшения)
-  - все низкоприоритетные
+base  = 14px  (FS)
++2    = 16px  (FS_L)
+-1    = 13px  (--fs-s в CSS — сохранить)
+-2    = 12px  (FS_S)
+-3    = 11px  (FS_SM)
+-4    = 10px  (FS_XS)
 ```
+
+**Действия:**
+- [ ] Удалить `--fs-s: 13px` из CSS, если не нужен отдельно (или переименовать чтобы не путать)
+- [ ] Сделать `styles.ts` константы ссылающимися на CSS-переменные:
+  ```ts
+  export const FS = 'var(--fs)';
+  export const FS_L = 'var(--fs-l)';
+  export const FS_S = 'var(--fs-s)';
+  export const FS_SM = 'var(--fs-sm)';
+  export const FS_XS = 'var(--fs-xs)';
+  ```
+- [ ] Добавить недостающие переменные в `:root`:
+  ```css
+  --fs-sm: 11px;
+  --fs-xs: 10px;
+  ```
+
+### Шаг 2: Убрать хардкод fontSize из JSX
+
+- [ ] ProgressOverlay.tsx — заменить все `'14px'` на `FS`, `'12px'` на `FS_S`
+- [ ] ResultCard.tsx — заменить `fontSize: '14px'` на `FS`
+- [ ] App.tsx — заменить `fontSize: '14px'` на `FS`
+
+### Шаг 3: Убрать !important из CSS
+
+- [ ] `.empty-state-hint` — переписать через нормальную специфичность (или использовать класс)
+- [ ] `.library-empty-hint` — то же
+
+### Шаг 4: Убрать хардкод hex-цветов
+
+- [ ] `sourceConfigs.ts` — заменить hex на ссылки через `COLORS`
+- [ ] `.btn-move` / `.btn-rename` / `.btn-write` — либо вынести в переменные, либо унифицировать с остальными кнопками
+- [ ] `.btn-primary:hover` — заменить `#dc2626` на `var(--red)` с opacity-фильтром
+
+### Шаг 5: Подключить Inter в index.html
+
+- [ ] Добавить `<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">` в `<head>`
+
+### Шаг 6: Удалить мёртвый код
+
+- [ ] `FS_XS` — если не используется нигде, удалить
+- [ ] `simColor` — удалить из styles.ts
+- [ ] `.result-card-meta` — удалить из index.css
+
+### Шаг 7: Убрать дубликаты из CSS
+
+- [ ] Инпуты: создать единый класс `.input-base` и использовать везде вместо копипасты
+- [ ] `font-family: var(--font)` — вынести в :root и наследовать через `body`
+
+### Шаг 8 (будущее): Ползунок масштаба
+
+После того как всё ссылается на CSS-переменные `--fs`, `--fs-l`, `--fs-s`, `--fs-sm`, `--fs-xs`:
+- [ ] Добавить range input в SettingsModal
+- [ ] Менять `document.documentElement.style.setProperty('--fs', value + 'px')`
+- [ ] Производные (`--fs-l`, `--fs-s`...) пересчитывать динамически

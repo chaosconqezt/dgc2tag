@@ -113,13 +113,6 @@ export function FolderPicker({ initialPath, onSelect, onClose }: FolderPickerPro
           onClick={() => { setSelectedPath(node.path); if (!node.children) toggleNode(node); }}
           onDoubleClick={() => toggleNode(node)}
           className="folder-tree-node"
-          style={{
-            paddingLeft: (indent + 8) + 'px',
-            backgroundColor: isSelected ? 'rgba(239,68,68,0.125)' : 'transparent',
-            color: isSelected ? 'var(--red)' : 'var(--text)',
-          }}
-          onMouseEnter={(e) => { if (!isSelected) e.currentTarget.style.backgroundColor = 'var(--border-light)'; }}
-          onMouseLeave={(e) => { if (!isSelected) e.currentTarget.style.backgroundColor = 'transparent'; }}
         >
           {node.children ? (
             node.expanded ? <ChevronDown size={12} className="icon-dim" /> : <ChevronRight size={12} className="icon-dim" />
@@ -144,7 +137,7 @@ export function FolderPicker({ initialPath, onSelect, onClose }: FolderPickerPro
 
   return (
     <div className="modal-backdrop" onClick={onClose}>
-      <div className="modal-panel" style={{ width: '420px', maxHeight: '70vh' }} onClick={(e) => e.stopPropagation()}>
+      <div className="modal-panel" onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
           <span className="modal-header-title">Select folder</span>
           <button onClick={onClose} className="modal-close-btn">&times;</button>

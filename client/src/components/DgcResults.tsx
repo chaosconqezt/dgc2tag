@@ -1,5 +1,4 @@
 import type { SearchResult } from '../types';
-import { COLORS } from './styles';
 import { ResultCard } from './ResultCard';
 
 interface DgcResultsProps {
@@ -26,7 +25,7 @@ export function DgcResults({ results, loading, selectedResult, onSelectResult }:
           genres={[]}
           releaseType={res.releaseType}
           url={res.url}
-            accentColor={COLORS.red}
+            sourceId="dgc"
           selected={selectedResult?.postId === res.postId}
           onClick={() => onSelectResult(res)}
         />

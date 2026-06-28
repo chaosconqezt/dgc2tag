@@ -34,7 +34,7 @@ export function Footer({ musicRoot, outputFolder, outputMode, onMusicRootChange,
       {/* Music root */}
       <div className="footer-section">
         <span className="footer-section-label">SRC:</span>
-        <span className="text-ellipsis footer-path" style={{ color: 'var(--text-muted)' }} title={musicRoot}>
+        <span className="text-ellipsis footer-path text-muted" title={musicRoot}>
           {musicRoot || '(not set)'}
         </span>
         <button onClick={() => setPickerTarget('musicRoot')} className="footer-icon-btn" title="Change music library path">
@@ -47,7 +47,7 @@ export function Footer({ musicRoot, outputFolder, outputMode, onMusicRootChange,
       {/* Output */}
       <div className="footer-section">
         <span className="footer-section-label">OUT:</span>
-        <span className="text-ellipsis footer-path" style={{ color: 'var(--text-muted)' }} title={displayOutput}>
+        <span className="text-ellipsis footer-path text-muted" title={displayOutput}>
           {displayOutput || '(not set)'}
         </span>
         <button onClick={() => setPickerTarget('output')} className="footer-icon-btn" title="Change output folder">

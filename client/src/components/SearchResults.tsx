@@ -33,29 +33,29 @@ export function SearchResults({ results, deezerResults, mbrainzResults, bandcamp
       <div className="search-results-header">
         <div className="search-results-badges">
           {results.length > 0 && (
-            <span className="search-results-badge" style={{ color: 'var(--red)' }}>
+            <span className="search-results-badge text-red">
               DGC · {dgcLoading ? '...' : results.length}
             </span>
           )}
           {deezerResults.length > 0 && (
-            <span className="search-results-badge" style={{ color: 'var(--green)' }}>
+            <span className="search-results-badge text-green">
               DEEZER · {deezerLoading ? '...' : deezerResults.length}
             </span>
           )}
           {mbrainzResults.length > 0 && (
-            <span className="search-results-badge" style={{ color: 'var(--mbrainz)' }}>
+            <span className="search-results-badge text-mbrainz">
               MBRAINZ · {mbrainzLoading ? '...' : mbrainzResults.length}
             </span>
           )}
           {bandcampResults.length > 0 && (
-            <span className="search-results-badge" style={{ color: 'var(--bandcamp)' }}>
+            <span className="search-results-badge text-bandcamp">
               BANDCAMP · {bandcampLoading ? '...' : bandcampResults.length}
             </span>
           )}
         </div>
         <span className="search-results-center">MATCHES</span>
         <div className="search-results-right">
-          {anyLoading && <RefreshCw size={10} className="animate-spin" style={{ color: 'var(--red)' }} />}
+          {anyLoading && <RefreshCw size={10} className="animate-spin text-red" />}
           {!anyLoading && searchTimeMs !== null && (
             <span className="search-results-timing">
               <Clock size={9} />{(searchTimeMs / 1000).toFixed(1)}s
@@ -66,7 +66,7 @@ export function SearchResults({ results, deezerResults, mbrainzResults, bandcamp
       </div>
       {!anyLoading && totalCount === 0 && !dgcLoading && !deezerLoading && !mbrainzLoading && !bandcampLoading ? (
         <div className="search-results-empty">
-          <AlertCircle size={14} style={{ opacity: 0.3 }} />
+          <AlertCircle size={14} />
           <span className="search-results-empty-text">No matches</span>
         </div>
       ) : (
