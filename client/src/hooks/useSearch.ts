@@ -6,7 +6,7 @@ export type AppDispatch = React.Dispatch<{ type: string; payload?: unknown }>;
 
 export interface SearchRefs {
   searchInProgress: React.MutableRefObject<boolean>;
-  loadAlbumDetailsId: React.MutableRefObject<number | null>;
+  loadAlbumDetailsId: React.MutableRefObject<number | string | null>;
   searchGeneration: React.MutableRefObject<number>;
 }
 
@@ -138,6 +138,7 @@ export function createSearchActions(
 
       const syntheticResult: SearchResult = {
         source: 'deezer',
+        id: `deezer-${dz.albumId}`,
         postId: -dz.albumId,
         albumName: dz.albumName,
         artist: dz.artist,
@@ -162,6 +163,8 @@ export function createSearchActions(
       clearSelectionState();
 
       const baseResult: SearchResult = {
+        source: 'musicbrainz',
+        id: mb.id,
         postId: 0,
         albumName: mb.title,
         artist: mb.artist,
@@ -175,11 +178,11 @@ export function createSearchActions(
         url: mb.url,
         parsedTracks: [],
         musicbrainzReleaseId: mb.releaseId,
-        musicbrainzArtistId: mb.artistId,
-        musicbrainzReleaseGroupId: mb.releaseGroupId,
-        catalogNumber: mb.catalogNumber,
-        discId: mb.discId,
-        originalYear: mb.originalYear,
+        musicbrainzArtistId: mb.artistId ?? undefined,
+        musicbrainzReleaseGroupId: mb.releaseGroupId ?? undefined,
+        catalogNumber: mb.catalogNumber ?? undefined,
+        discId: mb.discId ?? undefined,
+        originalYear: mb.originalYear ?? undefined,
         extraTags: mb.extraTags || {},
       };
 
@@ -200,9 +203,13 @@ export function createSearchActions(
           duration: t.duration,
         }));
 
+        const uniqueArtists = new Set(parsedTracks.map(t => t.artist).filter(Boolean));
+        const compilation = uniqueArtists.size > 1;
+
         const fullResult: SearchResult = {
           ...baseResult,
           parsedTracks,
+          compilation,
           musicbrainzReleaseTrackIds: fullRelease.tracks.map(t => t.recordingId).filter(Boolean) as string[],
         };
 

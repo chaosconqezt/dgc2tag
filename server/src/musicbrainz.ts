@@ -146,6 +146,8 @@ export async function searchMusicBrainz(artist?: string, album?: string): Promis
     const results: MusicBrainzResult[] = [];
     for (const rel of data.releases as MbRelease[]) {
       const artistName = rel['artist-credit']?.map(a => a.name).join(' / ') || '';
+      const artistCountry = (rel as any)['artist-credit']?.[0]?.artist?.country || null;
+      const releaseCountry = (rel as any).country || null;
       const year = rel.date?.substring(0, 4) || null;
       const label = rel['label-info']?.[0]?.label?.name || null;
       const primaryType = rel['release-group']?.['primary-type'] || null;
@@ -174,7 +176,7 @@ export async function searchMusicBrainz(artist?: string, album?: string): Promis
         label,
         releaseType: releaseType || null,
         status: (rel as any).status || null,
-        country: (rel as any).country || null,
+        country: artistCountry || releaseCountry,
         trackCount: rel['track-count'] || 0,
         tracks: [],
         url: mbUrl,
@@ -205,6 +207,8 @@ export async function getMusicBrainzRelease(releaseId: string): Promise<MusicBra
 
     const artistName = data['artist-credit']?.map((a: any) => a.name).join(' / ') || '';
     const artistId = data['artist-credit']?.[0]?.artist?.id || null;
+    const artistCountry = data['artist-credit']?.[0]?.artist?.country || null;
+    const releaseCountry = data.country || null;
     const year = data.date?.substring(0, 4) || null;
     const originalYear = data.date || null;
     const label = data['label-info']?.[0]?.label?.name || null;
@@ -216,7 +220,7 @@ export async function getMusicBrainzRelease(releaseId: string): Promise<MusicBra
       ? secondaryTypes[0]
       : primaryType;
     const status = data.status || null;
-    const country = data.country || null;
+    const country = artistCountry || releaseCountry;
     const tags = (data.tags || []).map((t: any) => t.name);
 
     const tracks = (data.media?.[0]?.tracks || []).map((t: any, i: number) => ({

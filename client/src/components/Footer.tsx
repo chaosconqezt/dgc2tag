@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { FolderOpen } from 'lucide-react';
 import { FolderPicker } from './FolderPicker';
+import { BUILD, CHANGES } from '../build';
 
 interface FooterProps {
   musicRoot: string;
@@ -82,6 +83,12 @@ export function Footer({ musicRoot, outputFolder, outputMode, onMusicRootChange,
           absolute
         </button>
       </div>
+
+      {/* Build version */}
+      <span className="footer-sep">|</span>
+      <span className="footer-path-label" title={CHANGES[BUILD] || ''}>
+        b{BUILD}
+      </span>
 
       {/* Spacer */}
       <div className="flex-1" />

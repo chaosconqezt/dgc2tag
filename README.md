@@ -14,8 +14,8 @@ npm run dev
 | `npm run dev:server` | tsx watch server |
 | `npm run dev:client` | Vite dev server (standalone) |
 | `npm run dev` | tsx watch + Vite middleware in single process |
-| `npm run build` | Build client (`npm -w client run build`) |
-| `npm start` | Production mode (requires `cross-env` on Windows — see `todo.md` H9) |
+| `npm run build` | Build client (`cd client && npm run build`) |
+| `npm start` | Production mode (`cross-env NODE_ENV=production tsx server/src/index.ts`) |
 
 ## Features
 
@@ -24,6 +24,11 @@ npm run dev
 - **Library** — card-based album grid with cover art, band grouping, alphabetical navigation, infinite scroll
 - **Discography** — auto-populates band discography from DGC when tagging (with duplicate-safe pagination)
 - **Compilation / multi-artist toggle** — auto-detects VA compilations, single checkbox to flatten or split tracks
+- **Notes panel** — displays DGC album notes in the comparison view
+- **Strip parentheses toggle** — globally strip parenthesized suffixes from track/album names
+- **Library controls** — adjustable card size slider, minimum album count filter, genre cloud filtering
+- **Cleanup ignore patterns** — configurable list of files to skip during cleanup (`.DS_Store`, `Thumbs.db`, etc.)
+- **Cache clearing** — from Settings UI or `/api/cache/clear` endpoint
 - **Track matching** — Levenshtein similarity (0–100%), number-first + fuzzy matching
 - **Tag preservation** — IDs preserved across source switches
 - **Extra Tags panel** — editable extra tags with "Clear all" to remove from file
@@ -43,7 +48,7 @@ npm run dev
 - **Single process** — Express + Vite middleware, one port
 - **Dev mode** — `NODE_ENV !== 'production'` → tsx watch + Vite `middlewareMode: true`
 - **Prod mode** — Express serves `client/dist` as static
-- **Plugin sources** — `server/src/sources/` with `SearchSource` interface
+- **Plugin sources** — `server/src/sources/` with `SearchSource` interface (wrappers over `server/src/{scraper,deezer,musicbrainz,bandcamp}.ts`)
 - **Unified SearchResult** — all sources normalize to common type
 - **Data-driven tags** — `writeUserDefinedText(current, Record<string, string | undefined>)`
 - **Config mutex** — promise-chain lock prevents concurrent config corruption
@@ -90,9 +95,10 @@ client/src/
 ├── sourceConfigs.ts  — [{ id, label, color }]
 ├── build.ts          — build version constant
 ├── index.css         — CSS variables, hover utilities, library view styles
+├── assets/           — static assets (currently unused)
 ├── hooks/
 │   ├── useAppContext.tsx — context provider + reducer composition
-│   ├── appReducer.ts     — state (54 fields), actions (40+), reducer
+│   ├── appReducer.ts     — state (49 fields), actions (60+), reducer
 │   ├── useSearch.ts      — parallel search (4 sources), generation-based cancellation
 │   ├── useLibrary.ts     — tree fetch, folder select (auto-search), file operations
 │   ├── useConfig.ts      — config + cache + enabledSources
@@ -117,12 +123,15 @@ client/src/
     ├── MultiArtistTracks.tsx  — track list for compilations (with artist fields)
     ├── TrackArtistField.tsx  — inline artist edit
     ├── ApplyPanel.tsx        — WRITE & MOVE / RENAME / WRITE / CANCEL
-    ├── ProgressOverlay.tsx   — operation result with auto-scroll log
+    ├── ProgressOverlay.tsx   — operation result with auto-scroll log (uses DiffBlock)
     ├── ResultModal.tsx       — success/error modal
-    ├── SettingsModal.tsx     — sources toggles + tag defaults
+    ├── SettingsModal.tsx     — sources toggles + tag defaults + cleanup patterns
     ├── WebfetchOverlay.tsx   — sandboxed iframe
     ├── LibraryTree.tsx       — tree with context menu, inline rename, move dialog
-    ├── LibraryView.tsx       — card grid, alphabetical nav, infinite scroll
+    ├── LibraryView.tsx       — card grid, alphabetical nav, infinite scroll, genre cloud
+    ├── GenreCloud.tsx        — tag cloud filter by genre in library view
+    ├── DiffLine.tsx          — LCS-based diff highlight for renamed files
+    ├── SimPercent.tsx        — color-coded similarity percentage display
     ├── SearchBar.tsx         — artist + album inputs with enable/disable
     ├── FolderPicker.tsx      — filesystem browser (drives/roots, expand-to-path)
     ├── ContextMenu.tsx       — right-click menu
@@ -191,7 +200,7 @@ Routes auto-generated: `POST /api/search-mysource`, `GET /api/mysource/:id`
 | POST | `/api/files/rename` | Rename file/folder |
 | POST | `/api/files/move` | Move file/folder (cross-device) |
 | POST | `/api/files/delete` | Delete file/folder |
-| GET | `/api/directory/roots` | List filesystem roots |
+| GET | `/api/directory/roots?path=` | List filesystem roots (optional custom path) |
 | GET | `/api/directory/children` | Browse directory |
 | GET | `/api/webfetch?url=` | SSRF-protected page fetch |
 | POST | `/api/parse-genres` | Parse genres from HTML (max 1MB) |
@@ -233,6 +242,14 @@ Routes auto-generated: `POST /api/search-mysource`, `GET /api/mysource/:id`
 - **Config corruption**: mutex prevents concurrent writes
 - **Headless mode configurable** (`NODE_ENV=production` or `HEADLESS=true`)
 
+## Contributing
+
+При внесении изменений в код:
+
+1. **Обновить `client/src/build.ts`** — увеличить номер сборки и добавить запись в `CHANGES`
+2. **Обновить `README.md`** — если меняется структура, API, конфигурация
+3. **Обновить `todo.md`** — пометить исправленные пункты
+
 ## Notes
 
 - **Puppeteer** — persistent browser, `userDataDir` in `user_data/`, shared by DGC + Bandcamp
@@ -245,8 +262,8 @@ Routes auto-generated: `POST /api/search-mysource`, `GET /api/mysource/:id`
 - **Library** — filesystem-based (`library/{bandId}/{postId}/album.json` + cover images), auto-populates discography from DGC API on tag
 - **Discography pagination** — duplicate-safe: tracks seen postIds to avoid infinite loops from DGC API returning stale offsets
 - **CSS hover** — utility classes (hover-bg, hover-toolbar, hover-red, hover-lift) replace JS event handlers
-- **.env.example** — uses `VITE_API_BASE=/api`, but `vite.config.ts` reads `VITE_API_BASE_URL` (default `http://localhost:3001`); server defaults to port `3000`
-- **Build artifacts** — compiled `.js`, `.d.ts`, `.js.map` files exist in `server/src/` (should be gitignored or moved to `dist/`)
+- **.env.example** — содержит `VITE_API_BASE=/api` (для `api.ts`) и `VITE_API_BASE_URL=http://localhost:3000` (прокси Vite); сервер по умолчанию на порту `3000`
+- **Build artifacts** — compiled `.js`, `.d.ts`, `.js.map` files in `server/src/` are gitignored and were cleaned up
 
 
 ## License

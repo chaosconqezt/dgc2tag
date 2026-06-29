@@ -9,6 +9,10 @@ import { createConfigActions } from './useConfig';
 import { createLibraryActions } from './useLibrary';
 import { createSearchActions } from './useSearch';
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type LooseDispatch = React.Dispatch<{ type: string; payload?: any }>;
+
+
 interface AppContextType extends AppState {
   dispatch: React.Dispatch<Action>;
   fetchConfig: () => Promise<void>;
@@ -39,7 +43,7 @@ const AppContext = createContext<AppContextType | null>(null);
 export function AppProvider({ children }: { children: React.ReactNode }) {
   const [state, dispatch] = useReducer(appReducer, initialState);
   const searchInProgressRef = useRef(false);
-  const loadAlbumDetailsIdRef = useRef<number | null>(null);
+  const loadAlbumDetailsIdRef = useRef<number | string | null>(null);
   const searchGenerationRef = useRef(0);
 
   const clearSelectionState = useCallback(() => {
@@ -50,26 +54,26 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const { handleSearch, loadAlbumDetails, handleSelectResult, handleSelectDeezer, handleSelectMbrainz } = useMemo(
     () => createSearchActions(
       { searchArtist: state.searchArtist, searchAlbum: state.searchAlbum, searchArtistEnabled: state.searchArtistEnabled, searchAlbumEnabled: state.searchAlbumEnabled, selectedResult: state.selectedResult, selectedDeezer: state.selectedDeezer, tagEnabled: state.tagEnabled, enabledSources: state.enabledSources },
-      dispatch, clearSelectionState,
+      dispatch as LooseDispatch, clearSelectionState,
       { searchInProgress: searchInProgressRef, loadAlbumDetailsId: loadAlbumDetailsIdRef, searchGeneration: searchGenerationRef },
     ),
     [state.searchArtist, state.searchAlbum, state.searchArtistEnabled, state.searchAlbumEnabled, state.selectedResult, state.selectedDeezer, state.tagEnabled, state.enabledSources, dispatch, clearSelectionState],
   );
 
   const { fetchLibrary, toggleNode, collapseAll, dirHasAudioFiles, handleFolderSelect, renameNode, deleteNode, moveNode } = useMemo(
-    () => createLibraryActions({ tree: state.tree, selectedFolder: state.selectedFolder }, dispatch, clearSelectionState, handleSearch),
+    () => createLibraryActions({ tree: state.tree, selectedFolder: state.selectedFolder }, dispatch as LooseDispatch, clearSelectionState, handleSearch),
     [state.tree, state.selectedFolder, dispatch, clearSelectionState, handleSearch],
   );
 
   const { fetchConfig, saveConfig, clearCache } = createConfigActions(
     { configMusicRoot: state.configMusicRoot, configOutputFolder: state.configOutputFolder, configOutputMode: state.configOutputMode, tagEnabled: state.tagEnabled, enabledSources: state.enabledSources, cleanupIgnorePatterns: state.cleanupIgnorePatterns },
-    dispatch, fetchLibrary,
+    dispatch as LooseDispatch, fetchLibrary,
   );
 
-  const { handleWebfetch, closeWebfetch } = createWebfetchActions(dispatch);
+  const { handleWebfetch, closeWebfetch } = createWebfetchActions(dispatch as LooseDispatch);
 
   const applyTags = useCallback(
-    createApplyTags(state, dispatch, clearSelectionState, fetchLibrary),
+    createApplyTags(state, dispatch as LooseDispatch, clearSelectionState, fetchLibrary),
     [state, clearSelectionState, fetchLibrary],
   );
 

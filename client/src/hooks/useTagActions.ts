@@ -92,9 +92,7 @@ export function createApplyTags(
     if (sr?.discId) tagsToApply.discId = sr.discId;
     if (sr?.originalYear) tagsToApply.originalYear = sr.originalYear;
 
-    if (Object.keys(state.editedExtraTags).length > 0) {
-      tagsToApply.extraTags = state.editedExtraTags;
-    }
+    const extraTags = Object.keys(state.editedExtraTags).length > 0 ? state.editedExtraTags : undefined;
 
     const parsedTracks = generateParsedTracks(state.albumDetails, state.localTags);
 
@@ -126,7 +124,7 @@ export function createApplyTags(
     try {
       const result = await api.updateTags({
         folderPath: state.selectedFolder,
-        tags: tagsToApply as AlbumTags,
+        tags: { ...tagsToApply, ...(extraTags ? { extraTags } : {}) } as AlbumTags,
         trackArtists,
         trackNames,
         trackNumbers,

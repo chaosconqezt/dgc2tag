@@ -57,14 +57,13 @@ export function MatchRow({
   return (
     <div className="mr-row hover-bg" data-enabled={String(nameEnabled)}>
       <div className="mr-check">
-        <input
-          type="checkbox"
-          className="cb"
-          checked={nameEnabled}
-          onChange={(e) => onPerTrackNameToggle(m.remote.num, e.target.checked)}
-          title={nameEnabled ? 'Writing this track name — click to skip' : 'Skipping this track name — click to include'}
-          style={{ cursor: 'pointer' }}
-        />
+          <input
+            type="checkbox"
+            className="cb"
+            checked={nameEnabled}
+            onChange={(e) => onPerTrackNameToggle(m.remote.num, e.target.checked)}
+            title={nameEnabled ? 'Writing this track name — click to skip' : 'Skipping this track name — click to include'}
+          />
       </div>
 
       <div className="mr-cell-num">

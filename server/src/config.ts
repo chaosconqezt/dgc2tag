@@ -13,6 +13,7 @@ export interface TagDefaults {
     country: boolean;
     label: boolean;
     releaseType: boolean;
+    postId: boolean;
 }
 
 export interface Config {
@@ -30,7 +31,7 @@ export interface Config {
 const CONFIG_PATH = path.join(__dirname, '../config.json');
 const DEFAULT_TAG_DEFAULTS: TagDefaults = {
     artist: true, albumArtist: true, album: true, year: true,
-    genre: true, country: true, label: true, releaseType: true,
+    genre: true, country: true, label: true, releaseType: true, postId: true,
 };
 
 export async function loadConfig(): Promise<Config> {

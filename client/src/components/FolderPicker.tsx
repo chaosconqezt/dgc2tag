@@ -175,7 +175,7 @@ export function FolderPicker({ initialPath, onSelect, onClose }: FolderPickerPro
 
   return (
     <div className="progress-overlay" onClick={onClose}>
-      <div className="progress-panel" style={{ width: '480px', maxHeight: '70vh' }} onClick={(e) => e.stopPropagation()}>
+      <div className="progress-panel folder-panel" onClick={(e) => e.stopPropagation()}>
         <div className="progress-header" data-alt="true">
           <span className="folder-picker-header-title">Select folder</span>
           <button onClick={onClose} className="btn-icon">

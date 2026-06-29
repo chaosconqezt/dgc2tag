@@ -25,7 +25,6 @@ export function DeezerResults({ results, loading, selectedId, onSelect }: Deezer
           releaseType={dz.releaseType}
           trackCount={dz.trackCount}
           url={dz.url}
-          urlTitle="Open on Deezer"
             accentColor="var(--green)"
           selected={selectedId === dz.albumId}
           onClick={() => onSelect(dz)}

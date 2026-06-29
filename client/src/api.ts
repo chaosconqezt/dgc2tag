@@ -31,11 +31,12 @@ const api = axios.create({
 
 // Request interceptor: attach AbortController
 api.interceptors.request.use((config) => {
-  if (!(config as Record<string, unknown>).signal) {
+  const cfg = config as unknown as Record<string, unknown>;
+  if (!cfg.signal) {
     const controller = new AbortController();
     const requestId = createRequestId();
-    (config as Record<string, unknown>).signal = controller.signal;
-    (config as Record<string, unknown>)._requestId = requestId;
+    cfg.signal = controller.signal;
+    cfg._requestId = requestId;
     activeControllers.set(requestId, controller);
   }
   return config;
@@ -44,13 +45,13 @@ api.interceptors.request.use((config) => {
 // Response interceptor: cleanup controller + handle errors
 api.interceptors.response.use(
   (response) => {
-    const requestId = (response.config as Record<string, unknown>)._requestId as string;
+    const requestId = (response.config as unknown as Record<string, unknown>)._requestId as string;
     if (requestId) activeControllers.delete(requestId);
     return response;
   },
   (error) => {
     // Cleanup controller on error too
-    const requestId = (error.config as Record<string, unknown>)?._requestId as string;
+    const requestId = (error.config as unknown as Record<string, unknown>)?._requestId as string;
     if (requestId) activeControllers.delete(requestId);
 
     // If cancelled due to unmount, don't log as error
@@ -74,7 +75,7 @@ api.interceptors.response.use(
   }
 );
 
-export async function fetchConfig(): Promise<{ musicRoot: string; port: number; tagDefaults: Record<string, boolean>; writeTrackNames: boolean; writeTrackArtists: boolean; outputFolder: string; outputMode: 'subfolder' | 'absolute'; cleanupIgnorePatterns: string[] }> {
+export async function fetchConfig(): Promise<{ musicRoot: string; port: number; tagDefaults: Record<string, boolean>; writeTrackNames: boolean; writeTrackArtists: boolean; outputFolder: string; outputMode: 'subfolder' | 'absolute'; enabledSources?: Record<string, boolean>; cleanupIgnorePatterns: string[] }> {
   const res = await api.get('/config');
   return res.data;
 }

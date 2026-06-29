@@ -32,8 +32,8 @@ function ExtraTagsSection({ sourceTags, outputTags, onOutputChange, onClearAll }
   };
 
   return (
-    <div style={{ marginTop: '4px' }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+    <div className="mt-xs">
+      <div className="row-sm">
         <button className="tc-extra-toggle" onClick={() => setExpanded(!expanded)}>
           <span className="tc-extra-arrow" data-expanded={String(expanded)}>&#9654;</span>
           {allKeys.length > 0 ? `${allKeys.length} extra tag${allKeys.length > 1 ? 's' : ''}` : 'extra tags'}
@@ -41,7 +41,7 @@ function ExtraTagsSection({ sourceTags, outputTags, onOutputChange, onClearAll }
         <button className="tc-extra-clear" onClick={handleClearAll}>Clear all</button>
       </div>
       {expanded && (
-        <div style={{ marginTop: '4px' }}>
+        <div className="mt-xs">
           <div className="tc-extra-grid">
             <div className="tc-extra-header">Tag</div>
             <div className="tc-extra-header">Current</div>
@@ -107,7 +107,7 @@ export function TagComparison({
       }
       let compareVal: string;
       if (f.key === 'artist' && Array.isArray(f.file)) {
-        compareVal = f.file[0] || '';
+        compareVal = f.file.join(' / ');
       } else {
         compareVal = String(f.file);
       }
@@ -123,7 +123,7 @@ export function TagComparison({
       <div className="tc-empty">
         <div className="tc-empty-icon">&#9776;</div>
         <p>Select a folder with MP3 files</p>
-        <p style={{ marginTop: '4px' }}>Click a folder in the tree on the left</p>
+        <p className="mt-xs">Click a folder in the tree on the left</p>
       </div>
     );
   }
@@ -179,10 +179,11 @@ export function TagComparison({
                   disabled={readonly}
                   onChange={(e) => onTagEnabledChange(f.key, e.target.checked)}
                   title={readonly ? `${f.label} — read only` : (enabled ? `Writing ${f.label} tag — click to skip` : `Skipping ${f.label} tag — click to include`)}
-                  style={{ justifySelf: 'center', opacity: readonly ? 0.3 : 1 }}
+                  className="cb tc-checkbox"
+                  data-readonly={String(readonly)}
                 />
                 <div className="t-cell tc-cell-inline">
-                  <div className="text-ellipsis" style={{ flex: 1, minWidth: 0 }}>
+                  <div className="text-ellipsis flex-1 min-w-0">
                     {renderLocalValue(f.file, f.key)}
                   </div>
                   <span className="tc-label">{f.label}</span>
@@ -198,7 +199,6 @@ export function TagComparison({
                   onChange={(e) => onEditedSiteValuesChange(f.key, e.target.value)}
                   data-diff={String(!readonly && isDifferent)}
                   data-readonly={String(readonly)}
-                  style={{ cursor: readonly ? 'default' : 'text' }}
                 />
               </div>
             </div>
@@ -208,7 +208,7 @@ export function TagComparison({
         {/* IDs row: DGC + Deezer side by side */}
         <div className="tc-row hover-bg" data-enabled="true">
           <div className="tc-grid">
-            <input type="checkbox" className="cb" checked disabled readOnly style={{ justifySelf: 'center', opacity: 0.3 }} />
+            <input type="checkbox" className="cb tc-checkbox" checked disabled readOnly />
             <div className="t-cell tc-id-cell">
               <span className="tc-id-pair">
                 <span className="tc-id-label">DGC</span>

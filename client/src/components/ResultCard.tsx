@@ -67,7 +67,7 @@ export function ResultCard({
       {/* Info — 2 lines */}
       <div className="result-info">
         {/* Line 1: Artist · Year · Label · link */}
-        <div className="result-line" style={{ gap: '4px' }}>
+        <div className="result-line gap-sm">
           <span className="result-meta text-ellipsis">
             {meta1 || '—'}
           </span>

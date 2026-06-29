@@ -24,6 +24,7 @@ const TAG_FIELDS = [
   { key: 'country', label: 'Country' },
   { key: 'label', label: 'Label' },
   { key: 'releaseType', label: 'Release Type' },
+  { key: 'postId', label: 'Post ID' },
 ];
 
 const SOURCE_FIELDS = [
@@ -53,7 +54,7 @@ export function SettingsModal({ saving, onSave, onClearCache, clearingCache, tag
 
   return (
     <div className="progress-overlay" onClick={onClose}>
-      <div className="progress-panel" style={{ width: '420px' }} onClick={(e) => e.stopPropagation()}>
+      <div className="progress-panel settings-panel" onClick={(e) => e.stopPropagation()}>
         <div className="progress-header" data-alt="true">
           <div className="row gap-md">
             <Settings size={12} color="var(--red)" />
@@ -69,7 +70,7 @@ export function SettingsModal({ saving, onSave, onClearCache, clearingCache, tag
             <div className="settings-tag-grid">
               {TAG_FIELDS.map(f => (
                 <label key={f.key} className="settings-tag-item" data-on={String(!!tagDefaults[f.key])}>
-                  <input type="checkbox" className="cb" style={{ width: '12px', height: '12px' }} checked={tagDefaults[f.key]} onChange={() => toggleTag(f.key)} />
+                  <input type="checkbox" className="cb-sm" checked={tagDefaults[f.key]} onChange={() => toggleTag(f.key)} />
                   {f.label}
                 </label>
               ))}
@@ -82,7 +83,7 @@ export function SettingsModal({ saving, onSave, onClearCache, clearingCache, tag
             <div className="settings-source-wrap">
               {SOURCE_FIELDS.map(s => (
                 <label key={s.id} className="settings-source-item" data-on={String(srcEnabled(s.id))} style={{ '--src-color': s.color } as React.CSSProperties}>
-                  <input type="checkbox" checked={srcEnabled(s.id)} onChange={() => toggleSource(s.id)} style={{ accentColor: s.color, width: '12px', height: '12px', cursor: 'pointer' }} />
+                  <input type="checkbox" className="cb-sm" checked={srcEnabled(s.id)} onChange={() => toggleSource(s.id)} style={{ accentColor: s.color }} />
                   {s.label}
                 </label>
               ))}

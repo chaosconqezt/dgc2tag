@@ -2,33 +2,33 @@
   color-scheme: dark;
 
   /* ─── Base ──────────────────────────── */
-  --bg: #000000;
-  --text: #9eb692;
-  --text-dim: #a1a1aa;
-  --accent: #ca0000;
+  --bg: #08080a;
+  --text: #cfcfcf;
+  --text-dim: #b6b6b6;
+  --accent: #dc2626;
 
   /* ─── Surface ───────────────────────── */
-  --panel-bg: #141414;
-  --input-bg: #0e0e0e;
-  --border: #5e0000;
-  --border-light: #444444;
+  --panel-bg: #111114;
+  --input-bg: #0c0c0f;
+  --border: #1e1e24;
+  --border-light: #2a2a32;
 
   /* ─── Text variants ─────────────────── */
-  --text-faint: #f1dfb8;
-  --text-disabled: #3f3f46;
+  --text-faint: #5c6370;
+  --text-disabled: #2a2a30;
 
   /* ─── Semantic ──────────────────────── */
   --red: var(--accent);
   --green: #4ade80;
-  --yellow: #fbbf24;
+  --yellow: #facc15;
   --purple: #a78bfa;
   --orange: #f97316;
-  --teal: #629aa9;
+  --teal: #2dd4bf;
 
   /* ─── Typography ────────────────────── */
   --fs: 14px;
-  --fw: 500;
-  --fw-bold: 800;
+  --fw: 450;
+  --fw-bold: 700;
   --font: 'Inter', system-ui, sans-serif;
   --font-mono: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
 
@@ -220,32 +220,32 @@ input, button, textarea, select {
   cursor: not-allowed;
 }
 
-/* Apply action buttons (keep for now) */
+/* Apply action buttons */
 .btn-move {
-  background: #132940;
+  background: #0f1923;
   color: #7dadd4;
-  border: 1px solid #1e3d5f;
+  border: 1px solid #1e2d3d;
 }
 .btn-move:hover {
-  background: #1a3a5c;
+  background: #142438;
   transform: translateY(-1px);
 }
 .btn-rename {
-  background: #1f1730;
+  background: #1a1424;
   color: #a892c4;
-  border: 1px solid #2e2444;
+  border: 1px solid #2a2038;
 }
 .btn-rename:hover {
-  background: #2a1f3d;
+  background: #221a30;
   transform: translateY(-1px);
 }
 .btn-write {
-  background: #2c1717;
-  color: #c49292;
-  border: 1px solid #3f2424;
+  background: #1f1215;
+  color: #d4a0a0;
+  border: 1px solid #331c1c;
 }
 .btn-write:hover {
-  background: #3a1f1f;
+  background: #2a1818;
   transform: translateY(-1px);
 }
 
@@ -463,6 +463,15 @@ input, button, textarea, select {
   color: var(--text-dim);
   border: 1px solid var(--text-disabled);
   cursor: pointer;
+}
+
+.settings-panel {
+  width: 420px;
+}
+
+.folder-panel {
+  width: 480px;
+  max-height: 70vh;
 }
 
 .settings-section {
@@ -752,6 +761,14 @@ input, button, textarea, select {
   accent-color: var(--red);
   width: 11px;
   height: 11px;
+  cursor: pointer;
+  margin: 0;
+}
+
+.cb-sm {
+  accent-color: var(--red);
+  width: 12px;
+  height: 12px;
   cursor: pointer;
   margin: 0;
 }
@@ -1055,9 +1072,8 @@ input, button, textarea, select {
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  width: 550px;
-  max-width: 90vw;
-  max-height: 80vh;
+  width: 70vw;
+  height: 75vh;
 }
 
 .progress-header {
@@ -1090,29 +1106,28 @@ input, button, textarea, select {
   flex: 1;
   overflow-y: auto;
   padding: 10px 14px;
-  min-height: 80px;
-  max-height: 400px;
+  min-height: 0;
 }
 
 .progress-console {
   background: var(--bg);
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  padding: 8px 10px;
+  padding: 10px 14px;
   font-family: var(--font-mono);
-  font-size: 12px;
-  line-height: 1.6;
+  font-size: 13px;
+  line-height: 1.7;
   color: var(--text-dim);
   white-space: pre-wrap;
   word-break: break-all;
 }
 
-.progress-console-line { display: block; padding: 1px 0; }
+.progress-console-line { display: block; padding: 2px 0; }
 .progress-console-line[data-has-sub="true"] { margin-bottom: 10px; }
-.progress-console-line.renamed { color: var(--green); }
-.progress-console-line.moved { color: var(--yellow); }
+.progress-console-line.renamed { color: #86efac; }
+.progress-console-line.moved { color: #fde047; }
 .progress-console-line.wrote { color: var(--text-dim); }
-.progress-console-line.error { color: var(--red); }
+.progress-console-line.error { color: #fca5a5; }
 .progress-console-line.dim { color: var(--text-disabled); }
 
 .progress-console-sep {
@@ -1177,11 +1192,20 @@ input, button, textarea, select {
 
 /* ─── Diff highlighting ──────────────── */
 
-.diff-entry { display: block; }
+.diff-entry {
+  display: block;
+  margin-bottom: 8px;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--border-light);
+}
 
 .diff-line {
   display: block;
-  padding: 1px 0;
+  padding: 2px 8px;
+  border-radius: 3px;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  line-height: 1.6;
 }
 
 .diff-old { color: var(--text-dim); }
@@ -1190,16 +1214,19 @@ input, button, textarea, select {
 .diff-marker {
   color: var(--text-disabled);
   user-select: none;
+  margin-right: 4px;
 }
 
 .diff-del {
-  color: var(--red);
+  color: #fca5a5;
+  background: rgba(239, 68, 68, 0.1);
   text-decoration: line-through;
-  text-decoration-color: rgba(239,68,68,0.4);
+  text-decoration-color: rgba(239, 68, 68, 0.5);
 }
 
 .diff-ins {
-  color: var(--green);
+  color: #86efac;
+  background: rgba(34, 197, 94, 0.1);
   font-weight: var(--fw-bold);
 }
 
@@ -1358,6 +1385,8 @@ input, button, textarea, select {
 .flex-1 { flex: 1; }
 .shrink-0 { flex-shrink: 0; }
 .min-w-0 { min-width: 0; }
+.mt-xs { margin-top: 4px; }
+.row-sm { display: flex; align-items: center; gap: 4px; }
 
 /* ─── Percent ──────────────────────── */
 
@@ -1764,6 +1793,18 @@ input, button, textarea, select {
 }
 
 /* ─── Tag comparison table ─────────── */
+
+.tc-checkbox {
+  justify-self: center;
+}
+
+.tc-checkbox[data-readonly="true"] {
+  opacity: 0.3;
+}
+
+.tc-input[data-readonly="true"] {
+  cursor: default;
+}
 
 .tc-header {
   display: flex;
