@@ -20,16 +20,16 @@ export function ResultModal({ success, message, details, diff, onClose }: Result
 
   return (
     <div className="progress-overlay" onClick={onClose}>
-      <div className="progress-panel" style={{ width: '600px', maxWidth: '90vw' }} onClick={(e) => e.stopPropagation()}>
+      <div className="progress-panel" style={{ width: '600px' }} onClick={(e) => e.stopPropagation()}>
         <div className="progress-header">
-          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+          <div className="row gap-md">
             {success ? <CheckCircle size={14} className="diff-ins" /> : <XCircle size={14} className="diff-del" />}
             <span className="progress-header-title">{success ? 'SUCCESS' : 'ERROR'}</span>
           </div>
           <button onClick={onClose} className="progress-close"><X size={14} /></button>
         </div>
         <div className="progress-body">
-          <div className={`progress-console-line ${success ? 'renamed' : 'error'}`} style={{ marginBottom: (details?.length || diff?.length) ? '10px' : '0', fontWeight: 600 }}>
+          <div className={`progress-console-line ${success ? 'renamed' : 'error'}`} data-has-sub={String(!!(details?.length || diff?.length))}>
             {message}
           </div>
           {details && details.length > 0 && (
@@ -43,8 +43,8 @@ export function ResultModal({ success, message, details, diff, onClose }: Result
             <DiffBlock entries={diff} />
           )}
         </div>
-        <div className="progress-footer" style={{ display: 'flex', justifyContent: 'flex-end' }}>
-          <button onClick={onClose} className="result-modal-ok" style={{ padding: '6px 16px', background: success ? 'var(--green)' : 'var(--red)', color: 'var(--text)', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 'var(--fw-bold)', fontSize: 'var(--fs)' }}>
+        <div className="progress-footer">
+          <button className="result-modal-ok" data-success={String(success)} onClick={onClose}>
             OK
           </button>
         </div>

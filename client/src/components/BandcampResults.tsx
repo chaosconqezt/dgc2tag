@@ -1,5 +1,4 @@
 import type { SearchResult } from '../types';
-import { COLORS } from './styles';
 import { ResultCard } from './ResultCard';
 
 interface BandcampResultsProps {
@@ -25,7 +24,7 @@ export function BandcampResults({ results, loading, selectedUrl, onSelect }: Ban
           genres={res.genres}
           releaseType={res.releaseType}
           url={res.url}
-          accentColor={COLORS.bandcamp}
+          accentColor="var(--teal)"
           selected={selectedUrl === res.url}
           onClick={() => onSelect(res)}
         />

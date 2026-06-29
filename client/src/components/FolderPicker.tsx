@@ -1,6 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { ChevronRight, ChevronDown, Folder, HardDrive } from 'lucide-react';
-import { FONT, FS, FS_SM, COLORS, OVERLAY_BACKDROP, MODAL_PANEL, MODAL_HEADER, ICON_BUTTON } from './styles';
 import { fetchDirectoryRoots, browseDirectory } from '../api';
 
 interface FolderPickerProps {
@@ -143,40 +142,27 @@ export function FolderPicker({ initialPath, onSelect, onClose }: FolderPickerPro
 
   const renderNode = (node: TreeNode, depth: number): React.ReactNode => {
     const isSelected = selectedPath === node.path;
-    const indent = depth * 16;
 
     return (
       <div key={node.path}>
         <div
+          className="folder-node"
+          data-selected={String(isSelected)}
+          style={{ '--indent': ((depth * 16) + 8) + 'px' } as React.CSSProperties}
           onClick={() => { setSelectedPath(node.path); if (!node.children) toggleNode(node); }}
           onDoubleClick={() => toggleNode(node)}
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '4px',
-            padding: '4px 8px',
-            paddingLeft: (indent + 8) + 'px',
-            cursor: 'pointer',
-            borderRadius: '4px',
-            backgroundColor: isSelected ? `${COLORS.red}20` : 'transparent',
-            color: isSelected ? COLORS.red : COLORS.text,
-            fontSize: FS,
-            fontFamily: FONT,
-          }}
-          onMouseEnter={(e) => { if (!isSelected) e.currentTarget.style.backgroundColor = COLORS.borderLight; }}
-          onMouseLeave={(e) => { if (!isSelected) e.currentTarget.style.backgroundColor = 'transparent'; }}
         >
           {node.children ? (
-            node.expanded ? <ChevronDown size={12} color={COLORS.textDim} /> : <ChevronRight size={12} color={COLORS.textDim} />
+            node.expanded ? <ChevronDown size={12} className="folder-node-icon" /> : <ChevronRight size={12} className="folder-node-icon" />
           ) : (
-            <span style={{ width: 12 }} />
+            <span className="folder-node-spacer" />
           )}
           {node.path.endsWith('\\') || node.path === '/' ? (
-            <HardDrive size={14} color={COLORS.textDim} />
+            <HardDrive size={14} className="folder-node-icon" />
           ) : (
-            <Folder size={14} color={COLORS.textDim} />
+            <Folder size={14} className="folder-node-icon" />
           )}
-          <span className="text-ellipsis" style={{ flex: 1 }}>{node.name}</span>
+          <span className="text-ellipsis flex-1">{node.name}</span>
         </div>
         {node.expanded && node.children && (
           <div>
@@ -188,50 +174,30 @@ export function FolderPicker({ initialPath, onSelect, onClose }: FolderPickerPro
   };
 
   return (
-    <div style={OVERLAY_BACKDROP} onClick={onClose}>
-      <div style={{ ...MODAL_PANEL, width: '480px', maxHeight: '70vh' }} onClick={(e) => e.stopPropagation()}>
-        <div style={MODAL_HEADER}>
-          <span style={{ fontSize: FS, color: COLORS.textMuted, fontWeight: '600', fontFamily: FONT }}>Select folder</span>
-          <button onClick={onClose} style={{ ...ICON_BUTTON, padding: '4px' }}>
-            <span style={{ fontSize: FS_SM }}>&times;</span>
+    <div className="progress-overlay" onClick={onClose}>
+      <div className="progress-panel" style={{ width: '480px', maxHeight: '70vh' }} onClick={(e) => e.stopPropagation()}>
+        <div className="progress-header" data-alt="true">
+          <span className="folder-picker-header-title">Select folder</span>
+          <button onClick={onClose} className="btn-icon">
+            <span className="folder-picker-close-x">&times;</span>
           </button>
         </div>
 
         {/* Path input with Go button */}
-        <div style={{ padding: '8px 14px', borderBottom: `1px solid ${COLORS.border}`, display: 'flex', gap: '6px', alignItems: 'center' }}>
+        <div className="folder-input-row">
           <input
             type="text"
+            className="folder-path-input"
+            data-error={String(!!loadError)}
             value={selectedPath}
             onChange={(e) => { setSelectedPath(e.target.value); setLoadError(''); }}
             onKeyDown={handleInputKeyDown}
             placeholder="Paste a path or browse below..."
-            style={{
-              flex: 1,
-              boxSizing: 'border-box',
-              background: COLORS.bg,
-              border: `1px solid ${loadError ? COLORS.red : COLORS.textInvisible}`,
-              borderRadius: '6px',
-              padding: '6px 10px',
-              color: COLORS.text,
-              fontSize: FS,
-              fontFamily: 'monospace',
-            }}
           />
           <button
-            onClick={() => navigateToPath(selectedPath)}
+            className="folder-go-btn"
             disabled={loading || !selectedPath}
-            style={{
-              padding: '6px 12px',
-              background: loading ? COLORS.textInvisible : COLORS.red,
-              color: COLORS.textBright,
-              border: 'none',
-              borderRadius: '6px',
-              cursor: loading || !selectedPath ? 'default' : 'pointer',
-              fontSize: FS,
-              fontFamily: FONT,
-              fontWeight: '600',
-              whiteSpace: 'nowrap',
-            }}
+            onClick={() => navigateToPath(selectedPath)}
           >
             {loading ? '...' : 'Go'}
           </button>
@@ -239,54 +205,19 @@ export function FolderPicker({ initialPath, onSelect, onClose }: FolderPickerPro
 
         {/* Error message */}
         {loadError && (
-          <div style={{ padding: '4px 14px', color: COLORS.red, fontSize: FS_SM, fontFamily: FONT }}>
-            {loadError}
-          </div>
+          <div className="folder-error">{loadError}</div>
         )}
 
         {/* Tree */}
-        <div style={{ flex: 1, overflowY: 'auto', padding: '8px 0', minHeight: '200px', maxHeight: '400px' }}>
+        <div className="folder-tree">
           {tree.map(node => renderNode(node, 0))}
-          {loading && (
-            <div style={{ padding: '8px 14px', color: COLORS.textInvisible, fontSize: FS, fontFamily: FONT }}>
-              Loading...
-            </div>
-          )}
+          {loading && <div className="folder-loading">Loading...</div>}
         </div>
 
         {/* Actions */}
-        <div style={{ padding: '10px 14px', borderTop: `1px solid ${COLORS.border}`, display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
-          <button
-            onClick={onClose}
-            style={{
-              padding: '6px 14px',
-              background: 'none',
-              border: `1px solid ${COLORS.border}`,
-              borderRadius: '6px',
-              cursor: 'pointer',
-              fontSize: FS,
-              fontFamily: FONT,
-              color: COLORS.textMuted,
-            }}
-          >
-            Cancel
-          </button>
-          <button
-            onClick={() => onSelect(selectedPath)}
-            style={{
-              padding: '6px 14px',
-              background: COLORS.red,
-              color: COLORS.textBright,
-              border: 'none',
-              borderRadius: '6px',
-              cursor: 'pointer',
-              fontSize: FS,
-              fontFamily: FONT,
-              fontWeight: '600',
-            }}
-          >
-            Select
-          </button>
+        <div className="folder-actions">
+          <button className="folder-btn" onClick={onClose}>Cancel</button>
+          <button className="folder-btn-primary" onClick={() => onSelect(selectedPath)}>Select</button>
         </div>
       </div>
     </div>

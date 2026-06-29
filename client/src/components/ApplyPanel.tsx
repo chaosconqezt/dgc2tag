@@ -7,7 +7,7 @@ interface ApplyPanelProps {
 
 export function ApplyPanel({ onApplyTags, onCancel }: ApplyPanelProps) {
   return (
-    <div className="panel" style={{ display: 'flex', justifyContent: 'center', gap: '8px' }}>
+    <div className="panel apply-panel">
       <button
         onClick={() => onApplyTags('move')}
         title="Write tags, rename files, and move to output folder"
@@ -32,8 +32,7 @@ export function ApplyPanel({ onApplyTags, onCancel }: ApplyPanelProps) {
       <button
         onClick={onCancel}
         title="Deselect current result"
-        className="btn hover-lift"
-        style={{ background: 'transparent', color: 'var(--text-dim)', border: '1px solid var(--border)' }}
+        className="btn hover-lift btn-cancel-bordered"
       >
         <X size={11} /> CANCEL
       </button>

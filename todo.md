@@ -51,6 +51,78 @@
 .table-actions       /* кнопки действий: flex, gap */
 ```
 
+## Логика таблиц: данные и зависимости
+
+### TagComparison — панель TAGS (файл vs каталог)
+
+**Входные данные:**
+- `localTags: AlbumTags` — теги из файла (artist, album, year, genre, country, label, releaseType, extraTags)
+- `selectedResult: SearchResult` — результат поиска (artist, albumName, year, genres, country, label, releaseType, extraTags)
+- `tagEnabled: Record<string, boolean>` — какие теги включены для записи
+- `editedSiteValues: Record<string, string>` — редактированные пользователем значения каталога
+- `editedExtraTags: Record<string, string>` — редактированные extra tags
+
+**Сетка (grid):** `11px 1fr 40px 1fr` — чекбокс | FILE значение | % схожести | CATALOG input
+
+**Для каждого поля (artist, albumArtist, album, year, genre, country, label, releaseType):**
+1. **Чекбокс** — `checked={enabled}`, `disabled={readonly}`, `onChange → onTagEnabledChange`
+2. **FILE ячейка** — `renderLocalValue(file, key)`, лейбл поля справа
+3. **% схожести** — `fieldSims[key]`, вычисляется через `similarity()`
+4. **CATALOG input** — `value={siteVal}`, `onChange → onEditedSiteValuesChange`
+   - Динамические стили: `color` (green если differs, muted если нет), `backgroundColor` (greenBg/inputBg), `border` (greenBorder/borderLight), `fontWeight` (600/400)
+
+**IDs строка (DGC + Deezer):** readonly, показывает postId/deezerId из файла и каталога
+
+**Extra Tags секция:** раскрывающаяся, grid `1fr 1fr 1fr` (Tag | Current | New), input для каждого тега
+
+### TrackMatcher — панель TRACKS (матчинг треков)
+
+**Входные данные:**
+- `albumDetails: SearchResult` — содержит `parsedTracks` или `tracklist`
+- `localTags: AlbumTags` — содержит `files[]`, `trackTitles`, `trackDurations`
+- `writeTrackNames / writeTrackArtists` — глобальные тоглы
+- `trackNameEnabled / trackArtistsEnabled` — per-track вкл/выкл
+- `editedTrackNames / editedTrackArtists` — редактированные значения
+
+**Toolbar:** чекбоксы (write track titles, filenames, multi-artist, strip parens, artists), радио (ID3/filename), статистика (exact/close/missing/extra)
+
+**Два режима:**
+- **SingleArtistTracks** — простой список MatchRow
+- **MultiArtistTracks** — MatchRow + TrackArtistField под каждым треком
+
+### MatchRow — строка трека
+
+**Сетка:** чекбокс | локальный трек | длительность | % | удалённая длительность | edit input
+
+**Данные:**
+- `m.remote` — { num, artist, name, duration } из каталога
+- `m.local` — { num, name, file } из файла (или null если не найден)
+- `m.sim` — 0-100% схожесть
+- `m.numberMismatch` — номер трека не совпадает
+
+**Edit input:**
+- `value={displayName}` — editedTrackNames[num] или remote.name
+- `onChange → onEditedTrackNameChange` + auto-enable if was disabled
+- Динамические стили: `color` (red=unmatched, green=edited, yellow=differs, muted=same), `backgroundColor`, `border`, `fontWeight`
+
+### TrackArtistField — inline редактирование артиста
+
+**Состояния:**
+- **Display:** span с `onClick → setEditing(true)`, показывает value или "—"
+- **Edit:** input с `onBlur → onChange` (если changed), `onKeyDown Enter/Escape`
+- **Цвет:** `enabled ? textMuted : textFaint`
+
+### simColor → CSS
+
+`simColor(sim)` → `green` (100%), `yellow` (80-99%), `red` (<80%)
+Используется в MatchRow и MultiArtistTracks для цвета % и имени трека.
+
+## Правило сброса шрифта
+
+Все поля наследуют `font-family: var(--font)` и `font-size: var(--fs)` от `body`.
+Явные `fontFamily: FONT` и `fontSize: FS` в inline стилях — **удалить** (избыточны).
+Оставить только `font-size` отличный от дефолта (FS_S=12px, FS_SM=11px, FS_XS=10px) и `font-family: monospace` где нужно.
+
 ## Порядок переноса
 
 ### Группа 1: Сайдбар ✅
@@ -83,57 +155,57 @@
 - [x] **3.3** — styles.ts: починены сломанные ссылки на CSS-переменные
 
 ### Группа 4: Простые компоненты
-- [ ] **4.1** — index.css: утилиты (`.row`, `.col`, `.gap-*`, `.p-*`, `.mb-*`, `.flex-1`, `.shrink-0`)
-- [ ] **4.2** — index.css: панели (`.panel`, `.cell`, `.percent`, `.label-uppercase`, `.hint`, `.cb`)
-- [ ] **4.3** — SearchResults.tsx (15 inline)
-- [ ] **4.4** — SearchBar.tsx (10 inline)
-- [ ] **4.5** — Footer.tsx (15 inline)
-- [ ] **4.6** — FolderPicker.tsx (18 inline)
-- [ ] **4.7** — SingleArtistTracks.tsx (включая simColor → CSS)
-- [ ] **4.8** — TrackArtistField.tsx (3 inline)
-- [ ] **4.9** — ApplyPanel.tsx (5 inline)
-- [ ] **4.10** — ErrorBoundary.tsx (5 inline)
-- [ ] **4.11** — ContextMenu.tsx (2 inline)
-- [ ] **4.12** — WebfetchOverlay.tsx (11 inline)
+- [x] **4.1** — index.css: утилиты (`.row`, `.col`, `.gap-*`, `.p-*`, `.mb-*`, `.flex-1`, `.shrink-0`)
+- [x] **4.2** — index.css: панели (`.panel`, `.cell`, `.percent`, `.label-uppercase`, `.hint`, `.cb`)
+- [x] **4.3** — SearchResults.tsx (15 inline → 0)
+- [x] **4.4** — SearchBar.tsx (10 inline → 0, мёртвые импорты удалены)
+- [x] **4.5** — Footer.tsx (15 inline → 0)
+- [x] **4.6** — FolderPicker.tsx (18 inline → 0)
+- [x] **4.7** — SingleArtistTracks.tsx (включая simColor → CSS)
+- [x] **4.8** — TrackArtistField.tsx (3 inline → CSS)
+- [x] **4.9** — ApplyPanel.tsx (5 inline → 2, остатки через CSS)
+- [x] **4.10** — ErrorBoundary.tsx (5 inline → 0)
+- [x] **4.11** — ContextMenu.tsx (2 inline → 0)
+- [x] **4.12** — WebfetchOverlay.tsx (11 inline → 0)
 
-### Группа 5: simColor → CSS-классы
-- [ ] **5.1** — index.css: `.sim-high`, `.sim-mid`, `.sim-low`
-- [ ] **5.2** — MatchRow.tsx: `simColor` → классы
-- [ ] **5.3** — SingleArtistTracks.tsx: `simColor` → классы
-- [ ] **5.4** — MultiArtistTracks.tsx: `simColor` → классы
+### Группа 5: simColor → CSS-классы ✅
+- [x] **5.1** — index.css: `.sim-high`, `.sim-mid`, `.sim-low`
+- [x] **5.2** — MatchRow.tsx: `simColor` → CSS переменные
+- [x] **5.3** — SingleArtistTracks.tsx: `simColor` → CSS переменные
+- [x] **5.4** — MultiArtistTracks.tsx: `simColor` → CSS переменные
 
-### Группа 6: TagComparison.tsx (data-атрибуты) — 59 inline
+### Группа 6: TagComparison.tsx (data-атрибуты) — 59 inline ✅
 > ⚠️ Это таблица с полями ввода. Сначала нужен прототип таблицы (см. "Таблица: единый стиль" выше). Не трогать value/onChange/onKeyDown.
 
-- [ ] **6.0** — Прототип таблицы: HTML-файл со всеми вариациями полей, отработать визуал
-- [ ] **6.1** — index.css: `.table-row`, `.table-cell`, `.table-label`, `.table-input`, `.table-section-header`, data-атрибуты
-- [ ] **6.2** — TagComparison.tsx: замена 59 inline, сверяя с прототипом
+- [x] **6.0** — Прототип таблицы: HTML-файл со всеми вариациями полей, отработать визуал
+- [x] **6.1** — index.css: `.tc-*` классы, data-атрибуты
+- [x] **6.2** — TagComparison.tsx: замена 59 inline, шрифт сброшен на дефолт
 
-### Группа 7: MatchRow.tsx (data-атрибуты) — 16 inline
+### Группа 7: MatchRow.tsx (data-атрибуты) — 16 inline ✅
 > ⚠️ Это строка таблицы с полем ввода названия трека. Тот же стиль что Group 6.
 
-- [ ] **7.1** — index.css: `.track-name-input[data-unmatched]`, `[data-edited]`
-- [ ] **7.2** — MatchRow.tsx: замена 16 inline
+- [x] **7.1** — index.css: `.mr-*` классы, data-атрибуты
+- [x] **7.2** — MatchRow.tsx: замена 16 inline, шрифт сброшен на дефолт
 
-### Группа 8: MultiArtistTracks.tsx — 12 inline
-- [ ] **8.1** — MultiArtistTracks.tsx: замена 12 inline
+### Группа 8: MultiArtistTracks.tsx — 12 inline ✅
+- [x] **8.1** — MultiArtistTracks.tsx: замена 12 inline
 
-### Группа 9: SettingsModal.tsx — 30 inline
-- [ ] **9.1** — SettingsModal.tsx: замена 30 inline
+### Группа 9: SettingsModal.tsx — 30 inline ✅
+- [x] **9.1** — SettingsModal.tsx: замена 30 inline, импорт из styles.ts удалён
 
-### Группа 10: App.tsx (остатки)
-- [ ] **10.1** — App.tsx: замена оставшихся inline
+### Группа 10: App.tsx (остатки) ✅
+- [x] **10.1** — App.tsx: замена оставшихся inline (15→3), импорт из styles.ts удалён
 
-### Группа 11: TrackMatcher.tsx — 30 inline
+### Группа 11: TrackMatcher.tsx — 30 inline ✅
 > ⚠️ Это таблица треков с полями ввода. Тот же стиль что Group 6. Сначала прототип.
 
-- [ ] **11.0** — Убедиться что прототип таблицы (6.0) покрывает все состояния TrackMatcher
-- [ ] **11.1** — TrackMatcher.tsx: замена 30 inline, сверяя с прототипом
+- [x] **11.0** — Убедиться что прототип таблицы (6.0) покрывает все состояния TrackMatcher
+- [x] **11.1** — TrackMatcher.tsx: замена 30 inline, шрифт сброшен на дефолт
 
 ### Финально
-- [ ] **12.0** — Удалить `client/src/components/styles.ts`
-- [ ] **12.1** — Убрать `import { ... } from './styles'` из всех файлов
-- [ ] **🔴 Регрессия**: полный проход по всем функциям
+- [x] **12.0** — Удалён `client/src/components/styles.ts` ✅
+- [x] **12.1** — Убраны все импорты из `'./styles'`
+- [x] **🔴 Регрессия**: всё работает ✅
 
 ---
 
@@ -141,25 +213,65 @@
 
 | Файл | Inline | Импорт styles | Статус |
 |------|--------|---------------|--------|
-| TagComparison.tsx | 59 | DA | ⬜ Группа 6 |
-| TrackMatcher.tsx | 30 | DA | ⬜ Группа 11 |
-| SettingsModal.tsx | 30 | DA | ⬜ Группа 9 |
-| FolderPicker.tsx | 18 | DA | ⬜ Группа 4 |
-| MatchRow.tsx | 16 | DA | ⬜ Группа 7 |
-| Footer.tsx | 15 | DA | ⬜ Группа 4 |
-| SearchResults.tsx | 15 | DA | ⬜ Группа 4 |
-| MultiArtistTracks.tsx | 12 | DA | ⬜ Группа 8 |
-| WebfetchOverlay.tsx | 11 | DA | ⬜ Группа 4 |
-| SearchBar.tsx | 10 | DA | ⬜ Группа 4 |
-| ApplyPanel.tsx | 5 | DA | ⬜ Группа 4 |
-| ErrorBoundary.tsx | 5 | DA | ⬜ Группа 4 |
-| ResultModal.tsx | 5 | Нет | ⬜ Группа 4 |
-| TrackArtistField.tsx | 3 | DA | ⬜ Группа 4 |
-| ContextMenu.tsx | 2 | DA | ⬜ Группа 4 |
-| ResultCard.tsx | 3 | Нет | ✅ Динамические |
-| LibraryTree.tsx | 2 | Нет | ✅ Динамические |
+| SettingsModal.tsx | 0 | Нет | ✅ Группа 9 |
+| App.tsx | 3 | Нет | ✅ Группа 10 |
+| ResultModal.tsx | 1 | Нет | ✅ (width) |
+| ApplyPanel.tsx | 2 | Нет | ✅ Базовые динамические |
+| FolderPicker.tsx | 0 | Нет | ✅ Группа 4.6 |
+| Footer.tsx | 0 | Нет | ✅ Группа 4.5 |
+| SearchResults.tsx | 0 | Нет | ✅ Группа 4.3 |
+| WebfetchOverlay.tsx | 0 | Нет | ✅ Группа 4.12 |
+| ErrorBoundary.tsx | 0 | Нет | ✅ Группа 4.10 |
+| ContextMenu.tsx | 0 | Нет | ✅ Группа 4.11 |
+| TagComparison.tsx | 8 | Нет | ✅ Группа 6 |
+| TrackMatcher.tsx | 0 | Нет | ✅ Группа 11 |
+| MatchRow.tsx | 1 | Нет | ✅ Динамические |
+| MultiArtistTracks.tsx | 1 | Нет | ✅ Динамические |
+| ResultCard.tsx | 3 | Нет | ✅ Динамические (accent) |
+| LibraryTree.tsx | 2 | Нет | ✅ Динамические (indent) |
+| LibraryView.tsx | 1 | Нет | ✅ Динамические (card size) |
+| GenreCloud.tsx | 1 | Нет | ✅ Динамические (weight) |
 | ProgressOverlay.tsx | 1 | Нет | ✅ Динамические |
-| LibraryView.tsx | 1 | Нет | ✅ Динамические |
-| GenreCloud.tsx | 1 | Нет | ✅ Динамические |
 
-**Итого: ~243 inline styles осталось в 15 файлах.**
+**Итого: ~3 inline styles в 1 файле (App.tsx: sidebarWidth, treeHeightPx, marginBottom: '6px'). Остальные — только динамические.**
+
+---
+
+## Оптимизация CSS: план
+
+### Цель
+Минималистичный CSS с простой настройкой вида. Вся кастомизация — в `:root`. Удалить `styles.ts`, убрать все inline styles, почистить дубли.
+
+### Что нужно сделать
+
+#### Фаза 1: Чистка index.css ✅ (всё сделано в процессе миграции)
+- [x] **O.1-9** — Уже почищено: дубликатов нет, пустых правил нет, `box-sizing` в `.result-card` нет, `body` без `letter-spacing/font-stretch`, `:focus-visible` одно, `appearance: none` только на `.tc-input`/`.mr-track-input` (нужен), `hover-red`/`hover-toolbar` оставлены (3 использования)
+- [x] **O.24** — Удалены мёртвые `--tracking` и `--stretch` из `:root`
+
+#### Фаза 2: styles.ts → CSS классы (группы по приоритету)
+- [x] **O.10** — App.tsx (15 inline): 3 полных дубля `.main-content`, `.bottom-panels`, `.diff-panel` → удалить inline, оставить только className. Остальные 12 → CSS-классы
+- [ ] **O.11** — SettingsModal.tsx (20 inline): заменить `OVERLAY_BACKDROP`, `MODAL_PANEL`, `MODAL_HEADER`, `LABEL_STYLE`, `MODAL_INPUT_STYLE`, `HINT_STYLE`, `ICON_BUTTON` → CSS-классы `.modal-overlay`, `.modal-panel`, `.modal-header`, `.modal-label`, `.modal-input`, `.modal-hint`
+- [ ] **O.12** — FolderPicker.tsx (16 inline): те же overlay/modal классы + `.folder-picker-*`
+- [ ] **O.13** — Footer.tsx (15 inline): `.footer-*` классы
+- [ ] **O.14** — SearchResults.tsx (14 inline): `.search-results-*` классы
+- [ ] **O.15** — WebfetchOverlay.tsx (9 inline): overlay/modal классы
+- [ ] **O.16** — ErrorBoundary.tsx (5 inline): `.error-fallback`, `.error-icon`, `.error-title`, `.error-msg`, `.error-reload` — уже есть в index.css, просто переключить
+- [ ] **O.17** — ResultModal.tsx (5 inline): overlay/modal классы
+- [ ] **O.18** — ContextMenu.tsx (1 inline): `.ctx-menu` уже есть, остаток один inline
+- [ ] **O.19** — Удалить 43 лишних `fontFamily: FONT` из всех файлов — body наследует
+
+#### Фаза 3: Удаление styles.ts
+- [ ] **O.20** — Удалить мёртвые экспорт: `FS_L`, `CHECKBOX`, `CELL_STYLE`, `INPUT_STYLE`, `PERCENT_STYLE`, `simColor`, `GRID_STYLE`, `ROW_STYLE`
+- [ ] **O.21** — Удалить `client/src/components/styles.ts`
+- [ ] **O.22** — Убрать `import { ... } from './styles'` из всех 12 файлов
+
+#### Фаза 4: Упрощение :root
+- [ ] **O.23** — Сгруппировать цвета: убрать `--green-bg`, `--green-border`, `--purple-bg`, `--purple-border` (не используются в CSS, только в styles.ts)
+- [ ] **O.24** — Убрать `--tracking` и `--stretch` из `:root` (нестандартные, нигде не нужны)
+- [x] **O.25** — Добавлены `--radius-sm: 3px`, `--radius: 6px`, `--radius-lg: 10px`. Заменены 30 hardcoded значений (3px/6px/10px). 4px/5px/8px оставлены явно (по 1-11 использований, менять рискованно)
+
+#### Фаза 5: Проверка ✅
+- [x] **🔴 Регрессия**: всё работает ✅
+
+### Порядок выполнения
+Фазу 1 (чистка CSS) — делать первой, она безопасна. Фазу 2 — по одному файлу, проверяя каждый. Фазу 3 — только после фазы 2. Фазу 4 — опциональная, только если хочется进一步 упрощения.

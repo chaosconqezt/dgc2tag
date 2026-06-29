@@ -3,7 +3,6 @@ import ErrorBoundary from './components/ErrorBoundary';
 import { AppProvider, useAppContext } from './hooks/useAppContext';
 import * as api from './api';
 import { RefreshCw, Layout, Settings, BookOpen } from 'lucide-react';
-import { FONT, FS, FS_SM, COLORS, ICON_BUTTON } from './components/styles';
 import { parseCompilationTracklist, parseSingleArtistTracklist } from './utils';
 import { WebfetchOverlay } from './components/WebfetchOverlay';
 import { SettingsModal } from './components/SettingsModal';
@@ -122,10 +121,10 @@ function AppContent() {
 
       {ctx.viewMode === 'library' ? (<>
         {/* Library Mode — full width */}
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0, overflow: 'hidden' }}>
+        <div className="main-content">
           <div className="library-header">
             <div className="library-header-left">
-              <button onClick={() => ctx.dispatch({ type: 'SET_VIEW_MODE', payload: 'main' })} className="hover-toolbar" style={{ ...ICON_BUTTON, display: 'flex', borderRadius: '4px', padding: '4px' }}>
+              <button onClick={() => ctx.dispatch({ type: 'SET_VIEW_MODE', payload: 'main' })} className="hover-toolbar btn-icon">
                 <Layout size={14} />
               </button>
               <h2 className="library-header-title">
@@ -238,13 +237,13 @@ function AppContent() {
       />
 
       {/* Main Content Area */}
-      <div className="main-content" style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0, overflow: 'hidden' }}>
+      <div className="main-content">
 
         {/* Content Split: Comparison Panel */}
-        <div className="bottom-panels" style={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
+        <div className="bottom-panels">
 
           {/* Comparison Panel */}
-          <div className="diff-panel" style={{ flex: 1, padding: '16px 20px', overflowY: 'auto', overflowX: 'hidden', minWidth: 0 }}>
+          <div className="diff-panel">
 
             {/* Search bar */}
             <SearchBar
@@ -266,7 +265,7 @@ function AppContent() {
             />
 
             {(ctx.selectedResult || ctx.localTags) ? (
-              <div style={{ display: 'flex', flexDirection: 'column' }}>
+              <div className="col">
                 <TagComparison
                   selectedResult={ctx.selectedResult}
                   localTags={ctx.localTags}
@@ -316,17 +315,17 @@ function AppContent() {
                 />
 
                 {ctx.albumDetails?.notes && (
-                  <div style={{ marginTop: '10px', padding: '10px', background: COLORS.bg, borderRadius: '8px', border: `1px solid ${COLORS.border}` }}>
-                    <div style={{ fontSize: FS, color: COLORS.textDim, fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '6px', fontFamily: FONT }}>NOTES</div>
-                    <p style={{ fontSize: FS, color: COLORS.textMuted, margin: 0, lineHeight: '1.5', fontFamily: FONT }}>{ctx.albumDetails.notes}</p>
+                  <div className="notes-panel">
+                    <div className="label-uppercase" style={{ marginBottom: '6px' }}>NOTES</div>
+                    <p className="notes-text">{ctx.albumDetails.notes}</p>
                   </div>
                 )}
               </div>
             ) : (
-              <div style={{ height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: COLORS.textInvisible, opacity: 0.5 }}>
-                <Layout size={40} style={{ marginBottom: '10px' }} />
-                <p style={{ fontWeight: '500', fontSize: FS, fontFamily: FONT }}>Select a folder with MP3 files</p>
-                <p style={{ fontSize: FS_SM, fontFamily: FONT, marginTop: '4px' }}>Click a folder in the tree on the left</p>
+              <div className="app-empty">
+                <Layout size={40} className="app-empty-icon" />
+                <p className="app-empty-text">Select a folder with MP3 files</p>
+                <p className="app-empty-sub">Click a folder in the tree on the left</p>
               </div>
             )}
           </div>

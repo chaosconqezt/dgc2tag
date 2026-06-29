@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react';
-import { FONT, FS, COLORS, INPUT_STYLE } from './styles';
 
 export function TrackArtistField({
   value,
@@ -19,24 +18,9 @@ export function TrackArtistField({
 
   return (
     <div
-      style={{
-        display: 'inline-flex',
-        alignItems: 'center',
-        gap: '4px',
-        fontSize: FS,
-        fontFamily: FONT,
-        color: enabled ? COLORS.textMuted : COLORS.textFaint,
-        cursor: editing ? 'text' : 'pointer',
-        padding: 0,
-        borderRadius: 0,
-        border: 'none',
-        background: 'transparent',
-        minWidth: '20px',
-        maxWidth: '200px',
-        overflow: 'hidden',
-        textOverflow: 'ellipsis',
-        whiteSpace: 'nowrap',
-      }}
+      className="track-artist-field"
+      data-enabled={String(enabled)}
+      style={{ cursor: editing ? 'text' : 'pointer' }}
     >
       {editing ? (
         <input
@@ -65,24 +49,13 @@ export function TrackArtistField({
               setEditing(false);
             }
           }}
-          style={{
-            ...INPUT_STYLE,
-            background: 'transparent',
-            border: 'none',
-            color: COLORS.textMuted,
-            padding: 0,
-            width: '100%',
-            minWidth: '30px',
-          }}
         />
       ) : (
         <span
           className="text-ellipsis"
           onClick={() => { setDraft(value); setEditing(true); }}
           title={value}
-          style={{
-            display: 'block',
-          }}
+          style={{ display: 'block' }}
         >{value || '—'}</span>
       )}
     </div>

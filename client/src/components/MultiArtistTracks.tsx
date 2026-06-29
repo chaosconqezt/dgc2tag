@@ -1,6 +1,5 @@
 import type { AlbumTags } from '../types';
 import { matchTracks, stripParentheses } from '../utils';
-import { FONT, FS, COLORS, simColor } from './styles';
 import { MatchRow, type TrackDisplayConfig, type TrackCallbacks } from './MatchRow';
 import { TrackArtistField } from './TrackArtistField';
 
@@ -38,7 +37,7 @@ export function MultiArtistTracks({
   onEditedTrackArtistChange: (num: string, value: string) => void;
 }) {
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+    <div className="col gap-sm">
       {matched.map((m) => {
         const nameEnabled = writeTrackNames && (trackNameEnabled[m.remote.num] !== false);
         const artistEnabled = writeTrackArtists && (trackArtistsEnabled[m.remote.num] === true);
@@ -65,30 +64,27 @@ export function MultiArtistTracks({
                 isNameEdited: m.remote.name !== displayName,
                 isUnmatched: !m.local,
                 displayName,
-                sc: simColor(m.sim),
               }}
               callbacks={callbacks}
             />
 
-            <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginTop: '-1px' }}>
-              <span style={{ width: '11px', flexShrink: 0 }} />
-              <div style={{ flex: 1, textAlign: 'left', minWidth: 0, paddingLeft: '4px' }}>
-                <span style={{ display: 'inline-block', width: '18px', flexShrink: 0 }} />
+            <div className="mr-artist-row">
+              <span className="mr-check" />
+              <span className="mr-cell-num" />
+              <div className="t-cell mr-artist-local">
                 {m.local ? (
-                  <span title={localTags.trackArtists?.[m.local.file] || ''} className="text-ellipsis" style={{
-                    fontSize: FS, fontFamily: FONT,
-                    color: COLORS.textFaint,
-                  }}>
+                  <span title={localTags.trackArtists?.[m.local.file] || ''} className="text-ellipsis">
                     {localTags.trackArtists?.[m.local.file] || ''}
                   </span>
                 ) : (
-                  <span style={{ fontSize: FS, color: COLORS.textInvisible }}>&nbsp;</span>
+                  <span className="mr-artist-empty">&nbsp;</span>
                 )}
               </div>
-              <span style={{ width: '36px', flexShrink: 0 }} />
-              <span style={{ width: '40px', flexShrink: 0 }} />
-              <span style={{ width: '36px', flexShrink: 0 }} />
-              <div style={{ flex: 1, paddingLeft: '4px', minWidth: 0 }}>
+              <span className="mr-duration" />
+              <span className="mr-sim" />
+              <span className="mr-remote-duration" />
+              <span className="mr-cell-num" />
+              <div className="t-cell mr-edit">
                 <TrackArtistField
                   value={displayArtist}
                   onChange={(v) => {

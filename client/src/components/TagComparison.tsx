@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import type { AlbumTags, SearchResult } from '../types';
 import { similarity } from '../utils';
-import { FONT, FS, FS_SM, FS_S, FS_XS, COLORS, CHECKBOX, CELL_STYLE, INPUT_STYLE, PERCENT_STYLE, GRID_STYLE, ROW_STYLE } from './styles';
+import { SimPercent } from './SimPercent';
 
 interface TagComparisonProps {
   selectedResult: SearchResult | null;
@@ -34,56 +34,28 @@ function ExtraTagsSection({ sourceTags, outputTags, onOutputChange, onClearAll }
   return (
     <div style={{ marginTop: '4px' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-        <button
-          onClick={() => setExpanded(!expanded)}
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '4px',
-            background: 'none',
-            border: 'none',
-            color: COLORS.textDim,
-            cursor: 'pointer',
-            fontSize: FS,
-            fontFamily: FONT,
-            padding: '4px 0',
-          }}
-        >
-          <span style={{ transform: expanded ? 'rotate(90deg)' : 'rotate(0deg)', transition: 'transform 0.15s', fontSize: FS_XS }}>&#9654;</span>
+        <button className="tc-extra-toggle" onClick={() => setExpanded(!expanded)}>
+          <span className="tc-extra-arrow" data-expanded={String(expanded)}>&#9654;</span>
           {allKeys.length > 0 ? `${allKeys.length} extra tag${allKeys.length > 1 ? 's' : ''}` : 'extra tags'}
         </button>
-        <button
-          onClick={handleClearAll}
-          style={{
-            background: 'none',
-            border: `1px solid ${COLORS.textFaint}`,
-            color: COLORS.textFaint,
-            cursor: 'pointer',
-            fontSize: FS_XS,
-            fontFamily: FONT,
-            padding: '1px 5px',
-            borderRadius: '3px',
-          }}
-        >
-          Clear all
-        </button>
+        <button className="tc-extra-clear" onClick={handleClearAll}>Clear all</button>
       </div>
       {expanded && (
         <div style={{ marginTop: '4px' }}>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '4px', marginBottom: '2px' }}>
-            <div style={{ fontSize: FS_XS, color: COLORS.textDim, fontWeight: '700', textTransform: 'uppercase', fontFamily: FONT }}>Tag</div>
-            <div style={{ fontSize: FS_XS, color: COLORS.textDim, fontWeight: '700', textTransform: 'uppercase', fontFamily: FONT }}>Current</div>
-            <div style={{ fontSize: FS_XS, color: COLORS.green, fontWeight: '700', textTransform: 'uppercase', fontFamily: FONT }}>New</div>
+          <div className="tc-extra-grid">
+            <div className="tc-extra-header">Tag</div>
+            <div className="tc-extra-header">Current</div>
+            <div className="tc-extra-header new">New</div>
           </div>
           {allKeys.map(key => (
-            <div key={key} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '4px', marginBottom: '2px', alignItems: 'center' }}>
-              <div style={{ ...CELL_STYLE, textAlign: 'right', color: COLORS.textDim, fontSize: FS_S }}>{key}</div>
-              <div style={{ ...CELL_STYLE, color: COLORS.textMuted, fontSize: FS_S }}>{sourceTags[key] || <span style={{ color: COLORS.textInvisible }}>—</span>}</div>
+            <div key={key} className="tc-extra-row">
+              <div className="t-cell tc-extra-key">{key}</div>
+              <div className="t-cell tc-extra-val">{sourceTags[key] || <span className="tc-dash">—</span>}</div>
               <input
                 type="text"
+                className="t-cell tc-extra-input"
                 value={outputTags[key] ?? ''}
                 onChange={(e) => onOutputChange(key, e.target.value)}
-                style={{ ...INPUT_STYLE, color: COLORS.green, backgroundColor: COLORS.greenBg, border: `1px solid ${COLORS.greenBorder}`, fontSize: FS_S }}
               />
             </div>
           ))}
@@ -148,10 +120,10 @@ export function TagComparison({
 
   if (!selectedResult && !localTags) {
     return (
-      <div style={{ height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: COLORS.textInvisible, opacity: 0.5 }}>
-        <div style={{ fontSize: '40px', marginBottom: '10px' }}>&#9776;</div>
-        <p style={{ fontWeight: '500', fontSize: FS, fontFamily: FONT }}>Select a folder with MP3 files</p>
-        <p style={{ fontSize: FS_SM, fontFamily: FONT, marginTop: '4px' }}>Click a folder in the tree on the left</p>
+      <div className="tc-empty">
+        <div className="tc-empty-icon">&#9776;</div>
+        <p>Select a folder with MP3 files</p>
+        <p style={{ marginTop: '4px' }}>Click a folder in the tree on the left</p>
       </div>
     );
   }
@@ -163,16 +135,16 @@ export function TagComparison({
 
   const renderLocalValue = (file: string[] | string | null | undefined, key: string) => {
     if (key === 'artist' && Array.isArray(file)) {
-      if (file.length === 0) return <span style={{ color: COLORS.textInvisible }}>—</span>;
+      if (file.length === 0) return <span className="tc-dash">—</span>;
       return (
-        <div className="text-ellipsis" style={{ fontSize: FS, color: COLORS.textMuted, fontFamily: FONT }}>
+        <div className="text-ellipsis mr-local-name">
           {file.join(' / ')}
         </div>
       );
     }
-    if (!file) return <span style={{ color: COLORS.textInvisible }}>—</span>;
+    if (!file) return <span className="tc-dash">—</span>;
     return (
-      <div className="text-ellipsis" style={{ fontSize: FS, color: COLORS.textMuted, fontFamily: FONT }}>
+      <div className="text-ellipsis mr-local-name">
         {String(file)}
       </div>
     );
@@ -180,10 +152,10 @@ export function TagComparison({
 
   return (
     <div className="panel">
-      <div style={{ display: 'flex', alignItems: 'center', marginBottom: '8px', paddingBottom: '6px', borderBottom: `1px solid ${COLORS.borderLight}` }}>
-        <span style={{ flex: 1, textAlign: 'center', color: COLORS.textDim, fontSize: FS, fontFamily: FONT, fontWeight: '600' }}>FILE</span>
-        <span style={{ textAlign: 'center', color: COLORS.text, fontWeight: '700', fontSize: FS, fontFamily: FONT, padding: '0 8px' }}>TAGS</span>
-        <span style={{ flex: 1, textAlign: 'center', color: COLORS.textDim, fontSize: FS, fontFamily: FONT, fontWeight: '600' }}>CATALOG</span>
+      <div className="tc-header">
+        <span>FILE</span>
+        <span className="tc-title">TAGS</span>
+        <span>CATALOG</span>
       </div>
 
       <div>
@@ -198,38 +170,35 @@ export function TagComparison({
           const readonly = 'readonly' in f && (f as { readonly?: boolean }).readonly === true;
 
           return (
-            <div key={f.key} style={{ ...ROW_STYLE(enabled), borderRadius: '4px' }} className="hover-bg">
-              <div style={GRID_STYLE}>
+            <div key={f.key} className="tc-row hover-bg" data-enabled={String(enabled)}>
+              <div className="tc-grid">
                 <input
                   type="checkbox"
+                  className="cb"
                   checked={enabled}
                   disabled={readonly}
                   onChange={(e) => onTagEnabledChange(f.key, e.target.checked)}
                   title={readonly ? `${f.label} — read only` : (enabled ? `Writing ${f.label} tag — click to skip` : `Skipping ${f.label} tag — click to include`)}
-                  style={{ ...CHECKBOX, justifySelf: 'center', opacity: readonly ? 0.3 : 1 }}
+                  style={{ justifySelf: 'center', opacity: readonly ? 0.3 : 1 }}
                 />
-                <div style={{ ...CELL_STYLE, display: 'flex', alignItems: 'center' }}>
-                  <span className="text-ellipsis" style={{ flex: 1, minWidth: 0 }}>
+                <div className="t-cell tc-cell-inline">
+                  <div className="text-ellipsis" style={{ flex: 1, minWidth: 0 }}>
                     {renderLocalValue(f.file, f.key)}
-                  </span>
-                  <span className="text-ellipsis" style={{ fontSize: FS, color: COLORS.textFaint, opacity: 0.5, fontFamily: FONT, marginLeft: '4px', flexShrink: 0 }}>{f.label}</span>
+                  </div>
+                  <span className="tc-label">{f.label}</span>
                 </div>
-                <div style={{ ...PERCENT_STYLE }}>
-                  {readonly ? '' : `${sim}%`}
+                <div className="tc-percent">
+                  {readonly ? '' : <SimPercent value={sim} />}
                 </div>
                 <input
                   type="text"
+                  className="t-cell tc-input"
                   value={siteVal}
                   readOnly={readonly}
                   onChange={(e) => onEditedSiteValuesChange(f.key, e.target.value)}
-                  style={{
-                    ...INPUT_STYLE,
-                    color: readonly ? COLORS.textDim : (isDifferent ? COLORS.green : COLORS.textMuted),
-                    backgroundColor: readonly ? 'transparent' : (isDifferent ? COLORS.greenBg : COLORS.inputBg),
-                    fontWeight: readonly ? '400' : (isDifferent ? '600' : '400'),
-                    border: readonly ? 'none' : (isDifferent ? `1px solid ${COLORS.greenBorder}` : `1px solid ${COLORS.borderLight}`),
-                    cursor: readonly ? 'default' : 'text',
-                  }}
+                  data-diff={String(!readonly && isDifferent)}
+                  data-readonly={String(readonly)}
+                  style={{ cursor: readonly ? 'default' : 'text' }}
                 />
               </div>
             </div>
@@ -237,38 +206,30 @@ export function TagComparison({
         })}
 
         {/* IDs row: DGC + Deezer side by side */}
-        <div style={{ ...ROW_STYLE(true), borderRadius: '4px' }} className="hover-bg">
-          <div style={{ display: 'grid', gridTemplateColumns: '11px 1fr 40px 1fr', gap: '4px', alignItems: 'center' }}>
-            <input type="checkbox" checked disabled readOnly style={{ ...CHECKBOX, justifySelf: 'center', opacity: 0.3 }} />
-            <div style={{ ...CELL_STYLE, display: 'flex', gap: '4px' }}>
-              <span style={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', gap: '4px' }}>
-                <span style={{ fontSize: FS, color: COLORS.textFaint, opacity: 0.5, fontFamily: FONT, flexShrink: 0 }}>DGC</span>
-                <span className="text-ellipsis" style={{ fontSize: FS, color: COLORS.textMuted, fontFamily: FONT }}>
-                  {dgcPostId || <span style={{ color: COLORS.textInvisible }}>—</span>}
-                </span>
+        <div className="tc-row hover-bg" data-enabled="true">
+          <div className="tc-grid">
+            <input type="checkbox" className="cb" checked disabled readOnly style={{ justifySelf: 'center', opacity: 0.3 }} />
+            <div className="t-cell tc-id-cell">
+              <span className="tc-id-pair">
+                <span className="tc-id-label">DGC</span>
+                <span className="text-ellipsis mr-local-name">{dgcPostId || <span className="tc-dash">—</span>}</span>
               </span>
-              <span style={{ width: '1px', background: COLORS.borderLight, alignSelf: 'stretch' }} />
-              <span style={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', gap: '4px' }}>
-                <span style={{ fontSize: FS, color: COLORS.textFaint, opacity: 0.5, fontFamily: FONT, flexShrink: 0 }}>DZ</span>
-                <span className="text-ellipsis" style={{ fontSize: FS, color: COLORS.textMuted, fontFamily: FONT }}>
-                  {dzDeezerId || <span style={{ color: COLORS.textInvisible }}>—</span>}
-                </span>
+              <span className="tc-id-sep" />
+              <span className="tc-id-pair">
+                <span className="tc-id-label">DZ</span>
+                <span className="text-ellipsis mr-local-name">{dzDeezerId || <span className="tc-dash">—</span>}</span>
               </span>
             </div>
-            <div style={PERCENT_STYLE}></div>
-            <div style={{ ...INPUT_STYLE, display: 'flex', gap: '4px', color: COLORS.textMuted, backgroundColor: COLORS.inputBg, border: `1px solid ${COLORS.borderLight}` }}>
-              <span style={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', gap: '4px' }}>
-                <span style={{ fontSize: FS, color: COLORS.textFaint, opacity: 0.5, fontFamily: FONT, flexShrink: 0 }}>DGC</span>
-                <span className="text-ellipsis" style={{ fontSize: FS, fontFamily: FONT }}>
-                  {siteDgcId || <span style={{ color: COLORS.textInvisible }}>—</span>}
-                </span>
+            <div className="tc-percent" />
+            <div className="t-cell tc-input tc-id-cell">
+              <span className="tc-id-pair">
+                <span className="tc-id-label">DGC</span>
+                <span className="text-ellipsis">{siteDgcId || <span className="tc-dash">—</span>}</span>
               </span>
-              <span style={{ width: '1px', background: COLORS.borderLight, alignSelf: 'stretch' }} />
-              <span style={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', gap: '4px' }}>
-                <span style={{ fontSize: FS, color: COLORS.textFaint, opacity: 0.5, fontFamily: FONT, flexShrink: 0 }}>DZ</span>
-                <span className="text-ellipsis" style={{ fontSize: FS, fontFamily: FONT }}>
-                  {siteDeezerId || <span style={{ color: COLORS.textInvisible }}>—</span>}
-                </span>
+              <span className="tc-id-sep" />
+              <span className="tc-id-pair">
+                <span className="tc-id-label">DZ</span>
+                <span className="text-ellipsis">{siteDeezerId || <span className="tc-dash">—</span>}</span>
               </span>
             </div>
           </div>

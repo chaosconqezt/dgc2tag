@@ -1,5 +1,4 @@
 import { Search } from 'lucide-react';
-import { FONT, FS, COLORS } from './styles';
 
 interface SearchBarProps {
   artist: string;

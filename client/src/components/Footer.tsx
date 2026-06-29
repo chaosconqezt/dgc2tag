@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { FolderOpen } from 'lucide-react';
-import { FONT, FS, FS_SM, FS_XS, COLORS } from './styles';
 import { FolderPicker } from './FolderPicker';
 
 interface FooterProps {
@@ -31,88 +30,61 @@ export function Footer({ musicRoot, outputFolder, outputMode, onMusicRootChange,
   };
 
   return (
-    <div style={{
-      borderTop: `1px solid ${COLORS.border}`,
-      padding: '4px 12px',
-      display: 'flex',
-      alignItems: 'center',
-      gap: '16px',
-      backgroundColor: COLORS.inputBgAlt,
-      fontFamily: FONT,
-      fontSize: FS_SM,
-      color: COLORS.textDim,
-      flexShrink: 0,
-    }}>
+    <div className="footer-bar">
       {/* Music root */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '4px', minWidth: 0 }}>
-        <span style={{ color: COLORS.textInvisible, flexShrink: 0 }}>SRC:</span>
-        <span className="text-ellipsis" style={{ color: COLORS.textMuted, fontFamily: 'monospace', maxWidth: '200px' }} title={musicRoot}>
+      <div className="footer-path">
+        <span className="footer-path-label">SRC:</span>
+        <span className="text-ellipsis footer-path-value" title={musicRoot}>
           {musicRoot || '(not set)'}
         </span>
         <button
+          className="footer-btn"
           onClick={() => setPickerTarget('musicRoot')}
-          style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '2px', display: 'flex', color: COLORS.textDim }}
           title="Change music library path"
         >
           <FolderOpen size={12} />
         </button>
       </div>
 
-      <span style={{ color: COLORS.textInvisible }}>|</span>
+      <span className="footer-sep">|</span>
 
       {/* Output */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '4px', minWidth: 0 }}>
-        <span style={{ color: COLORS.textInvisible, flexShrink: 0 }}>OUT:</span>
-        <span className="text-ellipsis" style={{ color: COLORS.textMuted, fontFamily: 'monospace', maxWidth: '200px' }} title={displayOutput}>
+      <div className="footer-path">
+        <span className="footer-path-label">OUT:</span>
+        <span className="text-ellipsis footer-path-value" title={displayOutput}>
           {displayOutput || '(not set)'}
         </span>
         <button
+          className="footer-btn"
           onClick={() => setPickerTarget('output')}
-          style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '2px', display: 'flex', color: COLORS.textDim }}
           title="Change output folder"
         >
           <FolderOpen size={12} />
         </button>
       </div>
 
-      <span style={{ color: COLORS.textInvisible }}>|</span>
+      <span className="footer-sep">|</span>
 
       {/* Output mode toggle */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '2px' }}>
+      <div className="footer-mode-group">
         <button
+          className="footer-mode-btn"
+          data-active={String(outputMode === 'subfolder')}
           onClick={() => { onOutputModeChange('subfolder'); onSave(); }}
-          style={{
-            background: outputMode === 'subfolder' ? COLORS.borderLight : 'none',
-            border: `1px solid ${outputMode === 'subfolder' ? COLORS.textInvisible : 'transparent'}`,
-            borderRadius: '3px',
-            padding: '1px 6px',
-            cursor: 'pointer',
-            fontSize: FS_XS,
-            fontFamily: FONT,
-            color: outputMode === 'subfolder' ? COLORS.text : COLORS.textFaint,
-          }}
         >
           subfolder
         </button>
         <button
+          className="footer-mode-btn"
+          data-active={String(outputMode === 'absolute')}
           onClick={() => { onOutputModeChange('absolute'); onSave(); }}
-          style={{
-            background: outputMode === 'absolute' ? COLORS.borderLight : 'none',
-            border: `1px solid ${outputMode === 'absolute' ? COLORS.textInvisible : 'transparent'}`,
-            borderRadius: '3px',
-            padding: '1px 6px',
-            cursor: 'pointer',
-            fontSize: FS_XS,
-            fontFamily: FONT,
-            color: outputMode === 'absolute' ? COLORS.text : COLORS.textFaint,
-          }}
         >
           absolute
         </button>
       </div>
 
       {/* Spacer */}
-      <div style={{ flex: 1 }} />
+      <div className="flex-1" />
 
       {/* Folder picker modal */}
       {pickerTarget && (

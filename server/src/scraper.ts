@@ -470,7 +470,9 @@ export async function getAlbumDetails(postId: number): Promise<SearchResult | nu
             } else {
                 const cleanName = trimmed.replace(/[:]+$/, '').trim();
                 const isSectionLabel = /^\b(bonus|hidden|secret|interlude|intro|outro|skit|intermission|disc|side|part|cd|track|reprise|remix|demo|live|acoustic|unreleased|pre-|post-|cover|intro\.|outro\.)\b/i.test(cleanName);
-                if (cleanName && !cleanName.match(/^\d/) && !isSectionLabel) {
+                const isDiscHeader = /["""].*["""].*\b(cd|dvd|lp|vinyl|cassette|tape|cd-r|cdr)\b/i.test(cleanName)
+                    || /^\s*["""].+["""].*\b\d{4}\b/.test(cleanName);
+                if (cleanName && !cleanName.match(/^\d/) && !isSectionLabel && !isDiscHeader) {
                     currentSectionArtist = cleanName;
                     lastKnownBandIndex = i;
                     logger.debug(`  section header: artist="${cleanName}" at line ${i}`);

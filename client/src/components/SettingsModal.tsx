@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
 import { Settings, X, Trash2 } from 'lucide-react';
-import { FONT, FS, COLORS, ICON_BUTTON, OVERLAY_BACKDROP, MODAL_PANEL, MODAL_HEADER, LABEL_STYLE, MODAL_INPUT_STYLE, HINT_STYLE } from './styles';
 
 interface SettingsModalProps {
   saving: boolean;
@@ -28,10 +27,10 @@ const TAG_FIELDS = [
 ];
 
 const SOURCE_FIELDS = [
-  { id: 'dgc', label: 'DGC', color: COLORS.red },
-  { id: 'deezer', label: 'Deezer', color: COLORS.green },
-  { id: 'mbrainz', label: 'MusicBrainz', color: COLORS.mbrainz },
-  { id: 'bandcamp', label: 'Bandcamp', color: COLORS.bandcamp },
+  { id: 'dgc', label: 'DGC', color: 'var(--red)' },
+  { id: 'deezer', label: 'Deezer', color: 'var(--green)' },
+  { id: 'mbrainz', label: 'MusicBrainz', color: 'var(--orange)' },
+  { id: 'bandcamp', label: 'Bandcamp', color: 'var(--teal)' },
 ];
 
 export function SettingsModal({ saving, onSave, onClearCache, clearingCache, tagDefaults, onTagDefaultsChange, enabledSources, onEnabledSourcesChange, cleanupIgnorePatterns, onCleanupIgnorePatternsChange, onClose }: SettingsModalProps) {
@@ -50,73 +49,75 @@ export function SettingsModal({ saving, onSave, onClearCache, clearingCache, tag
     onEnabledSourcesChange({ ...enabledSources, [id]: !enabledSources[id] });
   };
 
+  const srcEnabled = (id: string) => enabledSources[id] !== false;
+
   return (
-    <div style={OVERLAY_BACKDROP} onClick={onClose}>
-      <div style={{ ...MODAL_PANEL, width: '420px' }} onClick={(e) => e.stopPropagation()}>
-        <div style={MODAL_HEADER}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <Settings size={12} color={COLORS.red} />
-            <span style={{ fontSize: FS, color: COLORS.textMuted, fontWeight: '500', fontFamily: FONT }}>SETTINGS</span>
+    <div className="progress-overlay" onClick={onClose}>
+      <div className="progress-panel" style={{ width: '420px' }} onClick={(e) => e.stopPropagation()}>
+        <div className="progress-header" data-alt="true">
+          <div className="row gap-md">
+            <Settings size={12} color="var(--red)" />
+            <span className="settings-header-title">SETTINGS</span>
           </div>
-          <button onClick={onClose} style={{ ...ICON_BUTTON, padding: '4px' }}>
+          <button onClick={onClose} className="btn-icon">
             <X size={14} />
           </button>
         </div>
-        <div style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+        <div className="settings-body">
           <div>
-            <label style={LABEL_STYLE}>Default Tag Mappings</label>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '4px' }}>
+            <label className="settings-label">Default Tag Mappings</label>
+            <div className="settings-tag-grid">
               {TAG_FIELDS.map(f => (
-                <label key={f.key} style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', fontSize: FS, color: COLORS.textMuted, fontFamily: FONT, padding: '3px 6px', borderRadius: '4px', backgroundColor: tagDefaults[f.key] ? COLORS.borderLight : 'transparent' }}>
-                  <input type="checkbox" checked={tagDefaults[f.key]} onChange={() => toggleTag(f.key)} style={{ accentColor: COLORS.red, width: '12px', height: '12px', cursor: 'pointer' }} />
+                <label key={f.key} className="settings-tag-item" data-on={String(!!tagDefaults[f.key])}>
+                  <input type="checkbox" className="cb" style={{ width: '12px', height: '12px' }} checked={tagDefaults[f.key]} onChange={() => toggleTag(f.key)} />
                   {f.label}
                 </label>
               ))}
             </div>
-            <div style={HINT_STYLE}>These defaults are remembered between albums</div>
+            <div className="hint">These defaults are remembered between albums</div>
           </div>
 
           <div>
-            <label style={LABEL_STYLE}>Search Sources</label>
-            <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
+            <label className="settings-label">Search Sources</label>
+            <div className="settings-source-wrap">
               {SOURCE_FIELDS.map(s => (
-                <label key={s.id} style={{ display: 'flex', alignItems: 'center', gap: '4px', cursor: 'pointer', fontSize: FS, color: enabledSources[s.id] !== false ? s.color : COLORS.textFaint, fontFamily: FONT, padding: '4px 8px', borderRadius: '4px', backgroundColor: enabledSources[s.id] !== false ? `${s.color}15` : 'transparent', border: `1px solid ${enabledSources[s.id] !== false ? `${s.color}40` : COLORS.textInvisible}`, transition: 'all 0.15s' }}>
-                  <input type="checkbox" checked={enabledSources[s.id] !== false} onChange={() => toggleSource(s.id)} style={{ accentColor: s.color, width: '12px', height: '12px', cursor: 'pointer' }} />
+                <label key={s.id} className="settings-source-item" data-on={String(srcEnabled(s.id))} style={{ '--src-color': s.color } as React.CSSProperties}>
+                  <input type="checkbox" checked={srcEnabled(s.id)} onChange={() => toggleSource(s.id)} style={{ accentColor: s.color, width: '12px', height: '12px', cursor: 'pointer' }} />
                   {s.label}
                 </label>
               ))}
             </div>
-            <div style={HINT_STYLE}>Disabled sources won't be searched</div>
+            <div className="hint">Disabled sources won't be searched</div>
           </div>
 
           <div>
-            <label style={LABEL_STYLE}>Cleanup Ignore Patterns</label>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', marginBottom: '6px' }}>
+            <label className="settings-label">Cleanup Ignore Patterns</label>
+            <div className="settings-pattern-wrap">
               {cleanupIgnorePatterns.map((p, i) => (
-                <span key={i} style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: FS, color: COLORS.textMuted, fontFamily: FONT, padding: '3px 8px', borderRadius: '4px', backgroundColor: COLORS.borderLight, border: `1px solid ${COLORS.textInvisible}` }}>
+                <span key={i} className="settings-pattern-tag">
                   {p}
-                  <button onClick={() => onCleanupIgnorePatternsChange(cleanupIgnorePatterns.filter((_, j) => j !== i))} style={{ ...ICON_BUTTON, padding: 0, fontSize: FS, lineHeight: 1 }}>&times;</button>
+                  <button className="btn-icon settings-pattern-del" onClick={() => onCleanupIgnorePatternsChange(cleanupIgnorePatterns.filter((_, j) => j !== i))}>&times;</button>
                 </span>
               ))}
             </div>
-            <div style={{ display: 'flex', gap: '4px' }}>
-              <input type="text" value={newPattern} onChange={(e) => setNewPattern(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter' && newPattern.trim()) { onCleanupIgnorePatternsChange([...cleanupIgnorePatterns, newPattern.trim()]); setNewPattern(''); } }} style={{ ...MODAL_INPUT_STYLE, flex: 1 }} placeholder="e.g. .DS_Store" />
-              <button onClick={() => { if (newPattern.trim()) { onCleanupIgnorePatternsChange([...cleanupIgnorePatterns, newPattern.trim()]); setNewPattern(''); } }} style={{ background: COLORS.border, color: COLORS.textMuted, border: `1px solid ${COLORS.textInvisible}`, borderRadius: '6px', padding: '4px 10px', fontSize: FS, cursor: 'pointer', fontFamily: FONT }}>Add</button>
+            <div className="settings-input-row">
+              <input type="text" className="settings-pattern-input" value={newPattern} onChange={(e) => setNewPattern(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter' && newPattern.trim()) { onCleanupIgnorePatternsChange([...cleanupIgnorePatterns, newPattern.trim()]); setNewPattern(''); } }} placeholder="e.g. .DS_Store" />
+              <button className="btn-add" onClick={() => { if (newPattern.trim()) { onCleanupIgnorePatternsChange([...cleanupIgnorePatterns, newPattern.trim()]); setNewPattern(''); } }}>Add</button>
             </div>
-            <div style={HINT_STYLE}>Files ignored when checking if artist folder is empty after move</div>
+            <div className="hint">Files ignored when checking if artist folder is empty after move</div>
           </div>
 
-          <button onClick={onSave} disabled={saving} style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', height: '32px', fontSize: FS, background: COLORS.red, color: COLORS.textBright, border: 'none', borderRadius: '6px', cursor: saving ? 'wait' : 'pointer', fontFamily: FONT }}>
+          <button className="settings-btn-full settings-btn-save" onClick={onSave} disabled={saving}>
             {saving ? 'Saving...' : 'Save & Reload'}
           </button>
 
-          <div style={{ borderTop: `1px solid ${COLORS.border}`, paddingTop: '12px' }}>
-            <label style={LABEL_STYLE}>Cache</label>
-            <button onClick={onClearCache} disabled={clearingCache} style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', height: '32px', fontSize: FS, background: COLORS.border, color: COLORS.textMuted, border: `1px solid ${COLORS.textInvisible}`, borderRadius: '6px', cursor: clearingCache ? 'wait' : 'pointer', fontFamily: FONT }}>
+          <div className="settings-section">
+            <label className="settings-label">Cache</label>
+            <button className="settings-btn-full settings-btn-cache" onClick={onClearCache} disabled={clearingCache}>
               <Trash2 size={12} />
               {clearingCache ? 'Clearing...' : 'Clear Cache'}
             </button>
-            <div style={HINT_STYLE}>Clear cached album data from deathgrind.club</div>
+            <div className="hint">Clear cached album data from deathgrind.club</div>
           </div>
         </div>
       </div>

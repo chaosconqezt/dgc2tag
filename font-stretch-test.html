@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+  body { font-family: 'Inter', system-ui, sans-serif; font-size: 14px; background: #000; color: #999; padding: 20px; }
+  table { border-collapse: collapse; width: 100%; }
+  td, th { padding: 6px 12px; border: 1px solid #333; text-align: left; }
+  th { background: #111; }
+  .row { display: flex; gap: 16px; margin-bottom: 20px; align-items: center; }
+  .label { width: 120px; color: #666; }
+  input { background: #252525; border: 1px solid #333; color: #999; padding: 3px 6px; border-radius: 3px; width: 300px; }
+  div.cell { background: #252525; border: 1px solid #333; color: #999; padding: 3px 6px; border-radius: 3px; width: 300px; display: inline-block; }
+</style>
+</head>
+<body>
+<h2>font-stretch: comparison &lt;div&gt; vs &lt;input&gt;</h2>
+
+<div class="row">
+  <span class="label">ultra-condensed</span>
+  <div class="cell" style="font-stretch: ultra-condensed;">The quick brown fox 0123456789</div>
+  <input value="The quick brown fox 0123456789" style="font-stretch: ultra-condensed;" readonly>
+</div>
+
+<div class="row">
+  <span class="label">extra-condensed</span>
+  <div class="cell" style="font-stretch: extra-condensed;">The quick brown fox 0123456789</div>
+  <input value="The quick brown fox 0123456789" style="font-stretch: extra-condensed;" readonly>
+</div>
+
+<div class="row">
+  <span class="label">condensed</span>
+  <div class="cell" style="font-stretch: condensed;">The quick brown fox 0123456789</div>
+  <input value="The quick brown fox 0123456789" style="font-stretch: condensed;" readonly>
+</div>
+
+<div class="row">
+  <span class="label">semi-condensed</span>
+  <div class="cell" style="font-stretch: semi-condensed;">The quick brown fox 0123456789</div>
+  <input value="The quick brown fox 0123456789" style="font-stretch: semi-condensed;" readonly>
+</div>
+
+<div class="row">
+  <span class="label">normal (100%)</span>
+  <div class="cell" style="font-stretch: normal;">The quick brown fox 0123456789</div>
+  <input value="The quick brown fox 0123456789" style="font-stretch: normal;" readonly>
+</div>
+
+<div class="row">
+  <span class="label">semi-expanded</span>
+  <div class="cell" style="font-stretch: semi-expanded;">The quick brown fox 0123456789</div>
+  <input value="The quick brown fox 0123456789" style="font-stretch: semi-expanded;" readonly>
+</div>
+
+<div class="row">
+  <span class="label">expanded</span>
+  <div class="cell" style="font-stretch: expanded;">The quick brown fox 0123456789</div>
+  <input value="The quick brown fox 0123456789" style="font-stretch: expanded;" readonly>
+</div>
+
+<div class="row">
+  <span class="label">extra-expanded</span>
+  <div class="cell" style="font-stretch: extra-expanded;">The quick brown fox 0123456789</div>
+  <input value="The quick brown fox 0123456789" style="font-stretch: extra-expanded;" readonly>
+</div>
+
+<div class="row">
+  <span class="label">ultra-expanded</span>
+  <div class="cell" style="font-stretch: ultra-expanded;">The quick brown fox 0123456789</div>
+  <input value="The quick brown fox 0123456789" style="font-stretch: ultra-expanded;" readonly>
+</div>
+
+<div class="row">
+  <span class="label">95% (numeric)</span>
+  <div class="cell" style="font-stretch: 95%;">The quick brown fox 0123456789</div>
+  <input value="The quick brown fox 0123456789" style="font-stretch: 95%;" readonly>
+</div>
+
+<div class="row">
+  <span class="label">90%</div>
+  <div class="cell" style="font-stretch: 90%;">The quick brown fox 0123456789</div>
+  <input value="The quick brown fox 0123456789" style="font-stretch: 90%;" readonly>
+</div>
+
+<div class="row">
+  <span class="label">100%</div>
+  <div class="cell" style="font-stretch: 100%;">The quick brown fox 0123456789</div>
+  <input value="The quick brown fox 0123456789" style="font-stretch: 100%;" readonly>
+</div>
+
+</body>
+</html>
