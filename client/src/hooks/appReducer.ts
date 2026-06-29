@@ -2,6 +2,11 @@ import type { FileNode, AlbumTags, SearchResult, DeezerSearchResult } from '../t
 import type { MusicBrainzSearchResult, LibraryAlbum } from '../api';
 import { DEFAULT_TAG_DEFAULTS } from './useConfig';
 
+export interface DiffEntry {
+  from: string;
+  to: string;
+}
+
 export interface AppState {
   tree: FileNode[];
   selectedFolder: string | null;
@@ -23,7 +28,7 @@ export interface AppState {
   deezerLoading: boolean;
   mbrainzLoading: boolean;
   bandcampLoading: boolean;
-  progress: { active: boolean; phase: string; current: number; total: number; log: string[]; done: boolean; success: boolean; message: string; details?: string[] } | null;
+  progress: { active: boolean; phase: string; log: string[]; done: boolean; success: boolean; message: string; diff?: DiffEntry[] } | null;
   searchTimeMs: number | null;
   loading: boolean;
   webfetchUrl: string | null;
@@ -75,7 +80,7 @@ export type Action =
   | { type: 'SET_SELECTED_MBRAINZ'; payload: MusicBrainzSearchResult | null }
   | { type: 'SET_BANDCAMP_RESULTS'; payload: SearchResult[] }
   | { type: 'SET_BANDCAMP_LOADING'; payload: boolean }
-  | { type: 'SET_PROGRESS'; payload: { active: boolean; phase: string; current: number; total: number; log: string[]; done: boolean; success: boolean; message: string; details?: string[] } | null }
+  | { type: 'SET_PROGRESS'; payload: { active: boolean; phase: string; log: string[]; done: boolean; success: boolean; message: string; diff?: DiffEntry[] } | null }
   | { type: 'SET_SEARCH_TIME'; payload: number | null }
   | { type: 'TOGGLE_NODE'; payload: string }
   | { type: 'COLLAPSE_ALL' }

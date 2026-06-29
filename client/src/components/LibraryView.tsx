@@ -1,5 +1,6 @@
 import { useMemo, useRef, useEffect, useState, useCallback } from 'react';
 import type { LibraryAlbum } from '../api';
+import { GenreCloud } from './GenreCloud';
 
 interface LibraryViewProps {
   entries: LibraryAlbum[];
@@ -162,25 +163,7 @@ export function LibraryView({ entries, cardSize, minAlbums }: LibraryViewProps) 
         </div>
 
         {genreCounts.length > 0 && (
-          <div className="genre-cloud">
-            {genreCounts.map(([genre, count]) => {
-              const maxCount = genreCounts[0][1];
-              const ratio = count / maxCount;
-              const size = 11 + ratio * 11;
-              const opacity = 0.45 + ratio * 0.55;
-              return (
-                <span
-                  key={genre}
-                  className={`genre-tag${selectedGenre === genre ? ' selected' : ''}`}
-                  style={{ fontSize: `${size}px`, opacity }}
-                  onClick={() => setSelectedGenre(prev => prev === genre ? null : genre)}
-                >
-                  {genre}
-                  <span className="genre-tag-count">{count}</span>
-                </span>
-              );
-            })}
-          </div>
+          <GenreCloud genres={genreCounts} selectedGenre={selectedGenre} onSelect={(g) => setSelectedGenre(g)} />
         )}
 
         {selectedGenre && (
@@ -223,7 +206,6 @@ export function LibraryView({ entries, cardSize, minAlbums }: LibraryViewProps) 
                       ) : (
                         <span className="library-cover-placeholder">?</span>
                       )}
-                      <div className={`library-card-status${album.inLibrary ? ' owned' : ''}`}>✓</div>
                     </div>
                     <div className="library-card-info">
                       <div className="library-card-title text-ellipsis">{album.album}</div>

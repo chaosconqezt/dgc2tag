@@ -121,7 +121,7 @@ export function createApplyTags(
       : undefined;
 
     // Show progress overlay
-    dispatch({ type: 'SET_PROGRESS', payload: { active: true, phase: 'Processing...', current: 0, total: 0, log: [], done: false, success: false, message: '' } });
+    dispatch({ type: 'SET_PROGRESS', payload: { active: true, phase: '', log: [], done: false, success: false, message: '' } });
 
     try {
       const result = await api.updateTags({
@@ -146,7 +146,8 @@ export function createApplyTags(
       summary.push('Done');
 
       const labels: Record<ApplyMode, string> = { move: 'Files processed successfully', rename: 'Files renamed successfully', write: 'Tags updated successfully' };
-      dispatch({ type: 'SET_PROGRESS', payload: { active: true, phase: 'Done', current: 0, total: 0, log: summary, done: true, success: true, message: labels[mode] } });
+      const diff = result.renamed?.map(r => ({ from: r.from, to: r.to })) ?? [];
+      dispatch({ type: 'SET_PROGRESS', payload: { active: true, phase: 'Done', log: summary, done: true, success: true, message: labels[mode], diff } });
 
       if (mode === 'move') {
         clearSelectionState();
@@ -157,7 +158,7 @@ export function createApplyTags(
       }
     } catch (err) {
       if (import.meta.env.DEV) console.error('[client] updateTags error:', err);
-      dispatch({ type: 'SET_PROGRESS', payload: { active: true, phase: 'Error', current: 0, total: 0, log: [String(err)], done: true, success: false, message: 'Failed to update tags' } });
+      dispatch({ type: 'SET_PROGRESS', payload: { active: true, phase: 'Error', log: [String(err)], done: true, success: false, message: 'Failed to update tags' } });
     }
   };
 }

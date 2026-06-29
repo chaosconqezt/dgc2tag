@@ -229,8 +229,10 @@ export async function deleteFile(filePath: string): Promise<{ success: boolean }
   return res.data;
 }
 
-export async function fetchDirectoryRoots(): Promise<{ name: string; path: string }[]> {
-  const res = await api.get('/directory/roots');
+export async function fetchDirectoryRoots(customPath?: string): Promise<{ name: string; path: string }[]> {
+  const params: Record<string, string> = {};
+  if (customPath) params.path = customPath;
+  const res = await api.get('/directory/roots', { params });
   return res.data;
 }
 

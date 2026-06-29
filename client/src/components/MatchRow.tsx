@@ -46,7 +46,7 @@ export function MatchRow({
   const { onPerTrackNameToggle, onEditedTrackNameChange } = callbacks;
 
   const localLabel = m.local
-    ? filenameMode === 'filename' ? m.local.file : m.local.name
+    ? filenameMode === 'filename' ? m.local.file.split(/[\\/]/).pop() || m.local.file : m.local.name
     : '';
 
   const localDuration = m.local ? localTags.trackDurations?.[m.local.file] : undefined;

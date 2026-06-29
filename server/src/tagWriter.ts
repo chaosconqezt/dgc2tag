@@ -342,7 +342,7 @@ export async function moveProcessedFiles(
 }
 
 function sanitize(name: string): string {
-    return name.replace(/[<>:"/\\|?*]/g, '_').replace(/\s+/g, ' ').trim();
+    return name.replace(/[<>:"/\\|?*]/g, '_').replace(/\s+/g, ' ').replace(/\.+$/, '').trim();
 }
 
 async function cleanEmptyFolders(dir: string, stopAt: string, ignorePatterns: string[] = []): Promise<void> {

@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import type { AlbumTags, SearchResult } from '../types';
 import { matchTracks, generateParsedTracks } from '../utils';
-import { FONT, FS, COLORS, CHECKBOX, PANEL_STYLE } from './styles';
+import { FONT, FS, COLORS, CHECKBOX } from './styles';
 import { SingleArtistTracks } from './SingleArtistTracks';
 import { MultiArtistTracks } from './MultiArtistTracks';
 import type { TrackDisplayConfig } from './MatchRow';
@@ -86,7 +86,7 @@ export function TrackMatcher({
   const display: TrackDisplayConfig = { filenameMode, showFilenamePreviews };
 
   return (
-    <div style={PANEL_STYLE}>
+    <div className="panel">
       <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px', fontSize: FS, fontFamily: FONT, color: COLORS.textDim, flexWrap: 'wrap' }}>
           <label className="label-inline" style={{ gap: '3px' }}>
             <input type="checkbox" checked={writeTrackNames} onChange={(e) => handleTitlesToggle(e.target.checked)} style={CHECKBOX} />

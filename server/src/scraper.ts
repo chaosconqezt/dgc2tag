@@ -436,7 +436,7 @@ export async function getAlbumDetails(postId: number): Promise<SearchResult | nu
             if (trackMatch && trackMatch[1] && trackMatch[2]) {
                 const num = trackMatch[1];
                 const rest = trackMatch[2].trim();
-                const dashIdx = rest.search(/\s[-–—]\s/);
+                const dashIdx = rest.search(/\s[-–—]/);
                 if (isCompilation && dashIdx > 0) {
                     const beforeDash = rest.slice(0, dashIdx).trim();
                     const afterDash = rest.slice(dashIdx + 1).replace(/^[-–—]\s*/, '').trim();

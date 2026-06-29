@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { ChevronRight, ChevronDown, Folder, HardDrive } from 'lucide-react';
 import { FONT, FS, FS_SM, COLORS, OVERLAY_BACKDROP, MODAL_PANEL, MODAL_HEADER, ICON_BUTTON } from './styles';
 import { fetchDirectoryRoots, browseDirectory } from '../api';
@@ -18,94 +18,128 @@ interface TreeNode {
 
 export function FolderPicker({ initialPath, onSelect, onClose }: FolderPickerProps) {
   const [selectedPath, setSelectedPath] = useState(initialPath);
-  const [roots, setRoots] = useState<{ name: string; path: string }[]>([]);
   const [tree, setTree] = useState<TreeNode[]>([]);
   const [loading, setLoading] = useState(false);
+  const [loadError, setLoadError] = useState('');
+  const treeRef = useRef<TreeNode[]>([]);
 
-  // Load roots on mount
-  useEffect(() => {
-    fetchDirectoryRoots().then(setRoots).catch(console.error);
+  const syncTree = useCallback((newTree: TreeNode[]) => {
+    treeRef.current = newTree;
+    setTree(newTree);
   }, []);
 
-  // Expand to initial path
+  const loadRoots = useCallback(async (customPath?: string) => {
+    const data = await fetchDirectoryRoots(customPath);
+    const newTree: TreeNode[] = data.map(r => ({ name: r.name, path: r.path, expanded: false }));
+    syncTree(newTree);
+  }, [syncTree]);
+
+  // Load roots on mount, then expand to initial path
   useEffect(() => {
-    if (!initialPath || roots.length === 0) return;
-    expandToPath(initialPath);
-  }, [initialPath, roots]);
+    (async () => {
+      await loadRoots();
+      if (initialPath) {
+        expandTreeToPath(initialPath);
+      }
+    })();
+  }, []);
 
-  const expandToPath = async (targetPath: string) => {
-    const parts = targetPath.split(/[\\/]/).filter(Boolean);
-    // On Windows, first part is like "C:" so we need "C:\\"
-    const isWin = /^[A-Z]:$/i.test(parts[0] ?? '');
-    let currentPath = isWin ? parts[0] + '\\' : '/' + (parts[1] ?? '');
-    const newTree: TreeNode[] = roots.map(r => ({
-      name: r.name,
-      path: r.path,
-      expanded: r.path === currentPath || targetPath.startsWith(r.path),
-    }));
-
-    if (newTree.length === 0) return;
-
-    // Find the root that contains the target
-    const root = newTree.find(n => targetPath.startsWith(n.path));
-    if (!root) {
-      setTree(newTree);
-      return;
+  // Compute the root prefix for any filesystem path
+  const getRootPrefix = useCallback((p: string): string => {
+    if (p.startsWith('\\\\')) {
+      const parts = p.split(/[\\/]/).filter(Boolean);
+      return '\\\\' + parts.slice(0, 2).join('\\');
     }
+    const m = p.match(/^[A-Z]:\\/i);
+    if (m) return m[0].toUpperCase();
+    if (p.startsWith('/')) return '/';
+    return '';
+  }, []);
 
+  // Walk tree from root down to targetPath, expanding folders
+  const walkTreeToPath = useCallback(async (newTree: TreeNode[], targetPath: string, rootPrefix: string) => {
+    let root = newTree.find(n => targetPath.startsWith(n.path));
+    if (!root) return false;
     root.expanded = true;
     let current = root;
+    const relParts = targetPath.replace(rootPrefix, '').split(/[\\/]/).filter(Boolean);
 
-    // Walk down the path, expanding each level
-    const pathParts = targetPath.replace(root.path, '').split(/[\\/]/).filter(Boolean);
-    for (const part of pathParts) {
+    for (const part of relParts) {
       try {
         const children = await browseDirectory(current.path);
-        current.children = children.map(c => ({
-          name: c.name,
-          path: c.path,
-          expanded: false,
-        }));
-
+        current.children = children.map(c => ({ name: c.name, path: c.path, expanded: false }));
         const next = current.children.find(c => c.name === part);
-        if (next) {
-          next.expanded = true;
-          current = next;
-        } else {
-          break;
-        }
-      } catch {
-        break;
-      }
+        if (next) { next.expanded = true; current = next; }
+        else break;
+      } catch { break; }
+    }
+    return true;
+  }, []);
+
+  const expandTreeToPath = useCallback(async (targetPath: string) => {
+    if (!targetPath) return;
+    const rootPrefix = getRootPrefix(targetPath);
+    if (!rootPrefix) return;
+
+    let newTree = treeRef.current;
+    let rootIdx = newTree.findIndex(r => r.path.toLowerCase() === rootPrefix.toLowerCase());
+
+    // Root not in tree — reload roots with the UNC parent (not full path)
+    if (rootIdx < 0) {
+      await loadRoots(rootPrefix);
+      newTree = treeRef.current;
+      rootIdx = newTree.findIndex(r => r.path.toLowerCase() === rootPrefix.toLowerCase());
+      if (rootIdx < 0) return;
     }
 
-    setTree([...newTree]);
-    setSelectedPath(targetPath);
-  };
+    const expanded = newTree.map((n, i) => ({ ...n, expanded: i === rootIdx || targetPath.startsWith(n.path) }));
+    const ok = await walkTreeToPath(expanded, targetPath, rootPrefix);
+    if (ok) {
+      syncTree(expanded);
+      setSelectedPath(targetPath);
+    }
+  }, [getRootPrefix, loadRoots, walkTreeToPath, syncTree]);
+
+  const navigateToPath = useCallback(async (path: string) => {
+    if (!path) return;
+    setLoading(true);
+    setLoadError('');
+
+    try {
+      await browseDirectory(path); // validate path exists
+      setSelectedPath(path);
+      await expandTreeToPath(path);
+    } catch {
+      setLoadError(`Cannot access "${path}"`);
+    } finally {
+      setLoading(false);
+    }
+  }, [expandTreeToPath]);
+
+  const handleInputKeyDown = useCallback((e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      navigateToPath((e.target as HTMLInputElement).value);
+    }
+  }, [navigateToPath]);
 
   const toggleNode = useCallback(async (node: TreeNode) => {
     if (node.expanded) {
       node.expanded = false;
-      setTree([...tree]);
+      syncTree([...treeRef.current]);
       return;
     }
-
     setLoading(true);
     try {
       const children = await browseDirectory(node.path);
-      node.children = children.map(c => ({
-        name: c.name,
-        path: c.path,
-        expanded: false,
-      }));
+      node.children = children.map(c => ({ name: c.name, path: c.path, expanded: false }));
       node.expanded = true;
-      setTree([...tree]);
+      syncTree([...treeRef.current]);
     } catch (err) {
       if (import.meta.env.DEV) console.error('Failed to load directory:', err);
     } finally {
       setLoading(false);
     }
-  }, [tree]);
+  }, [syncTree]);
 
   const renderNode = (node: TreeNode, depth: number): React.ReactNode => {
     const isSelected = selectedPath === node.path;
@@ -155,25 +189,27 @@ export function FolderPicker({ initialPath, onSelect, onClose }: FolderPickerPro
 
   return (
     <div style={OVERLAY_BACKDROP} onClick={onClose}>
-      <div style={{ ...MODAL_PANEL, width: '420px', maxHeight: '70vh' }} onClick={(e) => e.stopPropagation()}>
+      <div style={{ ...MODAL_PANEL, width: '480px', maxHeight: '70vh' }} onClick={(e) => e.stopPropagation()}>
         <div style={MODAL_HEADER}>
           <span style={{ fontSize: FS, color: COLORS.textMuted, fontWeight: '600', fontFamily: FONT }}>Select folder</span>
           <button onClick={onClose} style={{ ...ICON_BUTTON, padding: '4px' }}>
-                    <span style={{ fontSize: FS_SM }}>&times;</span>
+            <span style={{ fontSize: FS_SM }}>&times;</span>
           </button>
         </div>
 
-        {/* Current path display */}
-        <div style={{ padding: '8px 14px', borderBottom: `1px solid ${COLORS.border}` }}>
+        {/* Path input with Go button */}
+        <div style={{ padding: '8px 14px', borderBottom: `1px solid ${COLORS.border}`, display: 'flex', gap: '6px', alignItems: 'center' }}>
           <input
             type="text"
             value={selectedPath}
-            onChange={(e) => setSelectedPath(e.target.value)}
+            onChange={(e) => { setSelectedPath(e.target.value); setLoadError(''); }}
+            onKeyDown={handleInputKeyDown}
+            placeholder="Paste a path or browse below..."
             style={{
-              width: '100%',
+              flex: 1,
               boxSizing: 'border-box',
               background: COLORS.bg,
-              border: `1px solid ${COLORS.textInvisible}`,
+              border: `1px solid ${loadError ? COLORS.red : COLORS.textInvisible}`,
               borderRadius: '6px',
               padding: '6px 10px',
               color: COLORS.text,
@@ -181,7 +217,32 @@ export function FolderPicker({ initialPath, onSelect, onClose }: FolderPickerPro
               fontFamily: 'monospace',
             }}
           />
+          <button
+            onClick={() => navigateToPath(selectedPath)}
+            disabled={loading || !selectedPath}
+            style={{
+              padding: '6px 12px',
+              background: loading ? COLORS.textInvisible : COLORS.red,
+              color: COLORS.textBright,
+              border: 'none',
+              borderRadius: '6px',
+              cursor: loading || !selectedPath ? 'default' : 'pointer',
+              fontSize: FS,
+              fontFamily: FONT,
+              fontWeight: '600',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            {loading ? '...' : 'Go'}
+          </button>
         </div>
+
+        {/* Error message */}
+        {loadError && (
+          <div style={{ padding: '4px 14px', color: COLORS.red, fontSize: FS_SM, fontFamily: FONT }}>
+            {loadError}
+          </div>
+        )}
 
         {/* Tree */}
         <div style={{ flex: 1, overflowY: 'auto', padding: '8px 0', minHeight: '200px', maxHeight: '400px' }}>

@@ -1,6 +1,5 @@
 import { useMemo, useState, useCallback, useRef } from 'react';
 import type { FileNode } from '../types';
-import { FONT, FS, FS_XS, COLORS } from './styles';
 import { ContextMenu, type ContextMenuItem } from './ContextMenu';
 
 interface LibraryTreeProps {
@@ -150,21 +149,8 @@ export function LibraryTree({ tree, selectedFolder, expandedNodes, onToggleNode,
       const item = (
         <div key={node.path}>
           <div
-            className={`tree-item ${isSelected ? 'selected' : ''}`}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              paddingLeft: (indent + 4) + 'px',
-              paddingRight: '4px',
-              paddingTop: '1px',
-              paddingBottom: '1px',
-              cursor: 'pointer',
-              backgroundColor: isSelected ? `${COLORS.red}20` : 'transparent',
-              borderRadius: '3px',
-              color: isSelected ? COLORS.red : COLORS.text,
-              border: isSelected ? `1px solid ${COLORS.red}40` : '1px solid transparent',
-              marginBottom: '0px',
-            }}
+            className={`tree-item${isSelected ? ' sel' : ''}`}
+            style={{ paddingLeft: (indent + 4) + 'px' }}
             title={node.name}
             onClick={() => {
               if (isDir) {
@@ -174,29 +160,8 @@ export function LibraryTree({ tree, selectedFolder, expandedNodes, onToggleNode,
             }}
             onContextMenu={(e) => handleContextMenu(e, node)}
           >
-            <span style={{
-              display: 'inline-flex',
-              width: ARROW_W + 'px',
-              height: ARROW_W + 'px',
-              alignItems: 'center',
-              justifyContent: 'center',
-              flexShrink: 0,
-              marginRight: '1px',
-            }}>
-              {isDir ? (
-                <span style={{
-                  fontSize: ARROW_W + 'px',
-                  fontWeight: '700',
-                  color: COLORS.textFaint,
-                  transform: isExpanded ? 'rotate(90deg)' : 'rotate(0deg)',
-                  transition: 'transform 0.1s',
-                  lineHeight: 1,
-                }}>
-                  &#9654;
-                </span>
-              ) : (
-                <span style={{ fontSize: FS, color: COLORS.border }}>&bull;</span>
-              )}
+            <span className={`tree-arrow${isExpanded ? ' open' : ''}`}>
+              {isDir ? '\u25B6' : <span className="tree-bullet">&bull;</span>}
             </span>
             {isRenaming ? (
               <input
@@ -210,45 +175,22 @@ export function LibraryTree({ tree, selectedFolder, expandedNodes, onToggleNode,
                   if (e.key === 'Escape') setRenamingPath(null);
                 }}
                 onClick={(e) => e.stopPropagation()}
-                style={{
-                  flex: 1,
-                  minWidth: 0,
-                  fontSize: FS,
-                  fontFamily: FONT,
-                  background: COLORS.inputBg,
-                  border: `1px solid ${COLORS.red}`,
-                  borderRadius: '3px',
-                  padding: '0 4px',
-                  color: COLORS.text,
-                  outline: 'none',
-                }}
+                className="tree-input"
               />
             ) : (
-              <span className="text-ellipsis" style={{
-                fontSize: FS,
-                fontWeight: isDir ? '600' : '400',
-                flex: 1,
-                minWidth: 0,
-              }}>
+              <span className={`text-ellipsis tree-item-text${isDir ? ' dir' : ''}`}>
                 {node.name}
               </span>
             )}
             {/* Badge: dir count or audio count */}
             {isDir && (dirCount > 0 || audioCount > 0) && !isRenaming && (
-              <span style={{
-                fontSize: FS_XS,
-                color: audioCount > 0 ? COLORS.green : COLORS.textFaint,
-                fontFamily: 'monospace',
-                flexShrink: 0,
-                marginLeft: '4px',
-                opacity: audioCount > 0 ? 1 : 0.6,
-              }}>
+              <span className={`tree-badge${audioCount > 0 ? ' green' : ''}`}>
                 {audioCount > 0 ? audioCount : dirCount}
               </span>
             )}
           </div>
           {isExpanded && hasKids && (
-            <div style={{ borderLeft: `1px solid ${COLORS.border}`, marginLeft: (indent + 4) + 'px' }}>
+            <div className="tree-children" style={{ marginLeft: (indent + 4) + 'px' }}>
               {renderTree(children, depth + 1)}
             </div>
           )}
@@ -261,10 +203,10 @@ export function LibraryTree({ tree, selectedFolder, expandedNodes, onToggleNode,
 
   const safeTree = Array.isArray(tree) ? tree : [];
   return (
-    <div style={{ height: '100%', overflowY: 'auto', padding: '8px' }}>
+    <div className="tree-container">
       {safeTree.length > 0
         ? renderTree(safeTree, 0)
-        : <div style={{ padding: '20px', color: COLORS.textInvisible, textAlign: 'center', fontSize: FS, fontFamily: FONT }}>Loading library...</div>
+        : <div className="tree-loading">Loading library...</div>
       }
 
       {/* Move dialog */}
@@ -302,61 +244,40 @@ function MoveDialog({ movingPath, allDirs, onMove, onCancel }: { movingPath: str
   }).slice(0, 50);
 
   return (
-    <div style={{ position: 'fixed', inset: 0, zIndex: 10000, display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(0,0,0,0.7)' }} onClick={onCancel}>
-      <div style={{ backgroundColor: COLORS.inputBg, border: `1px solid ${COLORS.border}`, borderRadius: '8px', width: '400px', maxHeight: '70vh', display: 'flex', flexDirection: 'column', overflow: 'hidden' }} onClick={(e) => e.stopPropagation()}>
-        <div style={{ padding: '10px 14px', borderBottom: `1px solid ${COLORS.border}`, fontWeight: '600', fontSize: FS, fontFamily: FONT, color: COLORS.text }}>
+    <div className="move-overlay" onClick={onCancel}>
+      <div className="move-panel" onClick={(e) => e.stopPropagation()}>
+        <div className="move-header">
           Move "{currentName}" to...
         </div>
-        <div style={{ padding: '8px 14px' }}>
+        <div className="move-search">
           <input
             type="text"
             value={filter}
             onChange={(e) => setFilter(e.target.value)}
             placeholder="Search folders..."
             autoFocus
-            style={{ width: '100%', boxSizing: 'border-box', background: COLORS.bg, border: `1px solid ${COLORS.textInvisible}`, borderRadius: '6px', padding: '6px 10px', color: COLORS.text, fontSize: FS, fontFamily: FONT, outline: 'none' }}
+            className="move-search-input"
           />
         </div>
-        <div style={{ flex: 1, overflowY: 'auto', padding: '0 14px 14px' }}>
+        <div className="move-list">
           {filtered.map((dir) => {
             const displayName = dir.replace(currentParent, '').replace(/^[\\/]/, '');
             return (
               <button
                 key={dir}
                 onClick={() => onMove(dir)}
-                style={{
-                  display: 'block',
-                  width: '100%',
-                  padding: '6px 10px',
-                  background: 'none',
-                  border: 'none',
-                  textAlign: 'left',
-                  cursor: 'pointer',
-                  fontSize: FS,
-                  fontFamily: FONT,
-                  color: COLORS.textMuted,
-                  borderRadius: '4px',
-                }}
-                onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = COLORS.borderLight)}
-                onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+                className="move-item"
               >
                 {displayName}
               </button>
             );
           })}
           {filtered.length === 0 && (
-            <div style={{ padding: '12px', textAlign: 'center', color: COLORS.textInvisible, fontSize: FS, fontFamily: FONT }}>
-              No matching folders
-            </div>
+            <div className="move-empty">No matching folders</div>
           )}
         </div>
-        <div style={{ padding: '8px 14px', borderTop: `1px solid ${COLORS.border}`, display: 'flex', justifyContent: 'flex-end' }}>
-          <button
-            onClick={onCancel}
-            style={{ padding: '6px 14px', background: 'none', border: `1px solid ${COLORS.border}`, borderRadius: '6px', cursor: 'pointer', fontSize: FS, fontFamily: FONT, color: COLORS.textMuted }}
-          >
-            Cancel
-          </button>
+        <div className="move-footer">
+          <button onClick={onCancel} className="move-cancel">Cancel</button>
         </div>
       </div>
     </div>

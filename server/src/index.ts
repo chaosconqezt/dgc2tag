@@ -34,9 +34,14 @@ function getConfig(): Config {
 function getOutputRoot(cfg?: Config) {
     const c = cfg || getConfig();
     if (c.outputMode === 'absolute') {
-        return path.resolve(c.outputFolder);
+        return safeResolve(c.outputFolder);
     }
     return path.join(c.musicRoot, c.outputFolder);
+}
+
+/** Like path.resolve but preserves UNC paths (\\server\share) unchanged. */
+function safeResolve(p: string): string {
+    return p.startsWith('\\\\') ? p : path.resolve(p);
 }
 
 const DEV = process.env.NODE_ENV !== 'production';
@@ -77,7 +82,7 @@ app.post('/api/config', async (req, res) => {
         try {
             const current = getConfig();
             const newConfig: Config = {
-                musicRoot: path.resolve(musicRoot),
+                musicRoot: safeResolve(musicRoot),
                 port: typeof port === 'number' ? port : current.port,
                 tagDefaults: { ...current.tagDefaults, ...(tagDefaults || {}) },
                 writeTrackNames: typeof writeTrackNames === 'boolean' ? writeTrackNames : current.writeTrackNames,
@@ -162,7 +167,7 @@ app.get('/api/library/children', async (req, res) => {
 
     try {
         const cfg = getConfig();
-        const absolutePath = path.resolve(dirPath);
+        const absolutePath = safeResolve(dirPath);
         if (!isInsideMusicRoot(absolutePath, cfg.musicRoot)) {
             return res.status(403).json({ error: 'Access denied' });
         }
@@ -181,7 +186,7 @@ app.get('/api/tags', async (req, res) => {
 
     try {
         const cfg = getConfig();
-        const absolutePath = path.resolve(folderPath);
+        const absolutePath = safeResolve(folderPath);
         if (!isInsideMusicRoot(absolutePath, cfg.musicRoot)) {
             return res.status(403).json({ error: 'Access denied' });
         }
@@ -226,7 +231,7 @@ app.post('/api/tags/update', async (req, res) => {
 
     try {
         const cfg = getConfig();
-        const absolutePath = path.resolve(folderPath);
+        const absolutePath = safeResolve(folderPath);
         if (!isInsideMusicRoot(absolutePath, cfg.musicRoot)) {
             return res.status(403).json({ error: 'Access denied' });
         }
@@ -340,7 +345,7 @@ app.post('/api/files/rename', async (req, res) => {
 
     try {
         const cfg = getConfig();
-        const absOld = path.resolve(oldPath);
+        const absOld = safeResolve(oldPath);
         assertInsideMusicRoot(absOld, cfg.musicRoot);
 
         const absNew = path.join(path.dirname(absOld), newName);
@@ -368,8 +373,8 @@ app.post('/api/files/move', async (req, res) => {
 
     try {
         const cfg = getConfig();
-        const absOld = path.resolve(oldPath);
-        const absTarget = path.resolve(targetDir);
+        const absOld = safeResolve(oldPath);
+        const absTarget = safeResolve(targetDir);
         assertInsideMusicRoot(absOld, cfg.musicRoot);
         assertInsideMusicRoot(absTarget, cfg.musicRoot);
 
@@ -418,7 +423,7 @@ app.post('/api/files/delete', async (req, res) => {
 
     try {
         const cfg = getConfig();
-        const absPath = path.resolve(filePath);
+        const absPath = safeResolve(filePath);
         assertInsideMusicRoot(absPath, cfg.musicRoot);
 
         await fs.rm(absPath, { recursive: true, force: true });
@@ -432,7 +437,7 @@ app.post('/api/files/delete', async (req, res) => {
 
 // ─── Directory browsing for folder picker ────────────────────────
 
-app.get('/api/directory/roots', async (_req, res) => {
+app.get('/api/directory/roots', async (req, res) => {
     try {
         const cfg = getConfig();
         const roots: { name: string; path: string }[] = [];
@@ -448,12 +453,22 @@ app.get('/api/directory/roots', async (_req, res) => {
             }
             // Also add music root's drive if not already listed
             const musicDrive = cfg.musicRoot.substring(0, 3);
-            if (!roots.some(r => r.path === musicDrive)) {
+            if (musicDrive.length === 3 && musicDrive.endsWith(':\\') && !roots.some(r => r.path === musicDrive)) {
                 roots.push({ name: musicDrive, path: musicDrive });
+            }
+            // If musicRoot is a UNC path, add it as a root
+            if (cfg.musicRoot.startsWith('\\\\') && !roots.some(r => r.path === cfg.musicRoot)) {
+                roots.push({ name: cfg.musicRoot, path: cfg.musicRoot });
             }
         } else {
             // Unix: start from /
             roots.push({ name: '/', path: '/' });
+        }
+
+        // If a custom path was requested via query, include it as a root
+        const customPath = typeof req.query.path === 'string' ? req.query.path : '';
+        if (customPath && !roots.some(r => r.path === customPath)) {
+            roots.push({ name: customPath, path: customPath });
         }
 
         res.json(roots);
@@ -470,7 +485,8 @@ app.get('/api/directory/children', async (req, res) => {
     }
 
     try {
-        const absPath = path.resolve(dirPath);
+        // Don't use path.resolve for UNC paths (\\server\share) — it may break them
+        const absPath = dirPath.startsWith('\\\\') ? dirPath : path.resolve(dirPath);
         const entries = await fs.readdir(absPath, { withFileTypes: true });
         const dirs = entries
             .filter(e => e.isDirectory())

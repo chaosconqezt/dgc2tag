@@ -118,7 +118,7 @@ function AppContent() {
   }, [ctx.viewMode]);
 
   return (
-    <div className="dashboard" style={{ display: 'flex', height: '100vh', backgroundColor: COLORS.bg, color: COLORS.text, fontFamily: FONT }}>
+    <div className="dashboard">
 
       {ctx.viewMode === 'library' ? (<>
         {/* Library Mode — full width */}
@@ -166,30 +166,30 @@ function AppContent() {
         </div>
       </>) : (<>
       {/* Sidebar: Library Tree + Search Results */}
-      <div className="sidebar" style={{ display: 'flex', flexDirection: 'column', width: sidebarWidth, flexShrink: 0 }}>
-        <div style={{ display: 'flex', flexDirection: 'column', backgroundColor: COLORS.inputBgAlt, overflow: 'hidden', height: '100%' }}>
-          <div style={{ padding: '10px 12px', borderBottom: `1px solid ${COLORS.border}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexShrink: 0 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <button onClick={() => ctx.dispatch({ type: 'SET_VIEW_MODE', payload: 'library' })} className="hover-toolbar" style={{ ...ICON_BUTTON, display: 'flex', borderRadius: '4px', padding: '4px' }}>
+      <div className="sidebar" style={{ width: sidebarWidth }}>
+        <div className="sidebar-inner">
+          <div className="sidebar-header">
+            <div className="sidebar-header-left">
+              <button onClick={() => ctx.dispatch({ type: 'SET_VIEW_MODE', payload: 'library' })} className="btn-icon">
                 <BookOpen size={14} />
               </button>
-              <h2 style={{ fontSize: FS, fontWeight: '600', margin: 0, letterSpacing: '0.3px', fontFamily: FONT, color: COLORS.text }}>
+              <h2 className="sidebar-title">
                 DGC TAGGER
               </h2>
             </div>
-            <div style={{ display: 'flex', gap: '4px' }}>
-              <button onClick={ctx.collapseAll} className="hover-toolbar" style={{ ...ICON_BUTTON, display: 'flex', fontSize: FS, fontWeight: '700', borderRadius: '4px', padding: '4px' }} title="Collapse all">
+            <div className="sidebar-actions">
+              <button onClick={ctx.collapseAll} className="btn-icon" title="Collapse all">
                 &#9650;
               </button>
-              <button onClick={() => ctx.dispatch({ type: 'SET_SHOW_SETTINGS', payload: true })} className="hover-toolbar" style={{ ...ICON_BUTTON, display: 'flex', borderRadius: '4px', padding: '4px' }}>
+              <button onClick={() => ctx.dispatch({ type: 'SET_SHOW_SETTINGS', payload: true })} className="btn-icon">
                 <Settings size={14} />
               </button>
-              <button onClick={ctx.fetchLibrary} className="hover-toolbar" style={{ ...ICON_BUTTON, display: 'flex', borderRadius: '4px', padding: '4px' }}>
+              <button onClick={ctx.fetchLibrary} className="btn-icon">
                 <RefreshCw size={14} className={ctx.loading ? 'animate-spin' : ''} />
               </button>
             </div>
           </div>
-          <div style={{ height: treeHeightPx, flexShrink: 0 }}>
+          <div className="sidebar-tree-wrap" style={{ height: treeHeightPx }}>
             <LibraryTree
               tree={ctx.tree}
               selectedFolder={ctx.selectedFolder}
@@ -205,16 +205,11 @@ function AppContent() {
           {/* Resize handle: tree ↔ matches */}
           <div
             onMouseDown={onResizeTreeStart}
-            className="hover-red"
-            style={{
-              height: '4px',
-              cursor: 'row-resize',
-              flexShrink: 0,
-            }}
+            className="hover-red resize-h"
           />
 
           {/* Search Results — vertical list */}
-          <div style={{ flex: 1, overflowY: 'auto', borderTop: `1px solid ${COLORS.border}` }}>
+          <div className="sidebar-results">
             <SearchResults
               results={ctx.searchResults}
               deezerResults={ctx.deezerResults}
@@ -239,13 +234,7 @@ function AppContent() {
       {/* Resize handle */}
       <div
         onMouseDown={onResizeStart}
-        className="hover-red"
-        style={{
-          width: '4px',
-          cursor: 'col-resize',
-          backgroundColor: 'transparent',
-          flexShrink: 0,
-        }}
+        className="hover-red resize-v"
       />
 
       {/* Main Content Area */}
@@ -255,7 +244,7 @@ function AppContent() {
         <div className="bottom-panels" style={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
 
           {/* Comparison Panel */}
-          <div className="diff-panel" style={{ flex: 1, padding: '16px 20px', backgroundColor: COLORS.inputBgAlt, overflowY: 'auto', overflowX: 'hidden', minWidth: 0 }}>
+          <div className="diff-panel" style={{ flex: 1, padding: '16px 20px', overflowY: 'auto', overflowX: 'hidden', minWidth: 0 }}>
 
             {/* Search bar */}
             <SearchBar
@@ -389,13 +378,11 @@ function AppContent() {
       {ctx.progress?.active && (
         <ProgressOverlay
           phase={ctx.progress.phase}
-          current={ctx.progress.current}
-          total={ctx.progress.total}
           log={ctx.progress.log}
           done={ctx.progress.done}
           success={ctx.progress.success}
           message={ctx.progress.message}
-          details={ctx.progress.details}
+          diff={ctx.progress.diff}
           onClose={() => ctx.dispatch({ type: 'SET_PROGRESS', payload: null })}
         />
       )}

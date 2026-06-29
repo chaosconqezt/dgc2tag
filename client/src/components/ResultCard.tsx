@@ -1,6 +1,5 @@
 import { useState, useRef } from 'react';
 import { Disc3, ExternalLink, Music2 } from 'lucide-react';
-import { FONT, FS, COLORS } from './styles';
 
 interface ResultCardProps {
   coverUrl: string | null;
@@ -36,7 +35,11 @@ export function ResultCard({
   const handleEnter = () => {
     if (!coverUrl || !imgRef.current) return;
     const rect = imgRef.current.getBoundingClientRect();
-    setPreview({ x: rect.left + rect.width / 2, y: rect.top });
+    const PRW = 300;
+    const half = PRW / 2;
+    let x = rect.left + rect.width / 2;
+    x = Math.max(half, Math.min(x, window.innerWidth - half));
+    setPreview({ x, y: rect.top });
   };
 
   const meta1 = [artist, year].filter(Boolean).join(' · ');
@@ -44,94 +47,52 @@ export function ResultCard({
   return (
     <div
       onClick={onClick}
-      style={{
-        display: 'flex',
-        gap: '8px',
-        padding: '5px',
-        border: `1px solid ${selected ? accentColor : COLORS.borderLight}`,
-        borderRadius: '6px',
-        cursor: 'pointer',
-        transition: 'border-color 0.15s, background-color 0.15s',
-        backgroundColor: selected ? `${accentColor}15` : 'transparent',
-        width: '100%',
-        boxSizing: 'border-box',
-      }}
+      className={`result-card${selected ? ' selected' : ''}`}
+      style={{ '--accent': accentColor } as React.CSSProperties}
     >
       {/* Cover */}
       <div
         ref={imgRef}
         onMouseEnter={handleEnter}
         onMouseLeave={() => setPreview(null)}
-        style={{
-          width: '40px',
-          height: '40px',
-          borderRadius: '4px',
-          overflow: 'hidden',
-          backgroundColor: COLORS.bg,
-          border: `1px solid ${COLORS.border}`,
-          flexShrink: 0,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-        }}
+        className="result-cover"
       >
         {coverUrl ? (
-          <img src={coverUrl} alt="" loading="lazy" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+          <img src={coverUrl} alt="" loading="lazy" />
         ) : (
-          <Disc3 size={16} color={COLORS.textInvisible} />
+          <Disc3 size={16} className="result-cover-icon" />
         )}
       </div>
 
       {/* Info — 2 lines */}
-      <div style={{ minWidth: 0, flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: '1px', overflow: 'hidden' }}>
+      <div className="result-info">
         {/* Line 1: Artist · Year · Label · link */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '4px', minWidth: 0 }}>
-          <span
-            className="text-ellipsis"
-            style={{
-              fontWeight: '600',
-              fontSize: FS,
-              color: accentColor,
-              fontFamily: FONT,
-              flex: 1,
-              minWidth: 0,
-            }}
-          >
+        <div className="result-line" style={{ gap: '4px' }}>
+          <span className="result-meta text-ellipsis">
             {meta1 || '—'}
           </span>
           <a
             href={url}
             target="_blank"
             onClick={(e) => e.stopPropagation()}
-            onMouseEnter={(e) => (e.currentTarget.style.color = COLORS.text)}
-            onMouseLeave={(e) => (e.currentTarget.style.color = COLORS.textInvisible)}
-            style={{ color: COLORS.textInvisible, flexShrink: 0, display: 'flex', transition: 'color 0.15s' }}
+            className="result-link"
           >
             <ExternalLink size={11} />
           </a>
         </div>
 
         {/* Line 2: Album · Label · track count */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', minWidth: 0 }}>
-          <span
-            className="text-ellipsis"
-            style={{
-              fontSize: FS,
-              color: COLORS.textMuted,
-              fontFamily: FONT,
-              flex: 1,
-              minWidth: 0,
-            }}
-          >
+        <div className="result-line-gap">
+          <span className="result-album text-ellipsis">
             {albumName}
           </span>
           {label && (
-            <span className="text-ellipsis" style={{ fontSize: FS, color: COLORS.textFaint, fontFamily: FONT, flexShrink: 0 }}>
+            <span className="result-label text-ellipsis">
               {label}
             </span>
           )}
           {trackCount != null && (
-            <span style={{ display: 'flex', alignItems: 'center', gap: '2px', fontSize: FS, color: COLORS.textFaint, fontFamily: FONT, flexShrink: 0 }}>
+            <span className="result-tracks">
               <Music2 size={10} />
               {trackCount}
             </span>
@@ -144,18 +105,11 @@ export function ResultCard({
         <img
           src={coverUrl}
           alt=""
+          className="result-preview"
           style={{
-            position: 'fixed',
             left: preview.x,
             top: preview.y,
             transform: 'translate(-50%, 8px)',
-            maxWidth: '300px',
-            maxHeight: '300px',
-            borderRadius: '6px',
-            border: `1px solid ${COLORS.border}`,
-            boxShadow: '0 8px 24px rgba(0,0,0,0.6)',
-            pointerEvents: 'none',
-            zIndex: 9999,
           }}
         />
       )}

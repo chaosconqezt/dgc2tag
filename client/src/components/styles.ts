@@ -7,28 +7,28 @@ export const FS_XS = '10px';
 
 export const COLORS = {
   bg: 'var(--bg)',
-  cardBg: 'var(--card-bg)',
+  cardBg: 'var(--panel-bg)',
   border: 'var(--border)',
   borderLight: 'var(--border-light)',
   text: 'var(--text)',
-  textBright: 'var(--text-bright)',
-  textMuted: 'var(--text-muted)',
+  textBright: 'var(--text)',
+  textMuted: 'var(--text-dim)',
   textDim: 'var(--text-dim)',
   textFaint: 'var(--text-faint)',
-  textInvisible: 'var(--text-invisible)',
+  textInvisible: 'var(--text-disabled)',
   green: 'var(--green)',
   yellow: 'var(--yellow)',
   red: 'var(--red)',
   purple: 'var(--purple)',
-  mbrainz: 'var(--mbrainz)',
-  bandcamp: 'var(--bandcamp)',
+  mbrainz: 'var(--orange)',
+  bandcamp: 'var(--teal)',
   inputBg: 'var(--input-bg)',
-  inputBgAlt: 'var(--input-bg-alt)',
-  inputBgAlt2: 'var(--input-bg-alt2)',
+  inputBgAlt: 'var(--panel-bg)',
+  inputBgAlt2: 'var(--panel-bg)',
   greenBg: 'var(--green-bg)',
   greenBorder: 'var(--green-border)',
-  purpleBg: 'var(--purple-bg)',
-  purpleBorder: 'var(--purple-border)',
+  purpleBg: 'var(--purple)',
+  purpleBorder: 'var(--purple)',
 } as const;
 
 export const CHECKBOX = {
@@ -71,14 +71,6 @@ export const PERCENT_STYLE = {
 };
 
 export const simColor = (sim: number) => sim === 100 ? COLORS.green : sim >= 80 ? COLORS.yellow : COLORS.red;
-
-export const PANEL_STYLE = {
-  padding: '10px',
-  background: COLORS.bg,
-  borderRadius: '8px',
-  border: `1px solid ${COLORS.border}`,
-  marginBottom: '10px',
-};
 
 export const GRID_STYLE = {
   display: 'grid',

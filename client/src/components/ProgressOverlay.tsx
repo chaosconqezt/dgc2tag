@@ -1,20 +1,18 @@
 import { useEffect, useRef } from 'react';
-import { FONT, FS, FS_SM, COLORS, ICON_BUTTON, OVERLAY_BACKDROP, MODAL_PANEL, MODAL_HEADER } from './styles';
+import type { DiffEntry } from '../hooks/appReducer';
+import { DiffBlock } from './DiffLine';
 
 interface ProgressOverlayProps {
   phase: string;
-  current: number;
-  total: number;
   log: string[];
   done: boolean;
   success: boolean;
   message: string;
-  details?: string[];
+  diff?: DiffEntry[];
   onClose: () => void;
 }
 
-export function ProgressOverlay({ phase, current, total, log, done, success, message, details, onClose }: ProgressOverlayProps) {
-  const pct = total > 0 ? Math.round((current / total) * 100) : 0;
+export function ProgressOverlay({ phase, log, done, success, message, diff, onClose }: ProgressOverlayProps) {
   const logRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -24,62 +22,40 @@ export function ProgressOverlay({ phase, current, total, log, done, success, mes
   }, [done, log.length]);
 
   return (
-    <div style={OVERLAY_BACKDROP} onClick={done ? onClose : undefined}>
-      <div style={{ ...MODAL_PANEL, width: '500px', maxHeight: '80vh' }} onClick={(e) => e.stopPropagation()}>
-        {/* Header */}
-        <div style={MODAL_HEADER}>
-          <span style={{ fontSize: FS, color: COLORS.textMuted, fontWeight: '600', fontFamily: FONT }}>
+    <div className="progress-overlay" onClick={done ? onClose : undefined}>
+      <div className="progress-panel" onClick={(e) => e.stopPropagation()}>
+        <div className="progress-header">
+          <span className="progress-header-title">
             {done ? (success ? 'Done' : 'Error') : phase}
           </span>
           {done && (
-            <button onClick={onClose} style={{ ...ICON_BUTTON, fontSize: FS, fontFamily: FONT }}>
-              Close
-            </button>
+            <button onClick={onClose} className="progress-close">Close</button>
           )}
         </div>
 
-        {/* Progress bar */}
-        {!done && total > 0 && (
-          <div style={{ padding: '10px 14px 6px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px', fontSize: FS_SM, fontFamily: FONT }}>
-              <span style={{ color: COLORS.textMuted }}>{current} / {total}</span>
-              <span style={{ color: COLORS.textDim }}>{pct}%</span>
-            </div>
-            <div style={{ height: '4px', backgroundColor: COLORS.border, borderRadius: '2px', overflow: 'hidden' }}>
-              <div style={{ height: '100%', width: `${pct}%`, backgroundColor: COLORS.red, borderRadius: '2px', transition: 'width 0.2s' }} />
-            </div>
-          </div>
-        )}
-
-        {/* Log */}
-        <div ref={logRef} style={{ flex: 1, overflowY: 'auto', padding: '8px 14px', minHeight: '80px', maxHeight: '300px' }}>
+        <div ref={logRef} className="progress-body">
           {log.length === 0 && !done ? (
-            <span style={{ fontSize: FS_SM, color: COLORS.textInvisible, fontFamily: FONT }}>Starting...</span>
+            <div className="progress-console">
+              <span className="progress-console-line dim">Processing{phase ? `: ${phase}` : ''}...</span>
+            </div>
           ) : (
-            log.map((line, i) => (
-              <div key={i} style={{ fontSize: FS_SM, color: COLORS.textMuted, fontFamily: 'monospace', lineHeight: '1.6', whiteSpace: 'pre-wrap' }}>
-                {line}
-              </div>
-            ))
-          )}
-          {done && details && details.length > 0 && (
-            <>
-              <div style={{ height: '1px', backgroundColor: COLORS.border, margin: '6px 0' }} />
-              {details.map((line, i) => (
-                <div key={`d-${i}`} style={{ fontSize: FS_SM, color: COLORS.textMuted, fontFamily: 'monospace', lineHeight: '1.6', whiteSpace: 'pre-wrap' }}>
-                  {line}
-                </div>
+            <div className="progress-console">
+              {log.map((line, i) => (
+                <span key={i} className={`progress-console-line ${line.startsWith('Renamed') ? 'renamed' : line.startsWith('Moved') ? 'moved' : line.startsWith('Error') ? 'error' : ''}`}>{line}</span>
               ))}
+            </div>
+          )}
+          {done && diff && diff.length > 0 && (
+            <>
+              <div className="progress-console-sep" style={{ margin: '6px 0' }} />
+              <DiffBlock entries={diff} />
             </>
           )}
         </div>
 
-        {/* Status bar */}
         {done && (
-          <div style={{ padding: '8px 14px', borderTop: `1px solid ${COLORS.border}`, textAlign: 'center' }}>
-            <span style={{ fontSize: FS, color: success ? COLORS.green : COLORS.red, fontWeight: '600', fontFamily: FONT }}>
-              {message}
-            </span>
+          <div className={`progress-footer ${success ? 'ok' : 'fail'}`}>
+            {message}
           </div>
         )}
       </div>

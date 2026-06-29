@@ -51,6 +51,10 @@ export function matchTracks(
     );
     if (byNum >= 0) {
       const comparisonName = matchByFilename ? localParsed[byNum].fileName : localParsed[byNum].name;
+      if (!comparisonName) {
+        usedLocal.add(byNum);
+        return { remote: { num: rt.num, artist: rt.artist, name: rt.name, duration: rt.duration }, local: localParsed[byNum], sim: 100, numberMismatch: false };
+      }
       const s = sim(rt.name, comparisonName);
       if (s >= 90) {
         usedLocal.add(byNum);
@@ -85,6 +89,30 @@ export function matchTracks(
     }
   }
 
+  const unmatchedRemote = results.filter(r => !r.local);
+  const unusedLocal = localParsed
+    .map((l, i) => ({ ...l, idx: i }))
+    .filter(l => !usedLocal.has(l.idx));
+
+  if (unmatchedRemote.length > 0 && unusedLocal.length > 0) {
+    const numSort = (a: string, b: string) => parseInt(a) - parseInt(b);
+    const sortedRemote = [...unmatchedRemote].sort((a, b) =>
+      numSort(a.remote.num, b.remote.num)
+    );
+    const sortedLocal = [...unusedLocal].sort((a, b) =>
+      numSort(a.num, b.num)
+    );
+    const count = Math.min(sortedRemote.length, sortedLocal.length);
+    for (let i = 0; i < count; i++) {
+      const r = sortedRemote[i]!;
+      const l = sortedLocal[i]!;
+      usedLocal.add(l.idx);
+      r.local = localParsed[l.idx];
+      r.sim = 0;
+      r.numberMismatch = false;
+    }
+  }
+
   return results;
 }
 
@@ -96,7 +124,7 @@ export function parseCompilationTracklist(tracklist: string): { num: string; art
     if (!m) continue;
     const num = m[1]!;
     const rest = m[2]!.trim();
-    const dashIdx = rest.search(/\s[-–—]\s/);
+    const dashIdx = rest.search(/\s[-–—]/);
     if (dashIdx > 0) {
       tracks.push({ num, artist: rest.slice(0, dashIdx).trim(), name: rest.slice(dashIdx + 1).replace(/^[-–—]\s*/, '').trim() });
     } else {
