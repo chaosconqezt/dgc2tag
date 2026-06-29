@@ -174,7 +174,6 @@ export function TagComparison({
               <div className="tc-grid">
                 <input
                   type="checkbox"
-                  className="cb"
                   checked={enabled}
                   disabled={readonly}
                   onChange={(e) => onTagEnabledChange(f.key, e.target.checked)}
