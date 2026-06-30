@@ -1,5 +1,5 @@
 import type { FileNode, AlbumTags, SearchResult, DeezerSearchResult } from '../types';
-import type { MusicBrainzSearchResult, LibraryAlbum } from '../api';
+import type { MusicBrainzSearchResult, DiscogsSearchResult, LibraryAlbum } from '../api';
 import { DEFAULT_TAG_DEFAULTS } from './useConfig';
 
 export interface DiffEntry {
@@ -15,8 +15,9 @@ export interface AppState {
   searchResults: SearchResult[];
   deezerResults: DeezerSearchResult[];
   mbrainzResults: MusicBrainzSearchResult[];
-  bandcampResults: SearchResult[];
+  discogsResults: DiscogsSearchResult[];
   selectedMbrainz: MusicBrainzSearchResult | null;
+  selectedDiscogs: DiscogsSearchResult | null;
   selectedResult: SearchResult | null;
   selectedDeezer: DeezerSearchResult | null;
   albumDetails: SearchResult | null;
@@ -27,7 +28,7 @@ export interface AppState {
   dgcLoading: boolean;
   deezerLoading: boolean;
   mbrainzLoading: boolean;
-  bandcampLoading: boolean;
+  discogsLoading: boolean;
   progress: { active: boolean; phase: string; log: string[]; done: boolean; success: boolean; message: string; diff?: DiffEntry[] } | null;
   searchTimeMs: number | null;
   loading: boolean;
@@ -78,8 +79,9 @@ export type Action =
   | { type: 'SET_MBRAINZ_RESULTS'; payload: MusicBrainzSearchResult[] }
   | { type: 'SET_MBRAINZ_LOADING'; payload: boolean }
   | { type: 'SET_SELECTED_MBRAINZ'; payload: MusicBrainzSearchResult | null }
-  | { type: 'SET_BANDCAMP_RESULTS'; payload: SearchResult[] }
-  | { type: 'SET_BANDCAMP_LOADING'; payload: boolean }
+  | { type: 'SET_DISCOGS_RESULTS'; payload: DiscogsSearchResult[] }
+  | { type: 'SET_DISCOGS_LOADING'; payload: boolean }
+  | { type: 'SET_SELECTED_DISCOGS'; payload: DiscogsSearchResult | null }
   | { type: 'SET_PROGRESS'; payload: { active: boolean; phase: string; log: string[]; done: boolean; success: boolean; message: string; diff?: DiffEntry[] } | null }
   | { type: 'SET_SEARCH_TIME'; payload: number | null }
   | { type: 'TOGGLE_NODE'; payload: string }
@@ -124,8 +126,9 @@ export const initialState: AppState = {
   searchResults: [],
   deezerResults: [],
   mbrainzResults: [],
-  bandcampResults: [],
+  discogsResults: [],
   selectedMbrainz: null,
+  selectedDiscogs: null,
   selectedResult: null,
   selectedDeezer: null,
   albumDetails: null,
@@ -136,7 +139,7 @@ export const initialState: AppState = {
   dgcLoading: false,
   deezerLoading: false,
   mbrainzLoading: false,
-  bandcampLoading: false,
+  discogsLoading: false,
   progress: null,
   searchTimeMs: null,
   loading: false,
@@ -188,8 +191,9 @@ export function appReducer(state: AppState, action: Action): AppState {
     case 'SET_MBRAINZ_RESULTS': return { ...state, mbrainzResults: action.payload };
     case 'SET_MBRAINZ_LOADING': return { ...state, mbrainzLoading: action.payload };
     case 'SET_SELECTED_MBRAINZ': return { ...state, selectedMbrainz: action.payload };
-    case 'SET_BANDCAMP_RESULTS': return { ...state, bandcampResults: action.payload };
-    case 'SET_BANDCAMP_LOADING': return { ...state, bandcampLoading: action.payload };
+    case 'SET_DISCOGS_RESULTS': return { ...state, discogsResults: action.payload };
+    case 'SET_DISCOGS_LOADING': return { ...state, discogsLoading: action.payload };
+    case 'SET_SELECTED_DISCOGS': return { ...state, selectedDiscogs: action.payload };
     case 'SET_PROGRESS': return { ...state, progress: action.payload };
     case 'SET_SEARCH_TIME': return { ...state, searchTimeMs: action.payload };
     case 'TOGGLE_NODE': {

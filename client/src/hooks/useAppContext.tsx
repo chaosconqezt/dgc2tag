@@ -1,6 +1,6 @@
 import { createContext, useContext, useReducer, useCallback, useRef, useMemo, useEffect } from 'react';
 import type { SearchResult, DeezerSearchResult } from '../types';
-import type { MusicBrainzSearchResult } from '../api';
+import type { MusicBrainzSearchResult, DiscogsSearchResult } from '../api';
 import * as api from '../api';
 import { appReducer, initialState, type AppState, type Action } from './appReducer';
 import { createApplyTags } from './useTagActions';
@@ -31,6 +31,7 @@ interface AppContextType extends AppState {
   handleSelectResult: (res: SearchResult) => void;
   handleSelectDeezer: (dz: DeezerSearchResult) => void;
   handleSelectMbrainz: (mb: MusicBrainzSearchResult) => void;
+  handleSelectDiscogs: (dg: DiscogsSearchResult) => void;
   handleWebfetch: (url: string) => Promise<void>;
   closeWebfetch: () => void;
   clearSelectionState: () => void;
@@ -51,7 +52,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     dispatch({ type: 'CLEAR_SELECTION_STATE' });
   }, []);
 
-  const { handleSearch, loadAlbumDetails, handleSelectResult, handleSelectDeezer, handleSelectMbrainz } = useMemo(
+  const { handleSearch, loadAlbumDetails, handleSelectResult, handleSelectDeezer, handleSelectMbrainz, handleSelectDiscogs } = useMemo(
     () => createSearchActions(
       { searchArtist: state.searchArtist, searchAlbum: state.searchAlbum, searchArtistEnabled: state.searchArtistEnabled, searchAlbumEnabled: state.searchAlbumEnabled, selectedResult: state.selectedResult, selectedDeezer: state.selectedDeezer, tagEnabled: state.tagEnabled, enabledSources: state.enabledSources },
       dispatch as LooseDispatch, clearSelectionState,
@@ -96,9 +97,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     fetchConfig, saveConfig, clearCache,
     fetchLibrary, toggleNode, collapseAll, dirHasAudioFiles, handleFolderSelect,
     renameNode, deleteNode, moveNode,
-    handleSearch, loadAlbumDetails, handleSelectResult, handleSelectDeezer, handleSelectMbrainz,
+    handleSearch, loadAlbumDetails, handleSelectResult, handleSelectDeezer, handleSelectMbrainz, handleSelectDiscogs,
     handleWebfetch, closeWebfetch, clearSelectionState, applyTags, fetchLibraryEntries,
-  }), [state, dispatch, fetchConfig, saveConfig, clearCache, fetchLibrary, toggleNode, collapseAll, dirHasAudioFiles, handleFolderSelect, renameNode, deleteNode, moveNode, handleSearch, loadAlbumDetails, handleSelectResult, handleSelectDeezer, handleSelectMbrainz, handleWebfetch, closeWebfetch, clearSelectionState, applyTags, fetchLibraryEntries]);
+  }), [state, dispatch, fetchConfig, saveConfig, clearCache, fetchLibrary, toggleNode, collapseAll, dirHasAudioFiles, handleFolderSelect, renameNode, deleteNode, moveNode, handleSearch, loadAlbumDetails, handleSelectResult, handleSelectDeezer, handleSelectMbrainz, handleSelectDiscogs, handleWebfetch, closeWebfetch, clearSelectionState, applyTags, fetchLibraryEntries]);
 
   return (
     <AppContext.Provider value={contextValue}>

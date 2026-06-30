@@ -7,6 +7,7 @@ export interface AlbumTags {
     country?: string;
     label?: string;
     releaseType?: string;
+    source?: string;
     trackCount?: number;
     files?: string[];
     trackTitles?: Record<string, string>;

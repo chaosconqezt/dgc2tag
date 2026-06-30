@@ -15,11 +15,12 @@ export interface AlbumTags {
   country?: string;
   label?: string;
   releaseType?: string;
+  source?: string;
   trackCount?: number;
   // ALL keys = FULL FILE PATHS (immutable identifiers)
-  files?: string[];          // full paths: c:/music/album/01.mp3
-  trackTitles?: Record<string, string>;  // filePath → title
-  trackArtists?: Record<string, string>; // filePath → artist
+  files?: string[];
+  trackTitles?: Record<string, string>;
+  trackArtists?: Record<string, string>;
   trackDurations?: Record<string, number | undefined>;
   postId?: number;
   bandId?: number;

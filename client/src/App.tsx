@@ -213,11 +213,11 @@ function AppContent() {
               results={ctx.searchResults}
               deezerResults={ctx.deezerResults}
               mbrainzResults={ctx.mbrainzResults}
-              bandcampResults={ctx.bandcampResults}
+              discogsResults={ctx.discogsResults}
               dgcLoading={ctx.dgcLoading}
               deezerLoading={ctx.deezerLoading}
               mbrainzLoading={ctx.mbrainzLoading}
-              bandcampLoading={ctx.bandcampLoading}
+              discogsLoading={ctx.discogsLoading}
               searchTimeMs={ctx.searchTimeMs}
               selectedResult={ctx.selectedResult}
               onSelectResult={ctx.handleSelectResult}
@@ -225,6 +225,8 @@ function AppContent() {
               selectedDeezerId={ctx.selectedDeezer?.albumId ?? null}
               selectedMbrainzId={ctx.selectedMbrainz?.releaseId ?? null}
               onSelectMbrainz={ctx.handleSelectMbrainz}
+              selectedDiscogsId={ctx.selectedDiscogs?.id ?? null}
+              onSelectDiscogs={ctx.handleSelectDiscogs}
             />
           </div>
         </div>

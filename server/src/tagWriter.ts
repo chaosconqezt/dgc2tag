@@ -137,6 +137,7 @@ async function writeSingleTag(
         'DGC_POST_ID': tags.postId != null ? String(tags.postId) : undefined,
         'BAND_ID': tags.bandId != null ? String(tags.bandId) : undefined,
         'DEEZER_ID': tags.deezerId != null ? String(tags.deezerId) : undefined,
+        'SOURCE': tags.source,
         'MusicBrainz Album Id': (tags as any).musicbrainzReleaseId,
         'MusicBrainz Artist Id': (tags as any).musicbrainzArtistId,
         'MusicBrainz Album Artist Id': (tags as any).musicbrainzAlbumArtistId,
@@ -265,6 +266,7 @@ export async function moveProcessedFiles(
     yearOverride?: string,
     albumOverride?: string,
     cleanupIgnorePatterns?: string[],
+    source?: string,
 ): Promise<{ moved: string[] }> {
     const resolvedOutput = path.resolve(outputRoot);
     const resolvedMusicRoot = path.resolve(musicRoot);
@@ -283,7 +285,8 @@ export async function moveProcessedFiles(
     const yearTag = yearOverride || '0000';
     const albumTag = sanitize(albumOverride || 'Unknown Album');
 
-    const artistDir = path.join(outputRoot, sanitize(resolvedAlbumArtist));
+    const sourceDir = source ? sanitize(source) : 'unknown';
+    const artistDir = path.join(outputRoot, sourceDir, sanitize(resolvedAlbumArtist));
     const albumDirName = `${yearTag} - ${albumTag}`;
 
     let destDir: string;

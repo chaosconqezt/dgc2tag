@@ -269,7 +269,7 @@ app.post('/api/tags/update', async (req, res) => {
                 absolutePath, getOutputRoot(cfg), cfg.musicRoot, tags,
                 albumArtistForMove, trackArtists, trackNames,
                 cfg.outputMode, yearForMove, albumForMove,
-                cfg.cleanupIgnorePatterns,
+                cfg.cleanupIgnorePatterns, tags.source,
             );
             moved = result.moved;
         } else if (renameFiles) {

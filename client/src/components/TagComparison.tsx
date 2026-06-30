@@ -174,12 +174,11 @@ export function TagComparison({
               <div className="tc-grid">
                 <input
                   type="checkbox"
-                  className="cb"
+                  className="cb tc-checkbox"
                   checked={enabled}
                   disabled={readonly}
                   onChange={(e) => onTagEnabledChange(f.key, e.target.checked)}
                   title={readonly ? `${f.label} — read only` : (enabled ? `Writing ${f.label} tag — click to skip` : `Skipping ${f.label} tag — click to include`)}
-                  className="cb tc-checkbox"
                   data-readonly={String(readonly)}
                 />
                 <div className="t-cell tc-cell-inline">

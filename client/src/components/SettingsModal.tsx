@@ -31,7 +31,7 @@ const SOURCE_FIELDS = [
   { id: 'dgc', label: 'DGC', color: 'var(--red)' },
   { id: 'deezer', label: 'Deezer', color: 'var(--green)' },
   { id: 'mbrainz', label: 'MusicBrainz', color: 'var(--orange)' },
-  { id: 'bandcamp', label: 'Bandcamp', color: 'var(--teal)' },
+  { id: 'discogs', label: 'Discogs', color: '#333333' },
 ];
 
 export function SettingsModal({ saving, onSave, onClearCache, clearingCache, tagDefaults, onTagDefaultsChange, enabledSources, onEnabledSourcesChange, cleanupIgnorePatterns, onCleanupIgnorePatternsChange, onClose }: SettingsModalProps) {

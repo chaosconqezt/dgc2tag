@@ -1,5 +1,5 @@
 import type { SearchResult, DeezerSearchResult } from '../types';
-import type { MusicBrainzSearchResult } from '../api';
+import type { MusicBrainzSearchResult, DiscogsSearchResult } from '../api';
 import * as api from '../api';
 
 export type AppDispatch = React.Dispatch<{ type: string; payload?: unknown }>;
@@ -61,11 +61,11 @@ export function createSearchActions(
       dispatch({ type: 'SET_DGC_LOADING', payload: true });
       dispatch({ type: 'SET_DEEZER_LOADING', payload: true });
       dispatch({ type: 'SET_MBRAINZ_LOADING', payload: true });
-      dispatch({ type: 'SET_BANDCAMP_LOADING', payload: true });
+      dispatch({ type: 'SET_DISCOGS_LOADING', payload: true });
       dispatch({ type: 'SET_SEARCH_RESULTS', payload: [] });
       dispatch({ type: 'SET_DEEZER_RESULTS', payload: [] });
       dispatch({ type: 'SET_MBRAINZ_RESULTS', payload: [] });
-      dispatch({ type: 'SET_BANDCAMP_RESULTS', payload: [] });
+      dispatch({ type: 'SET_DISCOGS_RESULTS', payload: [] });
       dispatch({ type: 'SET_SEARCH_TIME', payload: null });
 
       const start = Date.now();
@@ -100,13 +100,13 @@ export function createSearchActions(
           .finally(() => { dispatch({ type: 'SET_MBRAINZ_LOADING', payload: false }); checkDone(); });
       } else { dispatch({ type: 'SET_MBRAINZ_LOADING', payload: false }); }
 
-      if (es.bandcamp !== false) {
+      if (es.discogs !== false) {
         totalSources++;
-        api.searchAlbumsBandcamp(dzArtist, dzAlbum)
-          .then(data => { if (searchGeneration.current === gen) dispatch({ type: 'SET_BANDCAMP_RESULTS', payload: data }); })
+        api.searchAlbumsDiscogs(dzArtist, dzAlbum)
+          .then(data => { if (searchGeneration.current === gen) dispatch({ type: 'SET_DISCOGS_RESULTS', payload: data }); })
           .catch(() => {})
-          .finally(() => { dispatch({ type: 'SET_BANDCAMP_LOADING', payload: false }); checkDone(); });
-      } else { dispatch({ type: 'SET_BANDCAMP_LOADING', payload: false }); }
+          .finally(() => { dispatch({ type: 'SET_DISCOGS_LOADING', payload: false }); checkDone(); });
+      } else { dispatch({ type: 'SET_DISCOGS_LOADING', payload: false }); }
 
       if (totalSources === 0) {
         dispatch({ type: 'SET_SEARCH_TIME', payload: Date.now() - start });
@@ -216,6 +216,54 @@ export function createSearchActions(
         dispatch({ type: 'SET_ALBUM_DETAILS', payload: fullResult });
       } catch (err) {
         if (import.meta.env.DEV) console.error('[client] mbrainz release error:', err);
+      }
+    },
+
+    handleSelectDiscogs: async (dg: DiscogsSearchResult) => {
+      clearSelectionState();
+
+      const baseResult: SearchResult = {
+        source: 'discogs',
+        id: dg.id,
+        postId: 0,
+        albumName: dg.albumName,
+        artist: dg.artist,
+        albumArtist: dg.artist,
+        coverUrl: dg.coverUrl,
+        country: dg.country,
+        year: dg.year,
+        label: dg.label,
+        genres: [...dg.genres, ...dg.styles],
+        releaseType: dg.releaseType,
+        url: dg.url,
+        parsedTracks: [],
+      };
+
+      dispatch({ type: 'SET_SELECTED_DISCOGS', payload: dg });
+      dispatch({ type: 'SET_SELECTED_RESULT', payload: baseResult });
+      dispatch({ type: 'SET_ALBUM_DETAILS', payload: baseResult });
+      dispatch({ type: 'SET_TAG_ENABLED', payload: { ...state.tagEnabled, artist: true, album: true, year: true, label: true, genre: true, postId: false } });
+
+      try {
+        const fullRelease = await api.fetchDiscogsRelease(dg.id);
+
+        const parsedTracks = fullRelease.parsedTracks?.map(t => ({
+          num: t.num,
+          artist: t.artist || fullRelease.artist,
+          name: t.name,
+          duration: t.duration,
+        })) || [];
+
+        const fullResult: SearchResult = {
+          ...baseResult,
+          parsedTracks,
+          genres: [...(fullRelease.genres || []), ...(fullRelease.styles || [])],
+          releaseType: fullRelease.releaseType,
+        };
+
+        dispatch({ type: 'SET_ALBUM_DETAILS', payload: fullResult });
+      } catch (err) {
+        if (import.meta.env.DEV) console.error('[client] discogs release error:', err);
       }
     },
   };

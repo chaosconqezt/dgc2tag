@@ -210,8 +210,32 @@ export async function fetchMusicBrainzRelease(releaseId: string): Promise<MusicB
   return res.data;
 }
 
-export async function searchAlbumsBandcamp(artist?: string, album?: string): Promise<SearchResult[]> {
-  const res = await api.post('/search-bandcamp', { artist, album });
+export interface DiscogsSearchResult {
+  source: 'discogs';
+  id: string;
+  masterId: string | null;
+  albumName: string;
+  artist: string;
+  year: string | null;
+  label: string | null;
+  genres: string[];
+  styles: string[];
+  releaseType: string | null;
+  format: string | null;
+  country: string | null;
+  coverUrl: string;
+  trackCount: number;
+  url: string;
+  parsedTracks?: { num: string; artist: string; name: string; duration?: number }[];
+}
+
+export async function searchAlbumsDiscogs(artist?: string, album?: string): Promise<DiscogsSearchResult[]> {
+  const res = await api.post('/search-discogs', { artist, album });
+  return res.data;
+}
+
+export async function fetchDiscogsRelease(id: string): Promise<DiscogsSearchResult> {
+  const res = await api.get(`/discogs/${id}`);
   return res.data;
 }
 

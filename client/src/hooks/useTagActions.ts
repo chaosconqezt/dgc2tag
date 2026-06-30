@@ -91,6 +91,7 @@ export function createApplyTags(
     if (sr?.catalogNumber) tagsToApply.catalogNumber = sr.catalogNumber;
     if (sr?.discId) tagsToApply.discId = sr.discId;
     if (sr?.originalYear) tagsToApply.originalYear = sr.originalYear;
+    if (sr?.source) tagsToApply.source = sr.source;
 
     const extraTags = Object.keys(state.editedExtraTags).length > 0 ? state.editedExtraTags : undefined;
 
