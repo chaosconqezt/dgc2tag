@@ -1,6 +1,6 @@
 # DGC Tagger
 
-Desktop app for batch-tagging MP3 files from [Deathgrind Club](https://deathgrind.club), [Deezer](https://deezer.com), [MusicBrainz](https://musicbrainz.org), and [Bandcamp](https://bandcamp.com).
+Desktop app for batch-tagging MP3 files from [Deathgrind Club](https://deathgrind.club), [Deezer](https://deezer.com), [MusicBrainz](https://musicbrainz.org), [Bandcamp](https://bandcamp.com), and [Discogs](https://discogs.com).
 
 ## Quick Start
 
@@ -19,7 +19,7 @@ npm run dev
 
 ## Features
 
-- **4 search sources** — DGC (red), Deezer (green), MusicBrainz (orange), Bandcamp (teal) in parallel
+- **5 search sources** — DGC (red), Deezer (green), MusicBrainz (orange), Bandcamp (teal), Discogs (purple) in parallel
 - **Plugin architecture** — add new sources with 1 file + 1 line in registry
 - **Library** — card-based album grid with cover art, band grouping, alphabetical navigation, infinite scroll
 - **Discography** — auto-populates band discography from DGC when tagging (with duplicate-safe pagination)
@@ -48,7 +48,7 @@ npm run dev
 - **Single process** — Express + Vite middleware, one port
 - **Dev mode** — `NODE_ENV !== 'production'` → tsx watch + Vite `middlewareMode: true`
 - **Prod mode** — Express serves `client/dist` as static
-- **Plugin sources** — `server/src/sources/` with `SearchSource` interface (wrappers over `server/src/{scraper,deezer,musicbrainz,bandcamp}.ts`)
+- **Plugin sources** — `server/src/sources/` with `SearchSource` interface (wrappers over `server/src/{scraper,deezer,musicbrainz,discogs}.ts`; `bandcamp.ts` exists but is temporarily disabled)
 - **Unified SearchResult** — all sources normalize to common type
 - **Data-driven tags** — `writeUserDefinedText(current, Record<string, string | undefined>)`
 - **Config mutex** — promise-chain lock prevents concurrent config corruption
@@ -72,11 +72,13 @@ server/src/
 │   ├── dgc.ts        — wrapper over scraper.ts
 │   ├── deezer.ts     — wrapper over deezer.ts
 │   ├── musicbrainz.ts — wrapper over musicbrainz.ts
-│   └── bandcamp.ts   — wrapper over bandcamp.ts
+│   ├── discogs.ts     — wrapper over discogs.ts
+│   └── bandcamp.ts   — wrapper over bandcamp.ts (temporarily disabled)
 ├── scraper.ts        — puppeteer + stealth, DGC API, taxonomy, discography
-├── bandcamp.ts       — Bandcamp search + JSON-LD album parser
+├── bandcamp.ts       — Bandcamp search + JSON-LD album parser (temporarily disabled)
 ├── deezer.ts         — Deezer API (axios) with rate limiting
 ├── musicbrainz.ts    — MusicBrainz API + Lucene escaping + extra tag extraction
+├── discogs.ts        — Discogs API (requires DISCOGS_TOKEN env var)
 ├── tagWriter.ts      — ID3 writing, diff-style rename, folder move
 ├── tagger.ts         — ID3 reading + music-metadata for duration (single pass)
 ├── library.ts        — album JSON storage, cover download, discography population
@@ -99,7 +101,7 @@ client/src/
 ├── hooks/
 │   ├── useAppContext.tsx — context provider + reducer composition
 │   ├── appReducer.ts     — state (49 fields), actions (60+), reducer
-│   ├── useSearch.ts      — parallel search (4 sources), generation-based cancellation
+│   ├── useSearch.ts      — parallel search (5 sources), generation-based cancellation
 │   ├── useLibrary.ts     — tree fetch, folder select (auto-search), file operations
 │   ├── useConfig.ts      — config + cache + enabledSources
 │   ├── useTagActions.ts  — build full tag payload, POST, progress overlay
@@ -176,7 +178,10 @@ Routes auto-generated: `POST /api/search-mysource`, `GET /api/mysource/:id`
 | `dgc` | DGC | `#ef4444` | ✅ | ✅ `/api/post/:id` |
 | `deezer` | Deezer | `#4ade80` | ✅ | — |
 | `mbrainz` | MusicBrainz | `#f97316` | ✅ | ✅ `/api/mbrainz/:id` |
+| `discogs` | Discogs | `#7b2d8b` | ✅ | ✅ `/api/discogs/:id` |
 | `bandcamp` | Bandcamp | `#629aa9` | ✅ | ✅ JSON-LD parse |
+
+> **Note:** Bandcamp source code exists (`server/src/bandcamp.ts`) but is temporarily disabled — not registered in `server/src/sources/index.ts`. Enable by importing and adding to the `sources` array.
 
 ## API
 
@@ -252,12 +257,13 @@ Routes auto-generated: `POST /api/search-mysource`, `GET /api/mysource/:id`
 
 ## Notes
 
-- **Puppeteer** — persistent browser, `userDataDir` in `user_data/`, shared by DGC + Bandcamp
+- **Puppeteer** — persistent browser, `userDataDir` in `user_data/`, shared by DGC (Bandcamp also uses it when enabled)
 - **Cloudflare** — manual challenge on first run
 - **Taxonomy** — genre/type from DGC JS, 7d TTL cache
 - **MusicBrainz** — rate limit 1 req/sec, User-Agent required, Lucene query escaping, 30+ extra tag mappings
 - **Deezer** — 120ms delay between album detail requests
-- **Bandcamp** — search via Puppeteer (JS challenge), album details via JSON-LD
+- **Discogs** — requires `DISCOGS_TOKEN` env var; searches both masters and releases, deduplicates by master_id
+- **Bandcamp** — search via Puppeteer (JS challenge), album details via JSON-LD (temporarily disabled)
 - **music-metadata** — single-pass duration detection, ERR shown for undetectable files
 - **Library** — filesystem-based (`library/{bandId}/{postId}/album.json` + cover images), auto-populates discography from DGC API on tag
 - **Discography pagination** — duplicate-safe: tracks seen postIds to avoid infinite loops from DGC API returning stale offsets

@@ -8,8 +8,6 @@ interface SettingsModalProps {
   clearingCache: boolean;
   tagDefaults: Record<string, boolean>;
   onTagDefaultsChange: (defaults: Record<string, boolean>) => void;
-  enabledSources: Record<string, boolean>;
-  onEnabledSourcesChange: (sources: Record<string, boolean>) => void;
   cleanupIgnorePatterns: string[];
   onCleanupIgnorePatternsChange: (patterns: string[]) => void;
   onClose: () => void;
@@ -27,14 +25,7 @@ const TAG_FIELDS = [
   { key: 'postId', label: 'Post ID' },
 ];
 
-const SOURCE_FIELDS = [
-  { id: 'dgc', label: 'DGC', color: 'var(--red)' },
-  { id: 'deezer', label: 'Deezer', color: 'var(--green)' },
-  { id: 'mbrainz', label: 'MusicBrainz', color: 'var(--orange)' },
-  { id: 'discogs', label: 'Discogs', color: '#333333' },
-];
-
-export function SettingsModal({ saving, onSave, onClearCache, clearingCache, tagDefaults, onTagDefaultsChange, enabledSources, onEnabledSourcesChange, cleanupIgnorePatterns, onCleanupIgnorePatternsChange, onClose }: SettingsModalProps) {
+export function SettingsModal({ saving, onSave, onClearCache, clearingCache, tagDefaults, onTagDefaultsChange, cleanupIgnorePatterns, onCleanupIgnorePatternsChange, onClose }: SettingsModalProps) {
   const [newPattern, setNewPattern] = useState('');
   useEffect(() => {
     const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
@@ -45,12 +36,6 @@ export function SettingsModal({ saving, onSave, onClearCache, clearingCache, tag
   const toggleTag = (key: string) => {
     onTagDefaultsChange({ ...tagDefaults, [key]: !tagDefaults[key] });
   };
-
-  const toggleSource = (id: string) => {
-    onEnabledSourcesChange({ ...enabledSources, [id]: !enabledSources[id] });
-  };
-
-  const srcEnabled = (id: string) => enabledSources[id] !== false;
 
   return (
     <div className="progress-overlay" onClick={onClose}>
@@ -76,19 +61,6 @@ export function SettingsModal({ saving, onSave, onClearCache, clearingCache, tag
               ))}
             </div>
             <div className="hint">These defaults are remembered between albums</div>
-          </div>
-
-          <div>
-            <label className="settings-label">Search Sources</label>
-            <div className="settings-source-wrap">
-              {SOURCE_FIELDS.map(s => (
-                <label key={s.id} className="settings-source-item" data-on={String(srcEnabled(s.id))} style={{ '--src-color': s.color } as React.CSSProperties}>
-                  <input type="checkbox" className="cb-sm" checked={srcEnabled(s.id)} onChange={() => toggleSource(s.id)} style={{ accentColor: s.color }} />
-                  {s.label}
-                </label>
-              ))}
-            </div>
-            <div className="hint">Disabled sources won't be searched</div>
           </div>
 
           <div>

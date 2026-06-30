@@ -11,17 +11,20 @@ cache/
 .idea/
 nul
 
-# User music library (large, personal)
+
 music/
 music_processed/
 
-# Per-user config (override defaults)
+
 server/config.json
 taxonomy-cache.json
 
-# Build artifacts
+
 server/src/*.js
 server/src/*.js.map
 server/src/*.d.ts
 server/src/*.d.ts.map
 client/.vite/
+AUDIT.md
+.mimocode/
+.env

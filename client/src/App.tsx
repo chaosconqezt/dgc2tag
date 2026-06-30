@@ -13,6 +13,7 @@ import { SearchBar } from './components/SearchBar';
 import { SearchResults } from './components/SearchResults';
 import { TagComparison } from './components/TagComparison';
 import { TrackMatcher } from './components/TrackMatcher';
+import { SOURCE_CONFIGS } from './sourceConfigs';
 import { ApplyPanel } from './components/ApplyPanel';
 import { Footer } from './components/Footer';
 import { LibraryView } from './components/LibraryView';
@@ -173,8 +174,28 @@ function AppContent() {
                 <BookOpen size={14} />
               </button>
               <h2 className="sidebar-title">
-                DGC TAGGER
+                TAGGER
               </h2>
+              <div className="sidebar-sources">
+                {SOURCE_CONFIGS.map(s => (
+                  <label key={s.id} className="source-toggle" title={s.label}>
+                    <input
+                      type="checkbox"
+                      className="cb-sm"
+                      checked={ctx.enabledSources[s.id] !== false}
+                      onChange={() => {
+                        const next = { ...ctx.enabledSources, [s.id]: !ctx.enabledSources[s.id] };
+                        ctx.dispatch({ type: 'SET_ENABLED_SOURCES', payload: next });
+                        api.saveEnabledSources(next).catch(() => {});
+                      }}
+                      style={{ accentColor: s.color }}
+                    />
+                    <span className="source-toggle-label" style={{ color: ctx.enabledSources[s.id] !== false ? s.color : 'var(--text-disabled)' }}>
+                      {s.shortLabel}
+                    </span>
+                  </label>
+                ))}
+              </div>
             </div>
             <div className="sidebar-actions">
               <button onClick={ctx.collapseAll} className="btn-icon" title="Collapse all">
@@ -361,8 +382,6 @@ function AppContent() {
           clearingCache={ctx.clearingCache}
           tagDefaults={ctx.tagEnabled}
           onTagDefaultsChange={(defaults) => ctx.dispatch({ type: 'SET_TAG_ENABLED', payload: defaults })}
-          enabledSources={ctx.enabledSources}
-          onEnabledSourcesChange={(sources) => ctx.dispatch({ type: 'SET_ENABLED_SOURCES', payload: sources })}
           cleanupIgnorePatterns={ctx.cleanupIgnorePatterns}
           onCleanupIgnorePatternsChange={(patterns) => ctx.dispatch({ type: 'SET_CLEANUP_IGNORE_PATTERNS', payload: patterns })}
           onClose={() => ctx.dispatch({ type: 'SET_SHOW_SETTINGS', payload: false })}

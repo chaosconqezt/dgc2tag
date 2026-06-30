@@ -84,6 +84,10 @@ export async function saveConfig(musicRoot: string, tagDefaults?: Record<string,
   await api.post('/config', { musicRoot, tagDefaults, outputFolder, outputMode, enabledSources, cleanupIgnorePatterns });
 }
 
+export async function saveEnabledSources(sources: Record<string, boolean>): Promise<void> {
+  await api.post('/config', { enabledSources: sources });
+}
+
 export async function fetchLibrary(): Promise<FileNode[]> {
   const res = await api.get('/library');
   return res.data;
@@ -226,6 +230,7 @@ export interface DiscogsSearchResult {
   coverUrl: string;
   trackCount: number;
   url: string;
+  compilation?: boolean;
   parsedTracks?: { num: string; artist: string; name: string; duration?: number }[];
 }
 

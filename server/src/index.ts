@@ -72,9 +72,6 @@ app.get('/api/config', (_req, res) => {
 app.post('/api/config', async (req, res) => {
     try {
         const { musicRoot, port, tagDefaults, writeTrackNames, writeTrackArtists, outputFolder, outputMode, enabledSources, cleanupIgnorePatterns } = req.body;
-        if (!musicRoot || typeof musicRoot !== 'string') {
-            return res.status(400).json({ error: 'musicRoot is required' });
-        }
         const prev = configLock;
         let release!: () => void;
         configLock = new Promise<void>(r => { release = r; });
@@ -82,7 +79,7 @@ app.post('/api/config', async (req, res) => {
         try {
             const current = getConfig();
             const newConfig: Config = {
-                musicRoot: safeResolve(musicRoot),
+                musicRoot: musicRoot ? safeResolve(musicRoot) : current.musicRoot,
                 port: typeof port === 'number' ? port : current.port,
                 tagDefaults: { ...current.tagDefaults, ...(tagDefaults || {}) },
                 writeTrackNames: typeof writeTrackNames === 'boolean' ? writeTrackNames : current.writeTrackNames,

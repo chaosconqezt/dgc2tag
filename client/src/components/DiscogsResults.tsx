@@ -25,7 +25,7 @@ export function DiscogsResults({ results, loading, selectedId, onSelect }: Disco
           releaseType={dg.releaseType}
           trackCount={dg.trackCount}
           url={dg.url}
-          accentColor="#333333"
+          accentColor="#a78bfa"
           selected={selectedId === dg.id}
           onClick={() => onSelect(dg)}
         />

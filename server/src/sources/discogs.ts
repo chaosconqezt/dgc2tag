@@ -4,7 +4,7 @@ import { searchDiscogs, getDiscogsRelease } from '../discogs.js';
 export const discogsSource: SearchSource = {
     id: 'discogs',
     label: 'Discogs',
-    accentColor: '#333333',
+    accentColor: '#a78bfa',
 
     async search(artist, album) {
         return searchDiscogs(artist, album) as any;

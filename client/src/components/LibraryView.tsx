@@ -1,5 +1,6 @@
 import { useMemo, useRef, useEffect, useState, useCallback } from 'react';
 import type { LibraryAlbum } from '../api';
+import { ExternalLink } from 'lucide-react';
 import { GenreCloud } from './GenreCloud';
 
 interface LibraryViewProps {
@@ -163,7 +164,9 @@ export function LibraryView({ entries, cardSize, minAlbums }: LibraryViewProps) 
         </div>
 
         {genreCounts.length > 0 && (
-          <GenreCloud genres={genreCounts} selectedGenre={selectedGenre} onSelect={(g) => setSelectedGenre(g)} />
+          <div className="genre-cloud-wrap">
+            <GenreCloud genres={genreCounts} selectedGenre={selectedGenre} onSelect={(g) => setSelectedGenre(g)} />
+          </div>
         )}
 
         {selectedGenre && (
@@ -212,6 +215,16 @@ export function LibraryView({ entries, cardSize, minAlbums }: LibraryViewProps) 
                       <div className="library-card-meta">
                         <span>{album.year || '—'}</span>
                         {album.genre && <span>{album.genre}</span>}
+                        <a
+                          href={`https://deathgrind.club/posts/${album.postId}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="library-card-link"
+                          onClick={(e) => e.stopPropagation()}
+                          title="Open on DGC"
+                        >
+                          <ExternalLink size={10} />
+                        </a>
                       </div>
                     </div>
                   </div>

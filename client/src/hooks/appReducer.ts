@@ -210,7 +210,6 @@ export function appReducer(state: AppState, action: Action): AppState {
         selectedDeezer: null,
         selectedMbrainz: null,
         albumDetails: null,
-        tagEnabled: { ...DEFAULT_TAG_DEFAULTS },
         editedSiteValues: {},
         editedExtraTags: {},
         editedTrackNames: {},

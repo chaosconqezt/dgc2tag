@@ -1,6 +1,7 @@
 import type { SearchResult, DeezerSearchResult } from '../types';
 import type { MusicBrainzSearchResult, DiscogsSearchResult } from '../api';
 import * as api from '../api';
+import { DEFAULT_TAG_DEFAULTS } from './useConfig';
 
 export type AppDispatch = React.Dispatch<{ type: string; payload?: unknown }>;
 
@@ -156,7 +157,7 @@ export function createSearchActions(
 
       dispatch({ type: 'SET_SELECTED_RESULT', payload: syntheticResult });
       dispatch({ type: 'SET_ALBUM_DETAILS', payload: syntheticResult });
-      dispatch({ type: 'SET_TAG_ENABLED', payload: { ...state.tagEnabled, artist: true, album: true, year: true, label: true, postId: false } });
+      dispatch({ type: 'SET_TAG_ENABLED_KEY', payload: { key: 'postId', enabled: false } });
     },
 
     handleSelectMbrainz: async (mb: MusicBrainzSearchResult) => {
@@ -189,7 +190,7 @@ export function createSearchActions(
       dispatch({ type: 'SET_SELECTED_RESULT', payload: baseResult });
       dispatch({ type: 'SET_SELECTED_MBRAINZ', payload: mb });
       dispatch({ type: 'SET_ALBUM_DETAILS', payload: baseResult });
-      dispatch({ type: 'SET_TAG_ENABLED', payload: { ...state.tagEnabled, artist: true, album: true, year: true, label: true, postId: false } });
+      dispatch({ type: 'SET_TAG_ENABLED_KEY', payload: { key: 'postId', enabled: false } });
 
       try {
         refs.loadAlbumDetailsId.current = mb.releaseId;
@@ -242,7 +243,7 @@ export function createSearchActions(
       dispatch({ type: 'SET_SELECTED_DISCOGS', payload: dg });
       dispatch({ type: 'SET_SELECTED_RESULT', payload: baseResult });
       dispatch({ type: 'SET_ALBUM_DETAILS', payload: baseResult });
-      dispatch({ type: 'SET_TAG_ENABLED', payload: { ...state.tagEnabled, artist: true, album: true, year: true, label: true, genre: true, postId: false } });
+      dispatch({ type: 'SET_TAG_ENABLED_KEY', payload: { key: 'postId', enabled: false } });
 
       try {
         const fullRelease = await api.fetchDiscogsRelease(dg.id);
@@ -254,9 +255,13 @@ export function createSearchActions(
           duration: t.duration,
         })) || [];
 
+        const uniqueArtists = new Set(parsedTracks.map(t => t.artist).filter(Boolean));
+        const compilation = fullRelease.compilation ?? uniqueArtists.size > 1;
+
         const fullResult: SearchResult = {
           ...baseResult,
           parsedTracks,
+          compilation,
           genres: [...(fullRelease.genres || []), ...(fullRelease.styles || [])],
           releaseType: fullRelease.releaseType,
         };

@@ -27,6 +27,8 @@ export interface DiscogsSearchResult {
     coverUrl: string;
     trackCount: number;
     url: string;
+    compilation?: boolean;
+    parsedTracks?: { num: string; artist: string; name: string; duration: number | undefined }[];
 }
 
 interface DgSearchResult {
@@ -45,6 +47,14 @@ interface DgSearchResult {
     type?: string;
 }
 
+interface DgTrack {
+    position: string;
+    title: string;
+    duration?: string;
+    type_?: string;
+    artists?: { name: string }[];
+}
+
 interface DgRelease {
     id: number;
     master_id?: number;
@@ -58,7 +68,7 @@ interface DgRelease {
     country?: string;
     thumb?: string;
     uri?: string;
-    tracklist?: { position: string; title: string; duration?: string; artists?: { name: string }[] }[];
+    tracklist?: DgTrack[];
     images?: { uri?: string; uri150?: string; type?: string }[];
     notes?: string;
     videos?: { uri: string; title: string }[];
@@ -71,7 +81,7 @@ interface DgMaster {
     title: string;
     genres?: string[];
     styles?: string[];
-    tracklist?: { position: string; title: string; duration?: string }[];
+    tracklist?: DgTrack[];
     images?: { uri?: string; uri150?: string; type?: string }[];
     year?: number;
 }
@@ -109,6 +119,11 @@ function parseSearchTitle(title: string): { artist: string; albumName: string } 
 
 function buildUrl(uri?: string): string {
     return uri ? `https://www.discogs.com${uri}` : '';
+}
+
+function filterTracks(tracklist?: DgTrack[]): DgTrack[] {
+    if (!tracklist) return [];
+    return tracklist.filter(t => t.type_ !== 'heading');
 }
 
 function mapResult(r: DgSearchResult): DiscogsSearchResult {
@@ -197,6 +212,7 @@ export async function getDiscogsRelease(id: string): Promise<DiscogsSearchResult
             headers: { 'Authorization': `Discogs token=${token}` },
         });
 
+        const relTracks = filterTracks(rel.tracklist);
         const result: DiscogsSearchResult = {
             source: 'discogs',
             id: String(rel.id),
@@ -211,12 +227,12 @@ export async function getDiscogsRelease(id: string): Promise<DiscogsSearchResult
             format: extractFormat(rel.formats),
             country: rel.country || null,
             coverUrl: rel.images?.find(i => i.type === 'primary')?.uri || rel.images?.[0]?.uri || rel.thumb || '',
-            trackCount: rel.tracklist?.length || 0,
+            trackCount: relTracks.length,
             url: buildUrl(rel.uri),
         };
 
-        if (rel.tracklist?.length) {
-            (result as any).parsedTracks = rel.tracklist.map(t => ({
+        if (relTracks.length) {
+            result.parsedTracks = relTracks.map(t => ({
                 num: t.position,
                 artist: t.artists?.map(a => a.name).join(', ') || result.artist,
                 name: t.title,
@@ -227,7 +243,8 @@ export async function getDiscogsRelease(id: string): Promise<DiscogsSearchResult
         return result;
     }
 
-    // Master found — fetch main release for label/country/format
+    // Master found — fetch main release for tracklist (has per-track artists), label, country, format
+    let releaseTracks: DgTrack[] | undefined;
     let label: string | null = null;
     let country: string | null = null;
     let formats: { name: string; qty?: string; descriptions?: string[] }[] | undefined;
@@ -236,6 +253,7 @@ export async function getDiscogsRelease(id: string): Promise<DiscogsSearchResult
         const { data: rel } = await axios.get<DgRelease>(`${DISCOGS_BASE}/releases/${master.main_release}`, {
             headers: { 'Authorization': `Discogs token=${token}` },
         });
+        releaseTracks = rel.tracklist;
         label = rel.labels?.[0]?.name || null;
         country = rel.country || null;
         formats = rel.formats;
@@ -246,6 +264,20 @@ export async function getDiscogsRelease(id: string): Promise<DiscogsSearchResult
     const artist = master.artists?.map(a => a.name).join(', ') || '';
     const year = master.year != null ? String(master.year) : null;
     const coverUrl = master.images?.find(i => i.type === 'primary')?.uri || master.images?.[0]?.uri || '';
+
+    const tracks = filterTracks(releaseTracks || master.tracklist);
+    const parsedTracks = tracks.map(t => {
+        const trackArtist = t.artists?.map(a => a.name).join(', ') || artist;
+        return {
+            num: t.position,
+            artist: trackArtist,
+            name: t.title,
+            duration: parseTrackDuration(t.duration || ''),
+        };
+    });
+
+    const uniqueArtists = new Set(parsedTracks.map(t => t.artist).filter(Boolean));
+    const compilation = uniqueArtists.size > 1;
 
     const result: DiscogsSearchResult = {
         source: 'discogs',
@@ -261,17 +293,13 @@ export async function getDiscogsRelease(id: string): Promise<DiscogsSearchResult
         format: extractFormat(formats),
         country,
         coverUrl,
-        trackCount: master.tracklist?.length || 0,
+        trackCount: tracks.length,
         url: buildUrl(`/master/${master.id}`),
+        ...(compilation ? { compilation: true } : {}),
     };
 
-    if (master.tracklist?.length) {
-        (result as any).parsedTracks = master.tracklist.map(t => ({
-            num: t.position,
-            artist,
-            name: t.title,
-            duration: parseTrackDuration(t.duration || ''),
-        }));
+    if (parsedTracks.length) {
+        result.parsedTracks = parsedTracks;
     }
 
     return result;

@@ -12,7 +12,7 @@ function simColor(pct: number): string {
 
 export function SimPercent({ value, className, style }: { value: number; className?: string; style?: CSSProperties }) {
   return (
-    <span className={className} style={{ color: simColor(value), fontFamily: 'var(--font-mono)', fontWeight: 700, ...style }}>
+    <span className={className} style={{ color: simColor(value), fontFamily: 'var(--font-mono)', fontSize: 'var(--fs-mono)', fontWeight: 700, ...style }}>
       {value}%
     </span>
   );
