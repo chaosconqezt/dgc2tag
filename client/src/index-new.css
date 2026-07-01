@@ -19,7 +19,7 @@
   --teal: #2dd4bf;
   --text-tinted: #d4c4c4;
 
-  --fs: 13.25px;
+  --fs: 13.5px;
   --fw: 400;
   --fw-bold: 700;
   --font: 'Segoe UI', system-ui, -apple-system, sans-serif;
@@ -136,6 +136,8 @@ input, button, textarea, select { font: inherit; color: inherit; }
 .diff-line { display: block; padding: var(--gap-xs) var(--gap-lg); border-radius: var(--radius-sm); font-family: var(--font-mono); font-size: var(--fs-mono); line-height: 1.6; }
 .diff-old { color: var(--text-dim); }
 .diff-new { color: var(--text-dim); }
+
+.text-miss { color: #fbbf24; background: rgba(251, 191, 36, 0.15); }
 
 /* ─── Settings ─────────────────────────── */
 .st-grid { display: grid; grid-template-columns: 1fr 1fr; gap: var(--gap-sm); }

@@ -19,7 +19,7 @@ interface Chunk {
   type: 'common' | 'del' | 'ins';
 }
 
-function computeChunks(a: string, b: string): Chunk[] {
+export function computeChunks(a: string, b: string): Chunk[] {
   if (a === b) return [{ text: a, type: 'common' }];
   const dp = lcsMatrix(a, b);
   const stack: Chunk[] = [];

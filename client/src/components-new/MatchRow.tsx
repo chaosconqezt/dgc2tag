@@ -1,6 +1,16 @@
+import { useMemo } from 'react';
 import type { AlbumTags } from '../types';
 import { matchTracks } from '../utils';
 import { SimPercent } from './SimPercent';
+
+function wordDiff(a: string, b: string) {
+  const norm = (s: string) => s.replace(/[^a-zA-Z0-9]/g, '');
+  const bWords = new Set(b.split(/\s+/).map(norm));
+  return a.split(/\s+/).map((w, i) => ({
+    text: (i ? ' ' : '') + w,
+    diff: !bWords.has(norm(w)),
+  }));
+}
 
 function formatDuration(seconds?: number | null, fallback?: string): string {
   if (seconds === undefined || seconds === null) return fallback ?? '';
@@ -50,6 +60,11 @@ export function MatchRow({
 
   const inputSim = isUnmatched ? 'unmatched' : isNameEdited ? 'edited' : m.sim === 100 ? 'exact' : 'close';
 
+  const words = useMemo(
+    () => localLabel && displayName ? wordDiff(localLabel, displayName) : null,
+    [localLabel, displayName],
+  );
+
   const cellNum: React.CSSProperties = { width: 22, flexShrink: 0, textAlign: 'center', fontFamily: 'var(--font-mono)', fontSize: 'var(--fs-mono)' };
   const cellMono: React.CSSProperties = { fontFamily: 'var(--font-mono)', fontSize: 'var(--fs-mono)' };
 
@@ -66,7 +81,11 @@ export function MatchRow({
       <div className="cell-fixed" style={{ flex: 1, minWidth: 0, gap: 'var(--gap-sm)' }}>
         {m.local ? (
           <>
-            <span className="text-ellipsis" title={localLabel}>{localLabel || '—'}</span>
+            <span className="text-ellipsis" title={localLabel}>
+              {words ? words.map((w, i) =>
+                w.diff ? <span key={i} className="text-miss">{w.text}</span> : w.text
+              ) : localLabel || '—'}
+            </span>
             {showFilenamePreviews && m.local && filenameMode === 'id3' && m.local.file !== m.local.name && (
               <span className="text-ellipsis" style={{ opacity: 0.5 }} title={m.local.file}>{m.local.file || ''}</span>
             )}
