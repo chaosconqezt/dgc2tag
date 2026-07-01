@@ -22,39 +22,41 @@ export function ProgressOverlay({ phase, log, done, success, message, diff, onCl
   }, [done, log.length]);
 
   return (
-    <div className="progress-overlay" onClick={done ? onClose : undefined}>
-      <div className="progress-panel" onClick={(e) => e.stopPropagation()}>
-        <div className="progress-header">
-          <span className="progress-header-title">
+    <div className="modal-overlay" onClick={done ? onClose : undefined}>
+      <div className="modal-panel" onClick={(e) => e.stopPropagation()}>
+        <div className="modal-header">
+          <span style={{ fontWeight: 'var(--fw-bold)', color: 'var(--text-dim)' }}>
             {done ? (success ? 'Done' : 'Error') : phase}
           </span>
           {done && (
-            <button onClick={onClose} className="progress-close">Close</button>
+            <button onClick={onClose} className="btn-icon" style={{ color: 'var(--text-dim)' }}>Close</button>
           )}
         </div>
 
-        <div ref={logRef} className="progress-body">
+        <div ref={logRef} className="modal-body">
           {log.length === 0 && !done ? (
-            <div className="progress-console">
-              <span className="progress-console-line dim">Processing{phase ? `: ${phase}` : ''}...</span>
+            <div className="console">
+              <span className="console-line" style={{ color: 'var(--text-disabled)' }}>
+                Processing{phase ? `: ${phase}` : ''}...
+              </span>
             </div>
           ) : (
-            <div className="progress-console">
+            <div className="console">
               {log.map((line, i) => (
-                <span key={i} className={`progress-console-line ${line.startsWith('Renamed') ? 'renamed' : line.startsWith('Moved') ? 'moved' : line.startsWith('Error') ? 'error' : ''}`}>{line}</span>
+                <span key={i} className="console-line">{line}</span>
               ))}
             </div>
           )}
           {done && diff && diff.length > 0 && (
             <>
-              <div className="progress-console-sep" style={{ margin: '6px 0' }} />
+              <div className="console-sep" style={{ margin: '6px 0' }} />
               <DiffBlock entries={diff} />
             </>
           )}
         </div>
 
         {done && (
-          <div className={`progress-footer ${success ? 'ok' : 'fail'}`}>
+          <div className="modal-footer" style={{ justifyContent: 'center' }}>
             {message}
           </div>
         )}

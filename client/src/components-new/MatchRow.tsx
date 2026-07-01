@@ -28,11 +28,7 @@ export interface TrackCallbacks {
 }
 
 export function MatchRow({
-  m,
-  localTags,
-  display,
-  track,
-  callbacks,
+  m, localTags, display, track, callbacks,
 }: {
   m: ReturnType<typeof matchTracks>[number];
   localTags: AlbumTags;
@@ -54,71 +50,56 @@ export function MatchRow({
 
   const inputSim = isUnmatched ? 'unmatched' : isNameEdited ? 'edited' : m.sim === 100 ? 'exact' : 'close';
 
-  return (
-    <div className="mr-row hover-bg" data-enabled={String(nameEnabled)}>
-      <div className="mr-check">
-          <input
-            type="checkbox"
-            className="cb"
-            checked={nameEnabled}
-            onChange={(e) => onPerTrackNameToggle(m.remote.num, e.target.checked)}
-            title={nameEnabled ? 'Writing this track name — click to skip' : 'Skipping this track name — click to include'}
-          />
-      </div>
+  const cellNum: React.CSSProperties = { width: 22, flexShrink: 0, textAlign: 'center', fontFamily: 'var(--font-mono)', fontSize: 'var(--fs-mono)' };
+  const cellMono: React.CSSProperties = { fontFamily: 'var(--font-mono)', fontSize: 'var(--fs-mono)' };
 
-      <div className="mr-cell-num">
+  return (
+    <div className="tm-row hover-bg">
+      <div style={{ width: 11, flexShrink: 0 }}>
+        <input type="checkbox" className="cb" checked={nameEnabled}
+          onChange={(e) => onPerTrackNameToggle(m.remote.num, e.target.checked)}
+          title={nameEnabled ? 'Writing this track name — click to skip' : 'Skipping this track name — click to include'} />
+      </div>
+      <div style={cellNum}>
         {m.local ? (m.local.num || '?').padStart(2, '0') : '?'}
       </div>
-
-      <div className="t-cell mr-local">
+      <div className="cell-fixed" style={{ flex: 1, minWidth: 0, gap: 'var(--gap-sm)' }}>
         {m.local ? (
           <>
-            <div title={localLabel} className="text-ellipsis mr-local-name">
-              {localLabel || '—'}
-            </div>
+            <span className="text-ellipsis" title={localLabel}>{localLabel || '—'}</span>
             {showFilenamePreviews && m.local && filenameMode === 'id3' && m.local.file !== m.local.name && (
-              <div title={m.local.file} className="text-ellipsis mr-local-file">
-                {m.local.file || ''}
-              </div>
+              <span className="text-ellipsis" style={{ opacity: 0.5 }} title={m.local.file}>{m.local.file || ''}</span>
             )}
           </>
         ) : (
-          <div className="mr-local-unmatched">unmatched</div>
+          <span style={{ opacity: 0.4, fontStyle: 'italic' }}>unmatched</span>
         )}
       </div>
-
-      <div className="mr-duration">
+      <div style={{ ...cellMono, width: 34, flexShrink: 0, textAlign: 'center' }}>
         {formatDuration(displayDuration, 'ERR')}
       </div>
-
-      <div className="mr-sim">
-        {m.local ? (
-          <SimPercent value={m.sim} className="mr-sim-val" />
-        ) : (
-          <span className="mr-sim-dash">—</span>
-        )}
+      <div style={{ width: 40, flexShrink: 0, textAlign: 'center' }}>
+        {m.local ? <SimPercent value={m.sim} /> : <span style={{ opacity: 0.4 }}>—</span>}
       </div>
-
-      <div className="mr-remote-duration" data-has={String(!!remoteDuration)}>
+      <div style={{ ...cellMono, width: 36, flexShrink: 0 }}>
         {formatDuration(remoteDuration, '-:--')}
       </div>
-
-      <div className="mr-cell-num">
+      <div style={cellNum}>
         {m.remote.num.padStart(2, '0')}
       </div>
-
-      <input
-        type="text"
-        className="t-cell tc-input mr-track-input"
-        value={displayName}
-        onChange={(e) => {
-          onEditedTrackNameChange(m.remote.num, e.target.value);
-          if (!nameEnabled) onPerTrackNameToggle(m.remote.num, true);
-        }}
-        data-edited={String(isNameEdited)}
-        data-unmatched={String(isUnmatched)}
-        data-sim={inputSim}
-      />
+      <div className="cell-fixed" style={{ flex: 1, minWidth: 0 }}>
+        <input
+          type="text"
+          value={displayName}
+          onChange={(e) => {
+            onEditedTrackNameChange(m.remote.num, e.target.value);
+            if (!nameEnabled) onPerTrackNameToggle(m.remote.num, true);
+          }}
+          data-edited={String(isNameEdited)}
+          data-unmatched={String(isUnmatched)}
+          data-sim={inputSim}
+        />
+      </div>
     </div>
   );
 }

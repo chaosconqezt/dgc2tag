@@ -7,6 +7,7 @@ interface LibraryViewProps {
   entries: LibraryAlbum[];
   cardSize: number;
   minAlbums: number;
+  onClearArtist: (bandId: number, bandName: string) => void;
 }
 
 interface BandGroup {
@@ -24,7 +25,7 @@ function firstLetter(name: string): string {
   return (name[0] ?? '').toUpperCase();
 }
 
-export function LibraryView({ entries, cardSize, minAlbums }: LibraryViewProps) {
+export function LibraryView({ entries, cardSize, minAlbums, onClearArtist }: LibraryViewProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const bandSectionRefs = useRef<Map<string, HTMLDivElement>>(new Map());
   const pendingScroll = useRef<string | null>(null);
@@ -190,6 +191,12 @@ export function LibraryView({ entries, cardSize, minAlbums }: LibraryViewProps) 
               <div className="library-band-header">
                 <span className="library-band-name">{group.bandName}</span>
                 <span className="library-band-count">{owned}/{group.albums.length}</span>
+                <button
+                  onClick={(e) => { e.stopPropagation(); onClearArtist(group.bandId, group.bandName); }}
+                  className="btn-icon"
+                  style={{ marginLeft: 'auto', fontSize: 11, color: 'var(--text-faint)' }}
+                  title="Clear artist from library"
+                >✕</button>
               </div>
 
               <div className="library-albums-grid">

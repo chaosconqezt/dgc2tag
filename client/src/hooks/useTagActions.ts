@@ -113,9 +113,13 @@ export function createApplyTags(
         )
       : undefined;
 
+    const localCount = state.localTags?.files?.length || 0;
+    const remoteCount = parsedTracks.length;
+    const countMatch = localCount === remoteCount;
+    const totalStr = countMatch ? `/${remoteCount}` : '';
     const trackNumbers: Record<string, string> | undefined = matched.filter(m => m.local).length > 0
       ? Object.fromEntries(
-          matched.filter(m => m.local).map(m => [m.local!.file, m.remote.num])
+          matched.filter(m => m.local).map(m => [m.local!.file, String(parseInt(m.remote.num, 10)) + totalStr])
         )
       : undefined;
 

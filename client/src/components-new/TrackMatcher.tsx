@@ -1,8 +1,8 @@
 import { useMemo, useState } from 'react';
 import type { AlbumTags, SearchResult } from '../types';
 import { matchTracks, generateParsedTracks } from '../utils';
-import { SingleArtistTracks } from './SingleArtistTracks';
 import { MultiArtistTracks } from './MultiArtistTracks';
+import { SingleArtistTracks } from './SingleArtistTracks';
 import type { TrackDisplayConfig } from './MatchRow';
 
 interface TrackMatcherProps {
@@ -29,26 +29,14 @@ interface TrackMatcherProps {
 }
 
 export function TrackMatcher({
-  albumDetails,
-  localTags,
-  writeTrackNames,
-  writeTrackArtists,
-  trackNameEnabled,
-  trackArtistsEnabled,
-  editedTrackNames,
-  editedTrackArtists,
-  stripRemoteParentheses,
-  compilation,
-  onWriteTrackNamesChange,
-  onWriteTrackArtistsChange,
-  onTrackNameEnabledChange,
-  onTrackNameEnabledBatchChange,
-  onTrackArtistsEnabledChange,
-  onTrackArtistsEnabledBatchChange,
-  onEditedTrackNameChange,
-  onEditedTrackArtistChange,
-  onCompilationChange,
-  onStripRemoteParenthesesChange,
+  albumDetails, localTags, writeTrackNames, writeTrackArtists,
+  trackNameEnabled, trackArtistsEnabled, editedTrackNames, editedTrackArtists,
+  stripRemoteParentheses, compilation,
+  onWriteTrackNamesChange, onWriteTrackArtistsChange,
+  onTrackNameEnabledChange, onTrackNameEnabledBatchChange,
+  onTrackArtistsEnabledChange, onTrackArtistsEnabledBatchChange,
+  onEditedTrackNameChange, onEditedTrackArtistChange,
+  onCompilationChange, onStripRemoteParenthesesChange,
 }: TrackMatcherProps) {
   const [showFilenamePreviews, setShowFilenamePreviews] = useState(false);
   const [filenameMode, setFilenameMode] = useState<'id3' | 'filename'>('id3');
@@ -85,61 +73,53 @@ export function TrackMatcher({
   const display: TrackDisplayConfig = { filenameMode, showFilenamePreviews };
 
   return (
-    <div className="panel">
-      <div className="tm-toolbar">
-          <label className="label-inline gap-xs">
-            <input type="checkbox" className="cb" checked={writeTrackNames} onChange={(e) => handleTitlesToggle(e.target.checked)} />
-            write track titles
+    <div className="panel col gap-sm">
+      <div className="row" style={{ flexWrap: 'wrap', gap: 20, marginBottom: 4 }}>
+        <label className="label-inline" style={{ gap: 6 }}>
+          <input type="checkbox" className="cb" checked={writeTrackNames} onChange={(e) => handleTitlesToggle(e.target.checked)} />
+          write track titles
+        </label>
+        <label className="label-inline" style={{ gap: 6, opacity: hasAnyTags ? 1 : 0.3 }}>
+          <input type="checkbox" className="cb" checked={showFilenamePreviews} onChange={(e) => setShowFilenamePreviews(e.target.checked)} disabled={!hasAnyTags} />
+          filenames
+        </label>
+        <span style={countMatch ? {} : { background: 'rgba(250, 204, 21, 0.15)', padding: '2px 6px', borderRadius: 'var(--radius-sm)', fontWeight: 'var(--fw-bold)' }}>
+          <span style={{ color: countMatch ? 'var(--green)' : 'var(--yellow)' }}>{localCount}</span>
+          <span> / </span>
+          <span style={{ color: countMatch ? 'var(--green)' : 'var(--yellow)' }}>{remoteCount}</span>
+          <span> tracks</span>
+        </span>
+        {exactCount > 0 && <span className="badge" style={{ color: 'var(--green)' }}>{exactCount} exact</span>}
+        {closeCount > 0 && <span className="badge" style={{ color: 'var(--yellow)' }}>{closeCount} close</span>}
+        {missingCount > 0 && <span className="badge" style={{ color: 'var(--red)' }}>{missingCount} missing</span>}
+        {extraCount > 0 && <span className="badge" style={{ color: 'var(--yellow)' }}>{extraCount} extra</span>}
+        <span className="row" style={{ gap: 6 }}>
+          <label className="label-inline" style={{ gap: 6 }}>
+            <input type="radio" className="cb" name="filenameMode" checked={filenameMode === 'id3'} onChange={() => setFilenameMode('id3')} />
+            ID3
           </label>
-          <span className="tm-sep">·</span>
-          <label className="label-inline gap-xs" style={{ opacity: hasAnyTags ? 1 : 0.3 }}>
-            <input type="checkbox" className="cb" checked={showFilenamePreviews} onChange={(e) => setShowFilenamePreviews(e.target.checked)} disabled={!hasAnyTags} />
-            filenames
+          <label className="label-inline" style={{ gap: 6 }}>
+            <input type="radio" className="cb" name="filenameMode" checked={filenameMode === 'filename'} onChange={() => setFilenameMode('filename')} />
+            filename
           </label>
-          <span className="tm-sep">·</span>
-          <span>
-            <span className={countMatch ? 'tm-count-match' : 'tm-count-mismatch'}>{localCount}</span>
-            <span> / </span>
-            <span className={countMatch ? 'tm-count-match' : 'tm-count-mismatch'}>{remoteCount}</span>
-            <span> tracks</span>
-          </span>
-          {exactCount > 0 && <span className="tm-stat-exact">{exactCount} exact</span>}
-          {closeCount > 0 && <span className="tm-stat-close">{closeCount} close</span>}
-          {missingCount > 0 && <span className="tm-stat-missing">{missingCount} missing</span>}
-          {extraCount > 0 && <span className="tm-stat-extra">{extraCount} extra</span>}
-          <span className="tm-sep">·</span>
-          <span className="row gap-md">
-            <label className="label-inline gap-xs">
-              <input type="radio" className="cb" name="filenameMode" checked={filenameMode === 'id3'} onChange={() => setFilenameMode('id3')} />
-              ID3
-            </label>
-            <label className="label-inline gap-xs">
-              <input type="radio" className="cb" name="filenameMode" checked={filenameMode === 'filename'} onChange={() => setFilenameMode('filename')} />
-              filename
-            </label>
-          </span>
-          <span className="tm-sep">·</span>
-          <label className="label-inline gap-xs">
-            <input type="checkbox" className="cb" checked={hasMultiArtist} onChange={(e) => onCompilationChange(e.target.checked)} />
-            multi-artist
+        </span>
+        <label className="label-inline" style={{ gap: 6 }}>
+          <input type="checkbox" className="cb" checked={hasMultiArtist} onChange={(e) => onCompilationChange(e.target.checked)} />
+          multi-artist
+        </label>
+        <label className="label-inline" style={{ gap: 6 }}>
+          <input type="checkbox" className="cb" checked={stripRemoteParentheses} onChange={(e) => onStripRemoteParenthesesChange(e.target.checked)} />
+          strip parens
+        </label>
+        {hasMultiArtist && (
+          <label className="label-inline" style={{ gap: 6 }}>
+            <input type="checkbox" className="cb" checked={writeTrackArtists} onChange={(e) => handleArtistsToggle(e.target.checked)} />
+            artists
           </label>
-          <span className="tm-sep">·</span>
-          <label className="label-inline gap-xs">
-            <input type="checkbox" className="cb" checked={stripRemoteParentheses} onChange={(e) => onStripRemoteParenthesesChange(e.target.checked)} />
-            strip parens
-          </label>
-          {hasMultiArtist && (
-            <>
-              <span className="tm-sep">·</span>
-              <label className="label-inline gap-xs">
-                <input type="checkbox" className="cb" checked={writeTrackArtists} onChange={(e) => handleArtistsToggle(e.target.checked)} />
-                artists
-              </label>
-            </>
-          )}
-          {localTags.bitrateInfo && (
-            <span className="tm-bitrate">{localTags.bitrateInfo}</span>
-          )}
+        )}
+        {localTags.bitrateInfo && (
+          <span style={{ marginLeft: 'auto', opacity: 0.5 }}>{localTags.bitrateInfo}</span>
+        )}
       </div>
 
       {hasMultiArtist ? (

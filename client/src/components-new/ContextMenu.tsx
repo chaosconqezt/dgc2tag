@@ -32,13 +32,22 @@ export function ContextMenu({ x, y, items, onClose }: ContextMenuProps) {
   }, [onClose]);
 
   return (
-    <div ref={ref} className="ctx-menu" style={{ left: x, top: y }}>
+    <div ref={ref} style={{
+      position: 'fixed', left: x, top: y, zIndex: 9999,
+      background: 'var(--input-bg)', border: '1px solid var(--border)',
+      borderRadius: 'var(--radius-sm)', padding: 'var(--gap-xs) 0',
+      minWidth: 140, boxShadow: '0 4px 12px rgba(0,0,0,0.4)',
+      display: 'flex', flexDirection: 'column',
+      fontFamily: 'var(--font)', fontSize: 'var(--fs-sm)',
+    }}>
       {items.map((item, i) => (
-        <button
-          key={i}
-          className={item.danger ? 'ctx-item danger' : 'ctx-item'}
-          onClick={() => { item.action(); onClose(); }}
-        >
+        <button key={i} style={{
+          background: 'none', border: 'none', color: item.danger ? 'var(--red)' : 'var(--text-dim)',
+          cursor: 'pointer', padding: 'var(--gap-sm) var(--gap-lg)',
+          textAlign: 'left', fontSize: 'var(--fs)', fontWeight: item.danger ? 700 : 400,
+        }} onClick={() => { item.action(); onClose(); }}
+          onMouseEnter={(e) => { (e.target as HTMLElement).style.background = 'var(--border-light)'; }}
+          onMouseLeave={(e) => { (e.target as HTMLElement).style.background = 'none'; }}>
           {item.label}
         </button>
       ))}

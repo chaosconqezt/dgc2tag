@@ -220,6 +220,14 @@ export async function getAllLibraryAlbums(): Promise<LibraryAlbum[]> {
     return albums;
 }
 
+// ── Clear artist ──
+
+export async function clearArtist(bandId: number): Promise<void> {
+    const bandDir = path.join(LIBRARY_ROOT, String(bandId));
+    await fs.rm(bandDir, { recursive: true, force: true });
+    logger.info(`library: cleared artist ${bandId}`);
+}
+
 export async function getBandAlbums(bandId: number): Promise<LibraryAlbum[]> {
     logger.info(`library: loading albums for band ${bandId}`);
     const bandDir = path.join(LIBRARY_ROOT, String(bandId));

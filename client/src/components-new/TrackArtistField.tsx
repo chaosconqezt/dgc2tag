@@ -1,10 +1,6 @@
 import { useEffect, useState } from 'react';
 
-export function TrackArtistField({
-  value,
-  onChange,
-  enabled,
-}: {
+export function TrackArtistField({ value, onChange, enabled }: {
   value: string;
   onChange: (v: string) => void;
   enabled: boolean;
@@ -17,15 +13,10 @@ export function TrackArtistField({
   }, [value, editing]);
 
   return (
-    <div
-      className="track-artist-field"
-      data-enabled={String(enabled)}
-      style={{ cursor: editing ? 'text' : 'pointer' }}
-    >
+    <div className="track-artist-field" data-enabled={String(enabled)}
+      style={{ cursor: editing ? 'text' : 'pointer' }}>
       {editing ? (
-        <input
-          autoFocus
-          value={draft}
+        <input autoFocus value={draft}
           onChange={(e) => setDraft(e.target.value)}
           onBlur={() => {
             if (draft.trim() && draft !== value) {
@@ -51,11 +42,9 @@ export function TrackArtistField({
           }}
         />
       ) : (
-        <span
-          className="text-ellipsis"
+        <span style={{ display: 'block' }}
           onClick={() => { setDraft(value); setEditing(true); }}
           title={value}
-          style={{ display: 'block' }}
         >{value || '—'}</span>
       )}
     </div>

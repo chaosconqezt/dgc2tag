@@ -62,7 +62,7 @@ export function DiffHighlight({ oldStr, newStr, show }: { oldStr: string; newStr
 export function DiffBlock({ entries }: { entries: DiffEntry[] }) {
   if (entries.length === 0) return null;
   return (
-    <div className="progress-console">
+    <div className="console">
       {entries.map((d, i) => (
         <span key={i} className="diff-entry">
           <span className="diff-line diff-old">
@@ -73,7 +73,7 @@ export function DiffBlock({ entries }: { entries: DiffEntry[] }) {
             <span className="diff-marker">+  </span>
             <DiffHighlight oldStr={d.to} newStr={d.from} show="ins" />
           </span>
-          {i < entries.length - 1 && <span className="progress-console-sep" />}
+          {i < entries.length - 1 && <span className="console-sep" />}
         </span>
       ))}
     </div>

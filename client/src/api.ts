@@ -290,3 +290,7 @@ export async function fetchLibraryAlbums(): Promise<LibraryAlbum[]> {
   const res = await api.get('/collection');
   return res.data;
 }
+
+export async function clearArtist(bandId: number): Promise<void> {
+  await api.post('/library/clear-artist', { bandId });
+}

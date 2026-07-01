@@ -130,8 +130,8 @@ export function createSearchActions(
       clearSelectionState();
       dispatch({ type: 'SET_SELECTED_DEEZER', payload: dz });
 
-      const parsedTracks = dz.tracks.map(t => ({
-        num: t.num,
+      const parsedTracks = dz.tracks.map((t, i) => ({
+        num: t.num || String(i + 1).padStart(2, '0'),
         artist: t.artist || dz.artist,
         name: t.name,
         duration: t.duration,

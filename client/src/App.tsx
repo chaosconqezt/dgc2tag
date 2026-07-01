@@ -1,22 +1,22 @@
 import { useEffect, useState, useRef, useCallback } from 'react';
-import ErrorBoundary from './components/ErrorBoundary';
+import ErrorBoundary from './components-new/ErrorBoundary';
 import { AppProvider, useAppContext } from './hooks/useAppContext';
 import * as api from './api';
 import { RefreshCw, Layout, Settings, BookOpen } from 'lucide-react';
 import { parseCompilationTracklist, parseSingleArtistTracklist } from './utils';
-import { WebfetchOverlay } from './components/WebfetchOverlay';
-import { SettingsModal } from './components/SettingsModal';
-import { ResultModal } from './components/ResultModal';
-import { ProgressOverlay } from './components/ProgressOverlay';
-import { LibraryTree } from './components/LibraryTree';
-import { SearchBar } from './components/SearchBar';
-import { SearchResults } from './components/SearchResults';
-import { TagComparison } from './components/TagComparison';
-import { TrackMatcher } from './components/TrackMatcher';
+import { WebfetchOverlay } from './components-new/WebfetchOverlay';
+import { SettingsModal } from './components-new/SettingsModal';
+import { ResultModal } from './components-new/ResultModal';
+import { ProgressOverlay } from './components-new/ProgressOverlay';
+import { TreeView } from './components-new/TreeView';
+import { SearchBar } from './components-new/SearchBar';
+import { SearchResults } from './components-new/SearchResults';
+import { TagComparison } from './components-new/TagComparison';
+import { TrackMatcher } from './components-new/TrackMatcher';
 import { SOURCE_CONFIGS } from './sourceConfigs';
-import { ApplyPanel } from './components/ApplyPanel';
-import { Footer } from './components/Footer';
-import { LibraryView } from './components/LibraryView';
+import { ApplyPanel } from './components-new/ApplyPanel';
+import { Footer } from './components-new/Footer';
+import { LibraryView } from './components-new/LibraryView';
 
 function AppContent() {
   const ctx = useAppContext();
@@ -162,7 +162,13 @@ function AppContent() {
               </label>
             </div>
           </div>
-          <LibraryView entries={ctx.libraryEntries} cardSize={cardSize} minAlbums={minAlbums} />
+          <LibraryView entries={ctx.libraryEntries} cardSize={cardSize} minAlbums={minAlbums}
+            onClearArtist={async (bandId, bandName) => {
+              if (!window.confirm(`Remove "${bandName}" from library?`)) return;
+              await api.clearArtist(bandId);
+              ctx.fetchLibraryEntries();
+            }}
+          />
         </div>
       </>) : (<>
       {/* Sidebar: Library Tree + Search Results */}
@@ -210,7 +216,7 @@ function AppContent() {
             </div>
           </div>
           <div className="sidebar-tree-wrap" style={{ height: treeHeightPx }}>
-            <LibraryTree
+            <TreeView
               tree={ctx.tree}
               selectedFolder={ctx.selectedFolder}
               expandedNodes={ctx.expandedNodes}

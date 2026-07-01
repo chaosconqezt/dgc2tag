@@ -13,7 +13,7 @@ import type { Id3Tags } from './types.js';
 import { writeTags, moveProcessedFiles, renameFilesInPlace } from './tagWriter.js';
 import { getMp3Files, isInsideMusicRoot, assertInsideMusicRoot } from './trackUtils.js';
 import { searchAlbums, getAlbumDetails, fetchPageContent, parseGenresFromPage, getBrowserStatus, ensureTaxonomy } from './scraper.js';
-import { saveAlbumToLibrary, getAllLibraryAlbums, getBandAlbums } from './library.js';
+import { saveAlbumToLibrary, getAllLibraryAlbums, getBandAlbums, clearArtist } from './library.js';
 import { loadConfig, saveConfig, type Config } from './config.js';
 import { clearCache } from './cache.js';
 import { sources } from './sources/index.js';
@@ -302,6 +302,18 @@ app.get('/api/collection/:bandId', async (req, res) => {
     } catch (error) {
         logger.error('GET /api/library/:bandId error:', error);
         res.status(500).json({ error: 'Failed to load band library' });
+    }
+});
+
+app.post('/api/library/clear-artist', async (req, res) => {
+    const { bandId } = req.body;
+    if (bandId == null) return res.status(400).json({ error: 'bandId is required' });
+    try {
+        await clearArtist(bandId);
+        res.json({ success: true });
+    } catch (error) {
+        logger.error('POST /api/library/clear-artist error:', error);
+        res.status(500).json({ error: (error as Error).message });
     }
 });
 

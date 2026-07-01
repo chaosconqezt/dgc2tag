@@ -30,70 +30,72 @@ export function Footer({ musicRoot, outputFolder, outputMode, onMusicRootChange,
     onSave();
   };
 
+  const modeBtnStyle = (isActive: boolean): React.CSSProperties => ({
+    fontSize: 10,
+    padding: '1px 6px',
+    borderRadius: 'var(--radius-sm)',
+    cursor: 'pointer',
+    background: isActive ? 'var(--border-light)' : 'none',
+    border: `1px solid ${isActive ? 'var(--text-disabled)' : 'transparent'}`,
+    color: isActive ? 'var(--text)' : 'var(--text-faint)',
+  });
+
   return (
-    <div className="footer-bar">
-      {/* Music root */}
-      <div className="footer-path">
-        <span className="footer-path-label">SRC:</span>
-        <span className="text-ellipsis footer-path-value" title={musicRoot}>
+    <div className="footer row" style={{ gap: 16 }}>
+      <div className="row gap-sm" style={{ minWidth: 0 }}>
+        <span className="text-faint">SRC:</span>
+        <span className="text-ellipsis text-mono" style={{ maxWidth: 200, color: 'var(--text-dim)' }} title={musicRoot}>
           {musicRoot || '(not set)'}
         </span>
         <button
-          className="footer-btn"
           onClick={() => setPickerTarget('musicRoot')}
           title="Change music library path"
+          style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 2, display: 'flex', color: 'var(--text-dim)', borderRadius: 'var(--radius-sm)' }}
         >
           <FolderOpen size={12} />
         </button>
       </div>
 
-      <span className="footer-sep">|</span>
+      <span className="text-faint">|</span>
 
-      {/* Output */}
-      <div className="footer-path">
-        <span className="footer-path-label">OUT:</span>
-        <span className="text-ellipsis footer-path-value" title={displayOutput}>
+      <div className="row gap-sm" style={{ minWidth: 0 }}>
+        <span className="text-faint">OUT:</span>
+        <span className="text-ellipsis text-mono" style={{ maxWidth: 200, color: 'var(--text-dim)' }} title={displayOutput}>
           {displayOutput || '(not set)'}
         </span>
         <button
-          className="footer-btn"
           onClick={() => setPickerTarget('output')}
           title="Change output folder"
+          style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 2, display: 'flex', color: 'var(--text-dim)', borderRadius: 'var(--radius-sm)' }}
         >
           <FolderOpen size={12} />
         </button>
       </div>
 
-      <span className="footer-sep">|</span>
+      <span className="text-faint">|</span>
 
-      {/* Output mode toggle */}
-      <div className="footer-mode-group">
+      <div className="row gap-xs">
         <button
-          className="footer-mode-btn"
-          data-active={String(outputMode === 'subfolder')}
+          style={modeBtnStyle(outputMode === 'subfolder')}
           onClick={() => { onOutputModeChange('subfolder'); onSave(); }}
         >
           subfolder
         </button>
         <button
-          className="footer-mode-btn"
-          data-active={String(outputMode === 'absolute')}
+          style={modeBtnStyle(outputMode === 'absolute')}
           onClick={() => { onOutputModeChange('absolute'); onSave(); }}
         >
           absolute
         </button>
       </div>
 
-      {/* Build version */}
-      <span className="footer-sep">|</span>
-      <span className="footer-path-label" title={CHANGES[BUILD] || ''}>
+      <span className="text-faint">|</span>
+      <span className="text-faint" title={CHANGES[BUILD] || ''}>
         b{BUILD}
       </span>
 
-      {/* Spacer */}
       <div className="flex-1" />
 
-      {/* Folder picker modal */}
       {pickerTarget && (
         <FolderPicker
           initialPath={pickerTarget === 'musicRoot' ? musicRoot : (outputMode === 'subfolder' ? musicRoot : outputFolder)}
