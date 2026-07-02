@@ -2,15 +2,7 @@ import { useMemo } from 'react';
 import type { AlbumTags } from '../types';
 import { matchTracks } from '../utils';
 import { SimPercent } from './SimPercent';
-
-function wordDiff(a: string, b: string) {
-  const norm = (s: string) => s.replace(/[^a-zA-Z0-9]/g, '');
-  const bWords = new Set(b.split(/\s+/).map(norm));
-  return a.split(/\s+/).map((w, i) => ({
-    text: (i ? ' ' : '') + w,
-    diff: !bWords.has(norm(w)),
-  }));
-}
+import { computeWordSegments } from './DiffLine';
 
 function formatDuration(seconds?: number | null, fallback?: string): string {
   if (seconds === undefined || seconds === null) return fallback ?? '';
@@ -61,7 +53,7 @@ export function MatchRow({
   const inputSim = isUnmatched ? 'unmatched' : isNameEdited ? 'edited' : m.sim === 100 ? 'exact' : 'close';
 
   const words = useMemo(
-    () => localLabel && displayName ? wordDiff(localLabel, displayName) : null,
+    () => localLabel && displayName ? computeWordSegments(localLabel, displayName) : null,
     [localLabel, displayName],
   );
 

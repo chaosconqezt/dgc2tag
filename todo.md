@@ -1,5 +1,58 @@
 # TODO
 
+## 🖥️ Tauri — нативное окно (WebView2)
+
+### Идея
+Оборачиваем React SPA в Tauri (Edge WebView2) — шрифты рендерятся как в Edge, нативное окно, без адресной строки браузера.
+
+### Установка
+
+- [x] `npm install -D @tauri-apps/cli@latest`
+- [x] `npx tauri init`:
+  - App name: `dgc2tag`
+  - Window title: `DGC Tagger`
+  - Dev URL: `http://localhost:5173`
+  - Frontend dist: `../client/dist`
+  - Add to npm script: yes
+
+### Файлы (генерируются tauri init)
+
+- `src-tauri/Cargo.toml`
+- `src-tauri/build.rs`
+- `src-tauri/tauri.conf.json`
+- `src-tauri/src/main.rs`
+- `src-tauri/src/lib.rs`
+- `src-tauri/capabilities/default.json`
+- `src-tauri/icons/`
+
+### Настройки
+
+- [x] `client/vite.config.ts` — добавить `clearScreen: false`, `server.strictPort: true, port: 5173`
+- [x] `package.json` (корень) — скрипты `"tauri": "tauri"`, `"tauri:dev": "tauri dev"`, `"tauri:build": "tauri build"`
+- [x] `tauri.conf.json` — `beforeDevCommand: "npm run dev:client"`, окно 1400x900
+- [x] `lib.rs` — базовый `tauri::Builder`
+
+### Backend (Express) — запускать параллельно
+
+- [ ] `npm run dev:server` в соседнем терминале (как сейчас)
+- [ ] Sidecar — отложить, не критично
+
+### Dev
+
+```powershell
+# 1-й терминал:
+npm run dev:server
+
+# 2-й терминал:
+npx tauri dev
+```
+
+### Первый запуск
+
+`npx tauri dev` скомпилирует Rust-бинарник (~1-2 мин), откроет окно с React-приложением.
+
+---
+
 ## 📐 План рефакторинга UI — новый минимальный CSS + чистые компоненты
 
 ### Идея

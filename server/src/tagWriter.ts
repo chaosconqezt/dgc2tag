@@ -135,9 +135,7 @@ async function writeSingleTag(
         'Country': tags.country,
         'RELEASETYPE': tags.releaseType,
         'DGC_POST_ID': tags.postId != null ? String(tags.postId) : undefined,
-        'BAND_ID': tags.bandId != null ? String(tags.bandId) : undefined,
         'DEEZER_ID': tags.deezerId != null ? String(tags.deezerId) : undefined,
-        'SOURCE': tags.source,
         'MusicBrainz Album Id': (tags as any).musicbrainzReleaseId,
         'MusicBrainz Artist Id': (tags as any).musicbrainzArtistId,
         'MusicBrainz Album Artist Id': (tags as any).musicbrainzAlbumArtistId,
@@ -345,7 +343,7 @@ export async function moveProcessedFiles(
 }
 
 function sanitize(name: string): string {
-    return name.replace(/[<>:"/\\|?*]/g, '_').replace(/\s+/g, ' ').replace(/\.+$/, '').trim();
+    return name.replace(/[<>:"/\\|?*]/g, '_').replace(/\s+/g, ' ').trim();
 }
 
 async function cleanEmptyFolders(dir: string, stopAt: string, ignorePatterns: string[] = []): Promise<void> {

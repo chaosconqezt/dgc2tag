@@ -432,7 +432,7 @@ export async function getAlbumDetails(postId: number): Promise<SearchResult | nu
             const trimmed = line.trim();
             if (!trimmed) continue;
 
-            const trackMatch = trimmed.match(/^(\d{1,3})[.\s)]+\s*(.+)/);
+            const trackMatch = trimmed.match(/^(?:[A-Z])?(\d{1,3})[.\s)]+\s*(.+)/);
             if (trackMatch && trackMatch[1] && trackMatch[2]) {
                 const num = trackMatch[1];
                 const rest = trackMatch[2].trim();

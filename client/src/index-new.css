@@ -130,12 +130,15 @@ input, button, textarea, select { font: inherit; color: inherit; }
 /* ─── Diff highlight ───────────────────── */
 .diff-del { color: #fca5a5; background: rgba(239, 68, 68, 0.1); text-decoration: line-through; }
 .diff-ins { color: #86efac; background: rgba(34, 197, 94, 0.1); font-weight: var(--fw-bold); }
-.diff-dim { color: var(--text-disabled); }
-.diff-entry { display: block; margin-bottom: 8px; }
-.diff-marker { color: var(--text-disabled); user-select: none; margin-right: 4px; }
-.diff-line { display: block; padding: var(--gap-xs) var(--gap-lg); border-radius: var(--radius-sm); font-family: var(--font-mono); font-size: var(--fs-mono); line-height: 1.6; }
-.diff-old { color: var(--text-dim); }
-.diff-new { color: var(--text-dim); }
+
+/* ─── Visual diff (file rename) ─────────── */
+.vdiff-wrap { font-family: var(--font-mono); font-size: 14px; line-height: 1.4; }
+.vdiff-row { display: flex; white-space: pre; }
+.vdiff-side { color: var(--text); }
+.vdiff-arrow { color: var(--text-disabled); user-select: none; flex-shrink: 0; }
+.vdiff-del { color: #fca5a5; background: rgba(239, 68, 68, 0.12); border-radius: 2px; }
+.vdiff-ins { color: #86efac; background: rgba(34, 197, 94, 0.12); border-radius: 2px; }
+.vdiff-box { white-space: pre; color: var(--accent); opacity: 0.5; }
 
 .text-miss { color: #fbbf24; background: rgba(251, 191, 36, 0.15); }
 

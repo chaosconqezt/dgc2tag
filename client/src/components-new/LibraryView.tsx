@@ -1,7 +1,7 @@
 import { useMemo, useRef, useEffect, useState, useCallback } from 'react';
 import type { LibraryAlbum } from '../api';
 import { ExternalLink } from 'lucide-react';
-import { GenreCloud } from './GenreCloud';
+import { GenreBarChart } from './GenreCloud';
 
 interface LibraryViewProps {
   entries: LibraryAlbum[];
@@ -166,7 +166,7 @@ export function LibraryView({ entries, cardSize, minAlbums, onClearArtist }: Lib
 
         {genreCounts.length > 0 && (
           <div className="genre-cloud-wrap">
-            <GenreCloud genres={genreCounts} selectedGenre={selectedGenre} onSelect={(g) => setSelectedGenre(g)} />
+            <GenreBarChart genres={genreCounts} selectedGenre={selectedGenre} onSelect={(g) => setSelectedGenre(g)} />
           </div>
         )}
 
